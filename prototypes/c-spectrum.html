@@ -1,0 +1,1524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumoras Spectrum</title>
+<meta name="description" content="Lumoras: sound orchestration for every business. AI voice, point of sale and in-store audio working as one system.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Hanken+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: dark;
+  --abyss:#04060F;
+  --deep:#0A0F24;
+  --glass:rgba(255,255,255,.05);
+  --glass-line:rgba(255,255,255,.1);
+  --glass-bg:rgba(8,12,30,.66);
+  --tile-bg:rgba(9,13,32,.78);
+  --ink:#F2F4FF;
+  --ink-2:#C9CEE6;
+  --mute:#8F97B8;
+  --mute-2:#646C8E;
+  --s1:#3EE7FF;
+  --s2:#7C8CFF;
+  --s3:#FF6FB5;
+  --s4:#FFD27A;
+  --ok:#7CF2C4;
+  --spectrum:linear-gradient(90deg,var(--s1),var(--s2) 38%,var(--s3) 70%,var(--s4));
+  --f-display:"Bricolage Grotesque","Inter Tight","Helvetica Neue",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --f-body:"Hanken Grotesk","Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"Martian Mono","JetBrains Mono","SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+  --gutter:clamp(16px,4.2vw,56px);
+  --max:1240px;
+  --r-lg:26px;
+  --r-md:18px;
+  --r-sm:12px;
+  --focus:0 0 0 2px var(--abyss),0 0 0 4px var(--s1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{
+  margin:0;background:var(--abyss);color:var(--ink);
+  font-family:var(--f-body);font-size:17px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+img,svg{display:block}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--s1);outline-offset:3px;border-radius:6px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:fixed;left:16px;top:-60px;z-index:100;background:var(--ink);color:var(--abyss);padding:10px 16px;border-radius:999px;font-weight:600;text-decoration:none}
+.skip:focus{top:16px}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- field ---------- */
+#field{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.vignette{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(2,3,9,.75) 100%),
+    linear-gradient(180deg,rgba(4,6,15,.0) 70%,rgba(4,6,15,.35));}
+main,header,footer{position:relative;z-index:1}
+main{overflow-x:clip}
+
+.wrap{width:min(var(--max),100% - 2*var(--gutter));margin-inline:auto}
+.mono{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+.hair{height:1px;background:var(--spectrum);opacity:.75;border:0;margin:0}
+
+.glass{
+  background:linear-gradient(var(--glass),var(--glass)),var(--glass-bg);
+  border:1px solid var(--glass-line);
+  border-radius:var(--r-lg);
+  -webkit-backdrop-filter:blur(18px) saturate(140%);
+  backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 30px 80px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* ---------- nav ---------- */
+.nav{position:fixed;top:0;left:0;right:0;z-index:40;padding:14px 0;transition:background .3s,border-color .3s}
+.nav.scrolled{background:rgba(4,6,15,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--glass-line)}
+.nav-in{display:flex;align-items:center;gap:28px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--f-display);font-weight:700;font-size:21px;letter-spacing:-.02em}
+.brand svg{width:28px;height:28px}
+.nav-links{display:flex;gap:4px;list-style:none;margin:0 auto 0 12px;padding:0}
+.nav-links a{display:block;padding:8px 12px;border-radius:999px;text-decoration:none;color:var(--ink-2);font-size:15px;font-weight:500}
+.nav-links a:hover{color:var(--ink);background:rgba(255,255,255,.06)}
+.nav-cta{display:flex;align-items:center;gap:8px}
+.nav-sign{padding:8px 14px;border-radius:999px;text-decoration:none;color:var(--ink-2);font-size:15px;font-weight:500}
+.nav-sign:hover{color:var(--ink)}
+.menu-btn{display:none;width:40px;height:40px;border-radius:999px;border:1px solid var(--glass-line);background:rgba(255,255,255,.04);align-items:center;justify-content:center;cursor:pointer}
+.menu-panel{display:none}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:12px 22px;border-radius:999px;font-weight:600;font-size:16px;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .2s,background .2s,border-color .2s}
+.btn-primary{background:var(--ink);color:var(--abyss)}
+.btn-primary:hover{background:#fff;transform:translateY(-1px)}
+.btn-primary .ico{transition:transform .2s}
+.btn-primary:hover .ico{transform:translateX(3px)}
+.btn-sm{min-height:40px;padding:8px 16px;font-size:15px}
+.callchip{display:inline-flex;align-items:center;min-height:48px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(10,15,36,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow:hidden;max-width:100%}
+.callchip a{display:inline-flex;align-items:center;gap:9px;padding:12px 6px 12px 18px;text-decoration:none;font-weight:600;white-space:nowrap}
+.callchip a:hover{color:var(--s1)}
+.callchip a:focus-visible{outline-offset:-3px;border-radius:999px}
+.callchip .sep{color:var(--mute);padding:0 6px}
+.callchip .num{font-family:var(--f-mono);font-size:14px;letter-spacing:.02em;padding:12px 18px 12px 0;user-select:all;-webkit-user-select:all;cursor:text;white-space:nowrap}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(124,242,196,.6);flex:none}
+@media (prefers-reduced-motion:no-preference){.pulse{animation:pulse 2.4s infinite}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(124,242,196,.55)}70%{box-shadow:0 0 0 9px rgba(124,242,196,0)}100%{box-shadow:0 0 0 0 rgba(124,242,196,0)}}
+
+/* ---------- type ---------- */
+h1,h2,h3{font-family:var(--f-display);font-optical-sizing:auto;margin:0;color:var(--ink)}
+h2{font-size:clamp(38px,5.4vw,74px);line-height:.96;letter-spacing:-.035em;font-weight:700;font-stretch:86%;text-wrap:balance}
+h3{font-size:21px;line-height:1.2;letter-spacing:-.015em;font-weight:650;font-stretch:92%}
+.lede{font-size:clamp(17px,1.5vw,20px);color:var(--ink-2);line-height:1.55;max-width:60ch;margin:22px 0 0}
+.idx{display:flex;align-items:center;gap:14px;color:var(--mute);margin-bottom:26px}
+.idx b{font-weight:500;color:var(--ink)}
+.idx i{display:block;width:44px;height:1px;background:var(--spectrum)}
+
+/* ---------- hero ---------- */
+.hero{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:120px 0 28px;position:relative}
+.hero-core{position:relative;text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hero-core::before{content:"";position:absolute;inset:-6% 0;z-index:-1;pointer-events:none;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(4,6,15,.66) 0%,rgba(4,6,15,.42) 45%,rgba(4,6,15,0) 100%)}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border-radius:999px;border:1px solid var(--glass-line);background:rgba(10,15,36,.55);color:var(--ink-2)}
+h1{font-size:clamp(50px,9.4vw,140px);line-height:.9;letter-spacing:-.036em;font-weight:760;font-stretch:84%;margin-top:26px;text-wrap:balance}
+h1 .brandword{display:block;font-weight:800;font-stretch:100%;position:relative;width:max-content;max-width:100%;margin:0 auto .06em}
+h1 .brandword::after{content:"";position:absolute;left:4%;right:4%;bottom:.02em;height:2px;background:var(--spectrum);opacity:.85}
+.hero-sub{font-size:clamp(17px,1.6vw,21px);color:var(--ink-2);max-width:620px;margin:28px auto 0;line-height:1.55}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:36px}
+.ticker{margin-top:56px;border-top:1px solid var(--glass-line);border-bottom:1px solid var(--glass-line);background:rgba(4,6,15,.55);position:relative;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker-track{display:flex;width:max-content}
+.ticker ul{display:flex;list-style:none;margin:0;padding:0}
+.ticker li{display:flex;align-items:center;gap:10px;padding:13px 26px;white-space:nowrap;color:var(--ink-2);border-right:1px solid rgba(255,255,255,.06)}
+.ticker li .sim{color:var(--s4)}
+.ticker li .pr{color:var(--s1)}
+@media (prefers-reduced-motion:no-preference){.ticker-track{animation:tick 70s linear infinite}.ticker:hover .ticker-track{animation-play-state:paused}}
+@keyframes tick{to{transform:translateX(-50%)}}
+.ticker-label{display:flex;justify-content:space-between;gap:16px;margin-top:12px;color:var(--mute-2)}
+
+/* ---------- chapters ---------- */
+.chapter{position:relative;min-height:100vh;padding:clamp(96px,16vh,170px) 0;display:flex;align-items:center}
+.chapter > .wrap{position:relative}
+.panel{padding:clamp(26px,3.6vw,52px);max-width:640px}
+.right .panel{margin-left:auto}
+
+.caps{list-style:none;padding:0;margin:34px 0 0;display:grid;gap:2px}
+.caps li{display:grid;grid-template-columns:36px 1fr;gap:14px;padding:14px 0;border-top:1px solid rgba(255,255,255,.07)}
+.caps li:first-child{border-top:0}
+.caps .ico-w{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:var(--s1)}
+.caps strong{display:block;font-weight:600;color:var(--ink);font-size:16.5px}
+.caps span{display:block;color:var(--mute);font-size:15px;line-height:1.5;margin-top:2px}
+
+/* voice */
+.voice-grid{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);gap:40px;align-items:end}
+.transcript{padding:22px 22px 18px;max-width:390px;justify-self:end;margin:0;border-radius:var(--r-md)}
+.tx-head{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--mute);padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.tx-head .tag{display:inline-flex;align-items:center;gap:8px;color:var(--ink-2)}
+.tx{list-style:none;margin:0;padding:14px 0 6px;display:grid;gap:12px}
+.tx li{display:grid;gap:4px}
+.tx .who{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute-2)}
+.tx p{margin:0;font-size:15px;line-height:1.5;padding:10px 13px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+.tx .agent p{background:linear-gradient(135deg,rgba(62,231,255,.09),rgba(124,140,255,.08));border-color:rgba(124,140,255,.22)}
+.tx .agent .who{color:var(--s1)}
+.tx-foot{display:flex;flex-wrap:wrap;gap:8px 14px;color:var(--mute);padding-top:12px;border-top:1px solid rgba(255,255,255,.08);font-size:10.5px}
+.tx-foot .okk{color:var(--ok)}
+
+/* pos */
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:32px}
+.feat div{padding:16px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+.feat .ico{color:var(--s2);margin-bottom:10px}
+.feat strong{display:block;font-size:16px;font-weight:600}
+.feat span{display:block;font-size:14.5px;color:var(--mute);margin-top:3px;line-height:1.45}
+.price{display:grid;grid-template-columns:auto 1fr;gap:0;margin-top:22px;border-radius:14px;border:1px solid rgba(255,255,255,.09);overflow:hidden}
+.price > div{padding:16px 18px}
+.price > div + div{border-left:1px solid rgba(255,255,255,.09)}
+.price .k{color:var(--mute);font-size:10.5px}
+.price .v{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:-.02em;margin-top:4px;line-height:1}
+.price .v small{font-family:var(--f-body);font-size:14px;color:var(--mute);font-weight:500;letter-spacing:0}
+.price .d{font-size:14px;color:var(--mute);margin-top:6px;line-height:1.45}
+.switch-row{display:flex;align-items:center;gap:16px;margin-top:22px;padding:16px 18px;border-radius:14px;background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.14)}
+.switch{position:relative;width:54px;height:30px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);cursor:pointer;flex:none;padding:0;transition:background .3s,border-color .3s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--mute);transition:transform .3s,background .3s}
+.switch[aria-checked="true"]{background:linear-gradient(90deg,rgba(62,231,255,.35),rgba(124,140,255,.45));border-color:rgba(124,140,255,.6)}
+.switch[aria-checked="true"]::after{transform:translateX(24px);background:var(--ink)}
+.switch-row strong{display:block;font-size:15.5px}
+.switch-row span{display:block;font-size:14px;color:var(--mute)}
+
+/* sound */
+.daypart{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);margin-top:30px}
+.dp{border:0;background:transparent;padding:11px 6px;border-radius:10px;cursor:pointer;color:var(--mute);font-weight:600;font-size:15px;transition:background .25s,color .25s}
+.dp:hover{color:var(--ink)}
+.dp[aria-pressed="true"]{background:rgba(255,255,255,.1);color:var(--ink);box-shadow:inset 0 -2px 0 var(--dpc,var(--s1))}
+.readout{margin-top:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22);padding:16px 18px}
+.ro-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;color:var(--mute)}
+.ro-head strong{font-family:var(--f-display);font-size:19px;color:var(--ink);text-transform:none;letter-spacing:-.01em;font-weight:650}
+.zones{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:9px}
+.zones li{display:grid;grid-template-columns:150px minmax(0,1fr) 64px;gap:12px;align-items:center;font-size:14.5px}
+.zones .zn{color:var(--ink-2);font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.zones .zt{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lvl{height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.lvl i{display:block;height:100%;width:calc(var(--v,.5)*100%);background:var(--spectrum);border-radius:4px;transition:width .6s cubic-bezier(.2,.7,.2,1)}
+.ro-next{display:flex;gap:10px;align-items:center;margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font-size:14.5px;color:var(--ink-2)}
+.ro-next .ico{color:var(--s4)}
+.capgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px;margin-top:28px;list-style:none;padding:0}
+.capgrid li{display:flex;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.07)}
+.capgrid .ico{color:var(--s3);margin-top:2px}
+.capgrid strong{display:block;font-size:15.5px;font-weight:600}
+.capgrid span{display:block;color:var(--mute);font-size:14px;line-height:1.45}
+
+/* verticals */
+.vert{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,4vw,64px);align-items:start}
+.vert-intro{position:sticky;top:96px}
+.vert-intro .panel{max-width:none;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding:8px 0 0;position:relative}
+.vert-intro .panel::before{content:"";position:absolute;inset:-12% -8% -10% -8%;z-index:-1;pointer-events:none;background:radial-gradient(60% 55% at 40% 45%,rgba(4,6,15,.82),rgba(4,6,15,0))}
+.vert-intro h2{font-size:clamp(38px,4.4vw,62px)}
+.vert-intro .lede{font-size:17px}
+.vert-now{margin-top:24px;display:flex;gap:12px;align-items:center;color:var(--mute);min-height:22px}
+.vert-now i{width:10px;height:10px;border-radius:50%;background:var(--now,var(--mute-2));box-shadow:0 0 14px var(--now,transparent);flex:none}
+.vert-now b{color:var(--ink);font-weight:500}
+.tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;width:100%;height:100%;padding:18px 18px 20px;border-radius:var(--r-md);background:var(--tile-bg);border:1px solid var(--glass-line);cursor:pointer;position:relative;overflow:hidden;transition:border-color .25s,background .25s,transform .25s}
+.tile::before{content:"";position:absolute;left:0;top:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--tone),transparent);opacity:.35;transition:opacity .25s}
+.tile:hover,.tile[aria-pressed="true"]{border-color:color-mix(in srgb,var(--tone) 55%,transparent);background:rgba(14,20,46,.86);transform:translateY(-2px)}
+.tile:hover::before,.tile[aria-pressed="true"]::before{opacity:1}
+.tile:focus-visible{outline:2px solid var(--s1);outline-offset:3px}
+.t-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.t-ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--tone);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.badge{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:var(--ink-2);white-space:nowrap}
+.t-name{font-family:var(--f-display);font-weight:650;font-size:19px;letter-spacing:-.015em;font-stretch:92%;line-height:1.2;color:var(--ink)}
+.t-ex{font-size:14.5px;color:var(--mute);line-height:1.5}
+.t-ex::before{content:"\201C"}
+.t-ex::after{content:"\201D"}
+
+/* products */
+.prod-head{display:grid;grid-template-columns:minmax(0,1fr);max-width:720px}
+.prods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:48px}
+.prod{padding:28px 26px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden;border-radius:var(--r-lg)}
+.prod::before{content:"";position:absolute;left:24px;right:24px;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--tone),transparent)}
+.prod-status{display:flex;align-items:center;gap:8px;color:var(--mute)}
+.prod-status .dot{width:7px;height:7px;border-radius:50%;background:var(--tone);box-shadow:0 0 12px var(--tone)}
+.prod h3{font-size:34px;font-weight:750;letter-spacing:-.03em;font-stretch:88%}
+.prod .what{color:var(--ink-2);font-size:15.5px;margin:0}
+.prod blockquote{margin:0;font-family:var(--f-display);font-size:21px;line-height:1.2;letter-spacing:-.015em;font-weight:600;color:var(--ink);font-stretch:90%}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.08);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.stats div{background:rgba(6,9,24,.85);padding:12px 14px}
+.stats b{display:block;font-family:var(--f-display);font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.stats span{font-size:13px;color:var(--mute);line-height:1.35;display:block;margin-top:3px}
+.attrib{font-size:12.5px;color:var(--mute-2);margin:0}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:10px;font-size:15px;color:var(--ink-2);line-height:1.4}
+.plist .ico{width:18px;height:18px;color:var(--tone);margin-top:1px}
+.note{font-size:14px;color:var(--mute);padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-family:var(--f-mono);font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,210,122,.3);color:var(--s4);letter-spacing:.03em}
+.plink{margin-top:auto;display:inline-flex;align-items:center;gap:8px;font-weight:600;text-decoration:none;color:var(--ink);padding-top:6px;width:max-content;max-width:100%}
+.plink:hover{color:var(--tone)}
+.plink .ico{width:18px;height:18px;transition:transform .2s}
+.plink:hover .ico{transform:translateX(3px)}
+.platform{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:16px;border-radius:var(--r-md);border:1px solid var(--glass-line);background:rgba(6,9,24,.7);overflow:hidden}
+.platform div{padding:18px 22px;display:flex;gap:14px;align-items:flex-start}
+.platform div + div{border-left:1px solid var(--glass-line)}
+.platform .ico{color:var(--s2);margin-top:2px}
+.platform strong{display:block;font-size:15.5px}
+.platform span{display:block;font-size:14px;color:var(--mute)}
+
+/* enterprise */
+.ent{display:grid;grid-template-columns:1fr 1fr;gap:4px 26px;list-style:none;margin:32px 0 0;padding:0}
+.ent li{padding:16px 0;border-top:1px solid rgba(255,255,255,.08);display:grid;grid-template-columns:28px 1fr;gap:12px}
+.ent .ico{color:var(--s1);margin-top:1px}
+.ent strong{display:block;font-size:16px;font-weight:600}
+.ent span{display:block;font-size:14.5px;color:var(--mute);line-height:1.45;margin-top:2px}
+.ent-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:22px}
+.ent-tags span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--ink-2)}
+
+/* how */
+.how-head{max-width:720px}
+.steps{list-style:none;margin:56px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;counter-reset:s}
+.step{padding:26px 24px 28px;border-radius:var(--r-md);position:relative}
+.step.glass{background:linear-gradient(180deg,rgba(8,12,30,.62),rgba(8,12,30,.34));-webkit-backdrop-filter:blur(6px) saturate(150%);backdrop-filter:blur(6px) saturate(150%)}
+.step .n{display:flex;align-items:center;gap:10px;color:var(--mute)}
+.step .n b{font-family:var(--f-display);font-size:44px;font-weight:700;color:var(--ink);letter-spacing:-.04em;line-height:1}
+.step h3{margin-top:22px;font-size:26px}
+.step p{margin:10px 0 0;color:var(--mute);font-size:15px;line-height:1.5}
+.step .bar{position:absolute;left:24px;right:24px;bottom:0;height:2px;background:var(--spectrum);opacity:.55;transform-origin:left}
+
+/* cta */
+.cta-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,520px);gap:clamp(28px,5vw,80px);align-items:center}
+.cta-copy h2{font-size:clamp(44px,6.6vw,96px)}
+.cta-copy .lede{margin-top:24px}
+.cta-copy .callchip{margin-top:30px}
+.cta-copy .scrim{position:relative}
+.cta-copy .scrim::before{content:"";position:absolute;inset:-14% 0;z-index:-1;background:radial-gradient(50% 50% at 50% 50%,rgba(4,6,15,.75),rgba(4,6,15,0));pointer-events:none}
+.form{padding:clamp(24px,3vw,38px)}
+.form h3{font-size:26px}
+.form .sub{color:var(--mute);font-size:15px;margin:6px 0 22px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:grid;gap:7px}
+.field.full{grid-column:1/-1}
+.field label,.legend{font-size:13.5px;color:var(--ink-2);font-weight:500}
+.field input,.field select{width:100%;min-height:48px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(2,4,12,.55);color:var(--ink);font-size:16px;transition:border-color .2s,box-shadow .2s}
+.field select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50%),linear-gradient(135deg,var(--mute) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 15px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:40px}
+.field select option{background:var(--deep);color:var(--ink)}
+.field input::placeholder{color:var(--mute-2)}
+.field input:focus-visible,.field select:focus-visible{outline:none;border-color:var(--s1);box-shadow:0 0 0 3px rgba(62,231,255,.22)}
+.field input:user-invalid{border-color:var(--s3)}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+.chkrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chk{position:relative}
+.chk input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.chk span{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(2,4,12,.45);font-size:14.5px;cursor:pointer;color:var(--ink-2);transition:all .2s}
+.chk span::before{content:"";width:8px;height:8px;border-radius:50%;border:1px solid var(--mute)}
+.chk input:checked + span{border-color:rgba(62,231,255,.6);color:var(--ink);background:rgba(62,231,255,.08)}
+.chk input:checked + span::before{background:var(--s1);border-color:var(--s1);box-shadow:0 0 8px var(--s1)}
+.chk input:focus-visible + span{outline:2px solid var(--s1);outline-offset:3px}
+.form .btn{width:100%;justify-content:center;margin-top:20px}
+.fine{font-size:12.5px;color:var(--mute-2);margin:12px 0 0;text-align:center}
+.ok-msg{text-align:left}
+.ok-msg:focus{outline:none}
+.ok-mark{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:rgba(124,242,196,.1);border:1px solid rgba(124,242,196,.4);color:var(--ok);margin-bottom:18px}
+.ok-msg p{color:var(--ink-2);margin:10px 0 0}
+.ok-msg .btn{width:auto;margin-top:22px;background:transparent;color:var(--ink);border-color:rgba(255,255,255,.18)}
+
+/* footer */
+.foot{padding:72px 0 120px;border-top:1px solid var(--glass-line);background:linear-gradient(180deg,rgba(4,6,15,.4),rgba(4,6,15,.92) 30%)}
+.foot-grid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px}
+.foot p{color:var(--mute);font-size:15px;margin:14px 0 0;max-width:34ch}
+.foot h4{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:500;margin:6px 0 14px}
+.foot ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.foot ul a{text-decoration:none;color:var(--ink-2);font-size:15px}
+.foot ul a:hover{color:var(--ink)}
+.foot ul .dim{color:var(--mute-2);font-size:13px}
+.foot-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:56px;padding-top:22px;border-top:1px solid rgba(255,255,255,.07);color:var(--mute)}
+.foot-base .proto{color:var(--s4)}
+
+/* rail */
+.rail{position:fixed;right:clamp(10px,1.6vw,26px);top:50%;transform:translateY(-50%);z-index:30}
+.rail ol{list-style:none;margin:0;padding:8px 0;display:grid;gap:2px}
+.rail button{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;gap:10px;height:30px;width:72px;padding:0 6px;cursor:pointer;border-radius:8px;position:relative}
+.rail .rl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:rgba(8,12,30,.85);border:1px solid var(--glass-line);padding:5px 9px;border-radius:999px;white-space:nowrap;opacity:0;position:absolute;right:calc(100% + 4px);top:50%;transform:translate(6px,-50%);transition:opacity .2s,transform .2s;pointer-events:none}
+.rail .ri{font-family:var(--f-mono);font-size:11px;color:var(--mute-2);transition:color .25s;min-width:20px;text-align:right}
+.rail .rt{flex:none}
+.rail .rt{width:14px;height:1px;background:var(--mute-2);transition:width .35s,background .35s}
+.rail button:hover .rl,.rail button:focus-visible .rl{opacity:1;transform:translate(0,-50%)}
+.rail button:hover .ri{color:var(--ink)}
+.rail button:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.rail button[aria-current="true"] .ri{color:var(--ink)}
+.rail button[aria-current="true"] .rt{width:30px;background:var(--spectrum)}
+
+/* switcher */
+.switcher{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:50;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;background:rgba(6,9,22,.86);border:1px solid var(--glass-line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 10px 30px -10px rgba(0,0,0,.8);max-width:calc(100vw - 24px)}
+.switcher .lab{padding:0 8px 0 10px;color:var(--mute-2);font-size:10px}
+.switcher a{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;text-decoration:none;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.switcher a b{font-family:var(--f-mono);font-weight:500;font-size:11px;color:var(--mute)}
+.switcher a:hover{background:rgba(255,255,255,.07);color:var(--ink)}
+.switcher a[aria-current="page"]{background:rgba(255,255,255,.1);color:var(--ink);box-shadow:inset 0 -1px 0 var(--s1)}
+.switcher a[aria-current="page"] b{color:var(--s1)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .voice-grid{grid-template-columns:minmax(0,1fr)}
+  .transcript{justify-self:start}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .prods{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;padding-bottom:12px;scrollbar-width:thin}
+  .prod{flex:0 0 min(84%,380px);scroll-snap-align:start}
+}
+@media (max-width:999px){
+  .rail{display:none}
+  .vert{grid-template-columns:minmax(0,1fr)}
+  .vert-intro{position:relative;top:auto}
+  .cta-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:899px){
+  .nav-links,.nav-sign{display:none}
+  .menu-btn{display:inline-flex}
+  .nav-cta{margin-left:auto}
+  .menu-panel{position:absolute;left:var(--gutter);right:var(--gutter);top:64px;padding:10px;border-radius:var(--r-md)}
+  .nav.open .menu-panel{display:block}
+  .menu-panel a{display:block;padding:12px 14px;border-radius:10px;text-decoration:none;color:var(--ink-2)}
+  .menu-panel a:hover{background:rgba(255,255,255,.06);color:var(--ink)}
+  .platform{grid-template-columns:minmax(0,1fr)}
+  .platform div + div{border-left:0;border-top:1px solid var(--glass-line)}
+  .panel{max-width:none}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .chapter{padding:88px 0;min-height:auto}
+  .hero{padding-top:104px}
+  .feat,.capgrid,.ent,.tiles,.fgrid{grid-template-columns:minmax(0,1fr)}
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .price{grid-template-columns:minmax(0,1fr)}
+  .price > div + div{border-left:0;border-top:1px solid rgba(255,255,255,.09)}
+  .zones li{grid-template-columns:minmax(0,1fr) 56px;gap:4px 12px}
+  .zones .zn{grid-column:1/-1}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .foot-grid > div:first-child{grid-column:1/-1}
+  .hero-ctas{flex-direction:column;align-items:stretch}
+  .hero-ctas .btn,.hero-ctas .callchip{justify-content:center}
+  .callchip a{padding-left:14px}
+  .callchip .num{padding-right:14px}
+  .switcher .lab,.switcher .long{display:none}
+  .ticker-label{flex-direction:column;gap:4px}
+  .glass{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation:none !important}
+  .ticker{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="spec" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3EE7FF"/><stop offset=".4" stop-color="#7C8CFF"/><stop offset=".72" stop-color="#FF6FB5"/><stop offset="1" stop-color="#FFD27A"/>
+    </linearGradient>
+  </defs>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h3l2 5-2.5 1.5a11 11 0 0 0 6 6L15 14l5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-lang" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/></symbol>
+  <symbol id="i-transfer" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M4 7h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4V7z"/><path d="M14 8v2M14 12v0M14 14v2"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></symbol>
+  <symbol id="i-team" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5M15.5 15c2.3-.2 4.2 1.1 5 4"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8.5 16v-4M12.5 16V8M16.5 16v-6"/></symbol>
+  <symbol id="i-zones" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h1.5M7 8v8M11 4.5v15M15 8.5v7M19 10.5v3"/></symbol>
+  <symbol id="i-mega" viewBox="0 0 24 24"><path d="M4 10v4h3l7 4V6l-7 4H4z"/><path d="M17.5 9a4 4 0 0 1 0 6"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16M4 14h4M10 8h4M16 16h4"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6.5" cy="17" r="2.5"/><circle cx="17.5" cy="17" r="2.5"/><path d="M8.3 15.2L18 4M15.7 15.2L6 4"/></symbol>
+  <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 1.5-3 4-3 7v3h3"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-cross" viewBox="0 0 24 24"><path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8L11 3z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M4 16v-4l2-5h12l2 5v4H4z"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/><path d="M4 12h16"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11L12 4l8.5 7M6 9.5V20h12V9.5"/><path d="M12 18c-1.6 0-2.5-1-2.5-2.3 0-1.6 1.5-2.3 2.5-3.7 1 1.4 2.5 2.1 2.5 3.7 0 1.3-.9 2.3-2.5 2.3z"/></symbol>
+  <symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/></symbol>
+  <symbol id="i-bed" viewBox="0 0 24 24"><path d="M3 18V6M3 14h18v4M21 14v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="10.5" r="1.8"/></symbol>
+  <symbol id="i-paw" viewBox="0 0 24 24"><circle cx="6.5" cy="10" r="1.8"/><circle cx="10" cy="6" r="1.8"/><circle cx="14.5" cy="6" r="1.8"/><circle cx="18" cy="10" r="1.8"/><path d="M12.2 12c-3 0-5.5 3.5-5.5 5.5 0 1.5 1.2 2.5 2.7 2.5 1.2 0 1.8-.6 2.8-.6s1.6.6 2.8.6c1.5 0 2.7-1 2.7-2.5 0-2-2.5-5.5-5.5-5.5z"/></symbol>
+  <symbol id="i-brief" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="12" rx="2"/><path d="M9 7V5h6v2M3.5 12h17"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><path d="M5 21V4h9v17M14 9h5v12M3 21h18M8 8h3M8 12h3M8 16h3"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 24 24"><path d="M2.5 9.5L12 5l9.5 4.5L12 14 2.5 9.5z"/><path d="M6.5 11.5V16c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2v-4.5M21.5 9.5V15"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M15 3.5a5 5 0 0 0-4.6 6.9L4 16.8V20h3.2l6.4-6.4A5 5 0 0 0 20.5 9l-3 1-2.5-2.5 1-3-1-1z"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l2.5 2.5M13.5 9.5l2 2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.5-3 8-7.5 9.5-4.5-1.5-7.5-5-7.5-9.5V6L12 3z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5M13.5 4.5l-3 15"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.5l9 4.5-9 4.5-9-4.5 9-4.5z"/><path d="M3 12l9 4.5 9-4.5M3 16l9 4.5 9-4.5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></symbol>
+  <symbol id="i-onboard" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20c1-3.5 3.5-5.5 6.5-5.5 1.5 0 2.8.4 3.9 1.2M18 14v6M15 17h6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 8h16M4 16h16"/></symbol>
+</svg>
+
+<canvas id="field" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Lumoras home">
+      <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="14" r="12.25" stroke="url(#spec)" stroke-width="1.5"/><path d="M7.5 14h1M10.75 10.5v7M14 7v14M17.25 10.5v7M20.5 13v2" stroke="url(#spec)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Lumoras
+    </a>
+    <ul class="nav-links">
+      <li><a href="#voice">Platform</a></li>
+      <li><a href="#verticals">Verticals</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#sound">Retail Sound</a></li>
+      <li><a href="#enterprise">Enterprise</a></li>
+      <li><a href="#company">Company</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a class="nav-sign" href="#cta">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="#cta">Book a demo</a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menuPanel" aria-label="Open menu"><svg class="ico"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <nav class="menu-panel glass" id="menuPanel" aria-label="Mobile">
+    <a href="#voice">Platform</a><a href="#verticals">Verticals</a><a href="#products">Products</a><a href="#sound">Retail Sound</a><a href="#enterprise">Enterprise</a><a href="#company">Company</a><a href="#cta">Sign in</a>
+  </nav>
+</header>
+
+<nav class="rail" aria-label="Chapters">
+  <ol>
+    <li><button type="button" data-go="top" data-ch="0" aria-current="true" aria-label="00 Overview"><span class="rl">Overview</span><span class="ri">00</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="voice" data-ch="1" aria-label="01 Voice"><span class="rl">Voice</span><span class="ri">01</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="pos" data-ch="2" aria-label="02 Point of sale"><span class="rl">Point of sale</span><span class="ri">02</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="sound" data-ch="3" aria-label="03 Retail sound"><span class="rl">Retail sound</span><span class="ri">03</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="verticals" data-ch="4" aria-label="04 Verticals"><span class="rl">Verticals</span><span class="ri">04</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="products" data-ch="5" aria-label="05 Products"><span class="rl">Products</span><span class="ri">05</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="enterprise" data-ch="6" aria-label="06 Enterprise"><span class="rl">Enterprise</span><span class="ri">06</span><span class="rt"></span></button></li>
+    <li><button type="button" data-go="how" data-ch="7" aria-label="07 Get started"><span class="rl">Get started</span><span class="ri">07</span><span class="rt"></span></button></li>
+  </ol>
+</nav>
+
+<main id="main">
+  <!-- 00 HERO -->
+  <section class="hero" id="top" data-form="0" data-ch="0" aria-labelledby="h-hero">
+    <div class="wrap hero-core">
+      <span class="eyebrow mono"><span class="pulse" aria-hidden="true"></span>AI voice · Point of sale · In-store sound</span>
+      <h1 id="h-hero"><span class="brandword">Lumoras.</span> Sound orchestration for every business.</h1>
+      <p class="hero-sub">One conductor for every sound your business makes. The phone, the front counter, the checkout, the music on the floor and the announcements overhead, orchestrated as one system.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#cta">Book a demo <svg class="ico"><use href="#i-arrow"/></svg></a>
+        <div class="callchip">
+          <a href="tel:+19414304049"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg>Call the live demo</a><span class="sep" aria-hidden="true">·</span><span class="num">941-430-4049</span>
+        </div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="ticker" role="region" aria-label="Simulated live events" tabindex="0">
+        <div class="ticker-track">
+          <ul class="mono">
+            <li><span class="sim">SIM</span> · 06:42 PM · <span class="pr">Sonorch</span> · booked balayage with Maya · Thu 10:00</li>
+            <li><span class="sim">SIM</span> · 06:43 PM · <span class="pr">Restaurant</span> · pickup order · 2 birria tacos, horchata · ready 7:05</li>
+            <li><span class="sim">SIM</span> · 06:44 PM · <span class="pr">Lumoras Sound</span> · Zone A to evening set · Store 12</li>
+            <li><span class="sim">SIM</span> · 06:45 PM · <span class="pr">Lumoras Voice</span> · no-heat call triaged · tech ETA 7:30 PM</li>
+            <li><span class="sim">SIM</span> · 06:46 PM · <span class="pr">Lumoras POS</span> · checkout · tip split across 2 staff</li>
+            <li><span class="sim">SIM</span> · 06:47 PM · <span class="pr">Sonorch</span> · waitlist filled a Fri 3:15 cancellation</li>
+            <li><span class="sim">SIM</span> · 06:48 PM · <span class="pr">Lumoras Voice</span> · cleaning moved to Tue 9:00 · forms sent</li>
+            <li><span class="sim">SIM</span> · 06:49 PM · <span class="pr">Lumoras Sound</span> · curbside announcement · Door 2</li>
+            <li><span class="sim">SIM</span> · 06:50 PM · <span class="pr">Lumoras Voice</span> · warm transfer to front desk · Spanish</li>
+          </ul>
+          <ul class="mono" aria-hidden="true">
+            <li><span class="sim">SIM</span> · 06:42 PM · <span class="pr">Sonorch</span> · booked balayage with Maya · Thu 10:00</li>
+            <li><span class="sim">SIM</span> · 06:43 PM · <span class="pr">Restaurant</span> · pickup order · 2 birria tacos, horchata · ready 7:05</li>
+            <li><span class="sim">SIM</span> · 06:44 PM · <span class="pr">Lumoras Sound</span> · Zone A to evening set · Store 12</li>
+            <li><span class="sim">SIM</span> · 06:45 PM · <span class="pr">Lumoras Voice</span> · no-heat call triaged · tech ETA 7:30 PM</li>
+            <li><span class="sim">SIM</span> · 06:46 PM · <span class="pr">Lumoras POS</span> · checkout · tip split across 2 staff</li>
+            <li><span class="sim">SIM</span> · 06:47 PM · <span class="pr">Sonorch</span> · waitlist filled a Fri 3:15 cancellation</li>
+            <li><span class="sim">SIM</span> · 06:48 PM · <span class="pr">Lumoras Voice</span> · cleaning moved to Tue 9:00 · forms sent</li>
+            <li><span class="sim">SIM</span> · 06:49 PM · <span class="pr">Lumoras Sound</span> · curbside announcement · Door 2</li>
+            <li><span class="sim">SIM</span> · 06:50 PM · <span class="pr">Lumoras Voice</span> · warm transfer to front desk · Spanish</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ticker-label mono"><span>Simulated event stream · not live data</span><span>Scroll to hear the system unfold</span></div>
+    </div>
+  </section>
+
+  <!-- 01 VOICE -->
+  <section class="chapter" id="voice" data-form="1" data-ch="1" aria-labelledby="h-voice">
+    <div class="wrap voice-grid">
+      <div class="panel glass">
+        <div class="idx mono"><b>01</b><i></i>Lumoras Voice</div>
+        <h2 id="h-voice">AI voice that knows your trade.</h2>
+        <p class="lede">Purpose-built voice agents that already speak your vocabulary. A balayage versus a gloss. A 4-top at 7:30. A 60k-mile service. Your callers hear someone who gets it, on the first ring.</p>
+        <ul class="caps">
+          <li><span class="ico-w"><svg class="ico"><use href="#i-phone"/></svg></span><div><strong>Answers on the first ring, 24/7</strong><span>Nights, weekends, the Saturday rush. No hold music, no voicemail.</span></div></li>
+          <li><span class="ico-w"><svg class="ico"><use href="#i-user"/></svg></span><div><strong>Recognizes regulars by number</strong><span>Greets them by name and remembers the usual.</span></div></li>
+          <li><span class="ico-w"><svg class="ico"><use href="#i-cal"/></svg></span><div><strong>Books into your live calendar</strong><span>Checks real availability and confirms before the caller hangs up.</span></div></li>
+          <li><span class="ico-w"><svg class="ico"><use href="#i-bag"/></svg></span><div><strong>Takes orders and deposits</strong><span>Pickup orders, reservations, deposits and no-show policies, handled on the call.</span></div></li>
+          <li><span class="ico-w"><svg class="ico"><use href="#i-lang"/></svg></span><div><strong>Multilingual</strong><span>Follows the caller into their language, mid-sentence if needed.</span></div></li>
+          <li><span class="ico-w"><svg class="ico"><use href="#i-transfer"/></svg></span><div><strong>Warm transfer to staff</strong><span>Hands the call to a person with the context already said.</span></div></li>
+          <li><span class="ico-w"><svg class="ico"><use href="#i-msg"/></svg></span><div><strong>Follow-ups you approve</strong><span>Drafts win-back texts for callers who didn't book. Nothing sends until you approve it.</span></div></li>
+        </ul>
+      </div>
+      <figure class="glass transcript" aria-label="Simulated call transcript">
+        <figcaption class="tx-head mono"><span>SIM · Inbound · 06:41 PM</span><span class="tag"><span class="pulse" aria-hidden="true"></span>Sonorch</span></figcaption>
+        <ol class="tx">
+          <li><span class="who">Caller</span><p>Hi, it's Dana. Can Maya fit me in this week?</p></li>
+          <li class="agent"><span class="who">Voice agent</span><p>Hi Dana. Maya has Thursday at 10:00 for your usual balayage, about 90 minutes. Want it?</p></li>
+          <li><span class="who">Caller</span><p>Perfect. Book it.</p></li>
+          <li class="agent"><span class="who">Voice agent</span><p>Done. I've taken the $25 deposit and texted your confirmation. See you Thursday.</p></li>
+        </ol>
+        <div class="tx-foot mono"><span>Regular · matched by number</span><span class="okk">Booked · Thu 10:00</span><span>1m 12s</span></div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 02 POS -->
+  <section class="chapter right" id="pos" data-form="2" data-ch="2" aria-labelledby="h-pos">
+    <div class="wrap">
+      <div class="panel glass">
+        <div class="idx mono"><b>02</b><i></i>Lumoras POS</div>
+        <h2 id="h-pos">A POS for any service business.</h2>
+        <p class="lede"><strong style="color:var(--ink);font-weight:600">Start with the POS. Add voice whenever you're ready.</strong> The same core that runs salons and restaurants on Sonorch, configured for clinics, shops, studios and service crews. Voice is a switch, not a migration.</p>
+        <div class="feat">
+          <div><svg class="ico"><use href="#i-ticket"/></svg><strong>Appointments or tickets</strong><span>Calendars for chair time, tickets for the counter, waitlists that refill cancellations.</span></div>
+          <div><svg class="ico"><use href="#i-card"/></svg><strong>Payments</strong><span>Check out at the chair, the table or the counter. Split checks, tips, deposits.</span></div>
+          <div><svg class="ico"><use href="#i-team"/></svg><strong>Staff & commissions</strong><span>Personal staff apps, no shared logins. Payroll-ready commission and tip splits.</span></div>
+          <div><svg class="ico"><use href="#i-box"/></svg><strong>Inventory</strong><span>Retail and back-bar stock, low-stock alerts, top sellers by staff member.</span></div>
+          <div><svg class="ico"><use href="#i-pin"/></svg><strong>Multi-location</strong><span>One customer record across every location you run.</span></div>
+          <div><svg class="ico"><use href="#i-chart"/></svg><strong>Reporting</strong><span>Revenue, utilization, no-shows and top sellers by day, week, month or staff.</span></div>
+        </div>
+        <div class="price">
+          <div><div class="k mono">Free tier</div><div class="v">$0</div><div class="d">Cash and gift cards.</div></div>
+          <div><div class="k mono">Sonorch POS plans</div><div class="v">$99<small>/mo and up</small></div><div class="d">Up to 5 staff. Month to month, setup included, AI receptionist with unlimited calls.</div></div>
+        </div>
+        <div class="switch-row">
+          <button class="switch" type="button" role="switch" aria-checked="false" id="voiceSwitch" aria-labelledby="swLabel"></button>
+          <div><strong id="swLabel">Lumoras Voice</strong><span id="swState">Off · the POS runs on its own</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 SOUND -->
+  <section class="chapter" id="sound" data-form="3" data-ch="3" aria-labelledby="h-sound">
+    <div class="wrap">
+      <div class="panel glass">
+        <div class="idx mono"><b>03</b><i></i>Lumoras Sound</div>
+        <h2 id="h-sound">Custom sound orchestration for retail.</h2>
+        <p class="lede">Every zone, every daypart, every location. Music that follows traffic and the time of day, a sonic identity that sounds like your brand, and announcements that run themselves.</p>
+        <div class="daypart" role="group" aria-label="Daypart preview">
+          <button class="dp" type="button" data-dp="0" aria-pressed="true">Open</button>
+          <button class="dp" type="button" data-dp="1" aria-pressed="false">Midday</button>
+          <button class="dp" type="button" data-dp="2" aria-pressed="false">Rush</button>
+          <button class="dp" type="button" data-dp="3" aria-pressed="false">Close</button>
+        </div>
+        <div class="readout" aria-live="polite">
+          <div class="ro-head mono"><span>SIM · Store 12 · <span id="dpTime">9:00 AM</span></span><strong id="dpName">Doors open</strong></div>
+          <ul class="zones" id="zones">
+            <li><span class="zn">A · Sales floor</span><span class="zt">Warm acoustic · 84 BPM</span><span class="lvl" aria-hidden="true"><i style="--v:.45"></i></span></li>
+            <li><span class="zn">B · Fitting rooms</span><span class="zt">Ambient piano · 70 BPM</span><span class="lvl" aria-hidden="true"><i style="--v:.3"></i></span></li>
+            <li><span class="zn">C · Entrance</span><span class="zt">Bright indie · 96 BPM</span><span class="lvl" aria-hidden="true"><i style="--v:.55"></i></span></li>
+            <li><span class="zn">D · Checkout</span><span class="zt">Acoustic soul · 88 BPM</span><span class="lvl" aria-hidden="true"><i style="--v:.4"></i></span></li>
+          </ul>
+          <p class="ro-next"><svg class="ico" aria-hidden="true"><use href="#i-mega"/></svg><span>Next: <span id="dpNext">10:00 AM · Welcome message, all zones</span></span></p>
+        </div>
+        <ul class="capgrid">
+          <li><svg class="ico"><use href="#i-zones"/></svg><div><strong>Zones</strong><span>Floor, fitting rooms, entrance and checkout, each with its own mix and level.</span></div></li>
+          <li><svg class="ico"><use href="#i-clock"/></svg><div><strong>Dayparts</strong><span>Playlists that follow traffic and the time of day.</span></div></li>
+          <li><svg class="ico"><use href="#i-wave"/></svg><div><strong>Brand sonic identity</strong><span>A signature sound, voice and tempo that is unmistakably yours.</span></div></li>
+          <li><svg class="ico"><use href="#i-mega"/></svg><div><strong>Automated announcements</strong><span>Store closing, curbside ready, promos, scheduled or triggered.</span></div></li>
+          <li><svg class="ico"><use href="#i-mic"/></svg><div><strong>Voice paging</strong><span>Page a zone or the whole store from the console or a phone.</span></div></li>
+          <li><svg class="ico"><use href="#i-sliders"/></svg><div><strong>One console</strong><span>Every location synchronized and adjusted from one place.</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 VERTICALS -->
+  <section class="chapter" id="verticals" data-form="4" data-ch="4" aria-labelledby="h-vert">
+    <div class="wrap vert">
+      <div class="vert-intro">
+        <div class="panel glass">
+          <div class="idx mono"><b>04</b><i></i>Verticals</div>
+          <h2 id="h-vert">Every industry has a voice.</h2>
+          <p class="lede">Purpose-built agents that already know the vocabulary of the trade. Each cluster in the field is an industry. Hover or select one to light it up.</p>
+          <p class="vert-now mono" aria-live="polite"><i id="nowDot"></i><span id="nowText">14 verticals · one platform</span></p>
+        </div>
+      </div>
+      <ul class="tiles" id="tiles">
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="0"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-scissors"/></svg></span><span class="badge">Sonorch</span></span><span class="t-name">Salons, barbers & spas</span><span class="t-ex">Books a 90-minute balayage with Maya on Thursday and takes the $25 deposit.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="1"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-utensils"/></svg></span><span class="badge">SeasonX · soon</span></span><span class="t-name">Restaurants</span><span class="t-ex">Takes a pickup order for two birria tacos and an horchata, ready at 6:40.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="2"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-store"/></svg></span><span class="badge">Lumoras Sound</span></span><span class="t-name">Retail stores</span><span class="t-ex">Plays the 4 pm energy set in Zone A and announces curbside pickup at the door.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="3"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-cross"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Medical & dental clinics</span><span class="t-ex">Moves a cleaning to next Tuesday and sends the new-patient forms.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="4"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-spark"/></svg></span><span class="badge">Sonorch</span></span><span class="t-name">Med spas</span><span class="t-ex">Books a consult with the injector and sends the intake form ahead of the visit.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="5"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-car"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Auto service</span><span class="t-ex">Quotes the 60,000-mile service and holds the 8:00 drop-off bay.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="6"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-home"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Home services</span><span class="t-ex">Triages a no-heat call, books the after-hours tech, texts the ETA.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="7"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-dumbbell"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Fitness & wellness</span><span class="t-ex">Books a first reformer class for Saturday at 9 and texts what to bring.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="8"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-bed"/></svg></span><span class="badge">Voice + Sound</span></span><span class="t-name">Hotels & hospitality</span><span class="t-ex">Confirms a late check-in, books the spa for Saturday and notes the extra pillows.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="9"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-paw"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Veterinary & pet grooming</span><span class="t-ex">Books a full groom for a 60-pound doodle and flags the matting note for the groomer.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="10"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-brief"/></svg></span><span class="badge">Voice</span></span><span class="t-name">Legal & accounting</span><span class="t-ex">Screens a new estate-planning inquiry, books the consult and sends the intake packet.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="11"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-building"/></svg></span><span class="badge">Voice</span></span><span class="t-name">Property management</span><span class="t-ex">Logs a leaking dishwasher in unit 4B and schedules the vendor for tomorrow morning.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="12"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-cap"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Education & tutoring</span><span class="t-ex">Matches a parent with an SAT math tutor and books two sessions a week.</span></button></li>
+        <li><button class="tile" type="button" aria-pressed="false" data-cl="13"><span class="t-top"><span class="t-ico"><svg class="ico"><use href="#i-wrench"/></svg></span><span class="badge">POS + Voice</span></span><span class="t-name">Repair shops</span><span class="t-ex">Quotes a cracked-screen repair, confirms the part is in stock and books a noon drop-off.</span></button></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 05 PRODUCTS -->
+  <section class="chapter" id="products" data-form="5" data-ch="5" aria-labelledby="h-prod">
+    <div class="wrap">
+      <div class="prod-head">
+        <div class="idx mono"><b>05</b><i></i>Product family</div>
+        <h2 id="h-prod">One platform. A family of voices.</h2>
+        <p class="lede">Lumoras runs the platform. Our vertical products put it to work in the industries that live on the phone.</p>
+      </div>
+      <div class="prods" role="list">
+        <article class="prod glass" role="listitem" style="--tone:var(--s1)">
+          <div class="prod-status mono"><span class="dot"></span>Live · sonorch.ai</div>
+          <h3>Sonorch</h3>
+          <p class="what">POS and AI receptionist for salons, barbers, spas, nail and lash studios and med spas. Restaurants run here today too.</p>
+          <blockquote>Every call answered. Every chair filled. Every table sat.</blockquote>
+          <div class="stats">
+            <div><b>98%+</b><span>of calls answered</span></div>
+            <div><b>70%</b><span>fewer missed calls</span></div>
+            <div><b>100%</b><span>of bookings on the live calendar</span></div>
+            <div><b>10+ hrs</b><span>returned to the owner each week</span></div>
+          </div>
+          <p class="attrib">Results published by Sonorch. Shown here as illustrative.</p>
+          <a class="plink" href="https://sonorch.ai">Visit sonorch.ai <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </article>
+        <article class="prod glass" role="listitem" style="--tone:var(--s3)">
+          <div class="prod-status mono"><span class="dot"></span>Coming soon to seasonx.ai</div>
+          <h3>SeasonX</h3>
+          <p class="what">POS and AI receptionist built for restaurants.</p>
+          <ul class="plist">
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Phone orders and reservations while staff run the floor</li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Menu, allergen and hours questions answered</li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Live kitchen tickets with table, course and modifiers like "no peanuts"</li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Split checks, takeout and payment</li>
+          </ul>
+          <p class="note">Restaurants run on sonorch.ai today and move to seasonx.ai at launch.</p>
+          <a class="plink" href="https://sonorch.ai">Restaurants: start on sonorch.ai <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </article>
+        <article class="prod glass" role="listitem" style="--tone:var(--s4)">
+          <div class="prod-status mono"><span class="dot"></span>Florida launch · kitchenspot.ai</div>
+          <h3>KitchenSpot</h3>
+          <p class="what">Restaurant discovery, dish by dish. Every restaurant in town, its full menu, ratings and reviews from verified diners, and pickup ordering in a tap.</p>
+          <div class="chips" aria-label="Launch cities"><span>Sarasota</span><span>Tampa</span><span>Orlando</span><span>Miami</span></div>
+          <p class="note">Connects with SeasonX: menus, availability and pickup orders flow straight to the kitchen.</p>
+          <a class="plink" href="https://kitchenspot.ai">Visit kitchenspot.ai <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </article>
+      </div>
+      <div class="platform">
+        <div><svg class="ico" aria-hidden="true"><use href="#i-card"/></svg><div><strong>Lumoras POS</strong><span>The same core, configured for any service business.</span></div></div>
+        <div><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg><div><strong>Lumoras Voice</strong><span>Plugs into Lumoras POS or the system you already run.</span></div></div>
+        <div><svg class="ico" aria-hidden="true"><use href="#i-wave"/></svg><div><strong>Lumoras Sound</strong><span>Zoned, dayparted, on-brand audio for retail.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 ENTERPRISE -->
+  <section class="chapter" id="enterprise" data-form="6" data-ch="6" aria-labelledby="h-ent">
+    <div class="wrap">
+      <div class="panel glass">
+        <div class="idx mono"><b>06</b><i></i>Enterprise</div>
+        <h2 id="h-ent">Built for the enterprise.</h2>
+        <p class="lede">From one chair to hundreds of locations. The governance, security and rollups IT signs off on, with onboarding that never stalls the floor.</p>
+        <ul class="ent">
+          <li><svg class="ico"><use href="#i-key"/></svg><div><strong>SSO & SCIM</strong><span>Sign in with your identity provider. Provision and remove staff automatically.</span></div></li>
+          <li><svg class="ico"><use href="#i-shield"/></svg><div><strong>Role-based access</strong><span>Owners, managers, front desk and staff see exactly what their role allows.</span></div></li>
+          <li><svg class="ico"><use href="#i-list"/></svg><div><strong>Audit logs</strong><span>Every refund, schedule change, price edit and permission change, recorded.</span></div></li>
+          <li><svg class="ico"><use href="#i-code"/></svg><div><strong>Open API & webhooks</strong><span>Sync customers, bookings, tickets and sales with the systems you already run.</span></div></li>
+          <li><svg class="ico"><use href="#i-layers"/></svg><div><strong>Multi-location rollups</strong><span>Compare revenue, utilization and call outcomes across sites, or drill into one.</span></div></li>
+          <li><svg class="ico"><use href="#i-lock"/></svg><div><strong>Card data stays with the processor</strong><span>Payments are handled by the processor. Lumoras never stores card numbers.</span></div></li>
+          <li><svg class="ico"><use href="#i-onboard"/></svg><div><strong>Dedicated onboarding</strong><span>A named team maps your services, menus, policies and soundscapes, then trains your staff.</span></div></li>
+          <li><svg class="ico"><use href="#i-clock"/></svg><div><strong>24/7 answering</strong><span>Every location covered around the clock, with escalation rules you control.</span></div></li>
+        </ul>
+        <div class="ent-tags" aria-label="Integrations and controls"><span>SSO</span><span>SCIM</span><span>RBAC</span><span>Audit trail</span><span>REST API</span><span>Webhooks</span><span>Rollups</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 HOW -->
+  <section class="chapter" id="how" data-form="7" data-ch="7" aria-labelledby="h-how">
+    <div class="wrap">
+      <div class="how-head">
+        <div class="idx mono"><b>07</b><i></i>How it works</div>
+        <h2 id="h-how">Live in four movements.</h2>
+        <p class="lede">No rip and replace. Bring what you run today, tune it to how you work, and go live without closing for a day.</p>
+      </div>
+      <ol class="steps">
+        <li class="step glass"><div class="n mono"><b>1</b>Connect</div><h3>Bring your data</h3><p>Connect your POS data, calendar, menu or service list. Or start fresh on Lumoras POS.</p><span class="bar" aria-hidden="true"></span></li>
+        <li class="step glass"><div class="n mono"><b>2</b>Tune</div><h3>Make it yours</h3><p>Voice, greeting, policies, hours and escalation rules. For stores, the soundscape for every zone.</p><span class="bar" aria-hidden="true"></span></li>
+        <li class="step glass"><div class="n mono"><b>3</b>Go live</div><h3>Flip the switch</h3><p>Forward your number and pair your store speakers. Your team keeps working while it happens.</p><span class="bar" aria-hidden="true"></span></li>
+        <li class="step glass"><div class="n mono"><b>4</b>Orchestrate</div><h3>Run it as one</h3><p>Every call, sale and sound in one console, with live analytics across every location.</p><span class="bar" aria-hidden="true"></span></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="chapter" id="cta" data-form="8" data-ch="7" aria-labelledby="h-cta">
+    <div class="wrap cta-grid">
+      <div class="cta-copy">
+        <div class="scrim">
+          <div class="idx mono"><b>08</b><i></i>Hear it for yourself</div>
+          <h2 id="h-cta">Every sound your business makes. One conductor.</h2>
+          <p class="lede">Call the live demo line and talk to the receptionist yourself. Or book a walkthrough of voice, POS and sound for your locations.</p>
+          <div class="callchip">
+            <a href="tel:+19414304049"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg>Call the live demo</a><span class="sep" aria-hidden="true">·</span><span class="num">941-430-4049</span>
+          </div>
+        </div>
+      </div>
+      <div class="form glass">
+        <form id="demoForm" novalidate>
+          <h3>Book a demo</h3>
+          <p class="sub">Tell us a little about your business. We'll tailor the walkthrough.</p>
+          <div class="fgrid">
+            <div class="field"><label for="f-name">Full name</label><input id="f-name" name="name" autocomplete="name" required placeholder="Jordan Avery"></div>
+            <div class="field"><label for="f-email">Work email</label><input id="f-email" name="email" type="email" autocomplete="email" required placeholder="you@company.com"></div>
+            <div class="field"><label for="f-co">Company</label><input id="f-co" name="company" autocomplete="organization" required placeholder="Company name"></div>
+            <div class="field"><label for="f-loc">Locations</label>
+              <select id="f-loc" name="locations"><option>1</option><option>2–5</option><option selected>6–25</option><option>26–100</option><option>100+</option></select></div>
+            <fieldset class="field full"><legend class="legend">Interested in</legend>
+              <div class="chkrow">
+                <label class="chk"><input type="checkbox" name="interest" value="Voice" checked><span>Voice</span></label>
+                <label class="chk"><input type="checkbox" name="interest" value="POS"><span>POS</span></label>
+                <label class="chk"><input type="checkbox" name="interest" value="Retail Sound"><span>Retail Sound</span></label>
+                <label class="chk"><input type="checkbox" name="interest" value="Enterprise"><span>Enterprise</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <button class="btn btn-primary" type="submit">Request a demo <svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <p class="fine" id="formErr" role="alert"></p>
+        </form>
+        <div class="ok-msg" id="formOk" hidden tabindex="-1" role="status">
+          <div class="ok-mark"><svg class="ico"><use href="#i-check"/></svg></div>
+          <h3 id="okTitle">You're on the schedule.</h3>
+          <p id="okText">We'll reach out to set up your walkthrough.</p>
+          <p class="mono" style="color:var(--mute-2);font-size:10.5px;margin-top:16px">Prototype · nothing was sent</p>
+          <button class="btn" type="button" id="formReset">Send another request</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot" id="company">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#top"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="14" r="12.25" stroke="url(#spec)" stroke-width="1.5"/><path d="M7.5 14h1M10.75 10.5v7M14 7v14M17.25 10.5v7M20.5 13v2" stroke="url(#spec)" stroke-width="1.8" stroke-linecap="round"/></svg>Lumoras</a>
+        <p>Sound orchestration for every business. AI voice, point of sale and in-store sound, working as one system.</p>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <ul><li><a href="#voice">Lumoras Voice</a></li><li><a href="#pos">Lumoras POS</a></li><li><a href="#sound">Lumoras Sound</a></li><li><a href="#enterprise">Enterprise</a></li></ul>
+      </div>
+      <div>
+        <h4>Products</h4>
+        <ul><li><a href="https://sonorch.ai">Sonorch</a> <span class="dim">sonorch.ai</span></li><li><a href="#products">SeasonX</a> <span class="dim">coming soon</span></li><li><a href="https://kitchenspot.ai">KitchenSpot</a> <span class="dim">kitchenspot.ai</span></li></ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul><li><a href="#top">About</a></li><li><a href="#verticals">Industries</a></li><li><a href="#enterprise">Security</a></li><li><a href="#cta">Contact sales</a></li></ul>
+      </div>
+    </div>
+    <div class="foot-base mono"><span>© 2026 Lumoras</span><span class="proto">Prototype · figures are illustrative</span></div>
+  </div>
+</footer>
+
+<nav class="switcher" aria-label="Design directions">
+  <span class="lab mono">Direction</span>
+  <a href="a-voice-core.html"><b>A</b><span class="long">Voice Core</span></a>
+  <a href="b-score.html"><b>B</b><span class="long">Score</span></a>
+  <a href="c-spectrum.html" aria-current="page"><b>C</b>Spectrum</a>
+  <a href="index.html">All<span class="long">&nbsp;directions</span></a>
+</nav>
+
+<script>
+(() => {
+  'use strict';
+  /* ================= Particle field ================= */
+  const canvas = document.getElementById('field');
+  const ctx = canvas.getContext('2d', { alpha: true });
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reduced = mq.matches;
+  const TAU = Math.PI * 2;
+  let W = 0, H = 0, DPR = 1;
+  const SMALL = Math.min(window.innerWidth, (screen && screen.width) || window.innerWidth) < 700;
+  const N = SMALL ? 1000 : 2600;
+
+  function rng(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const R = rng(20261008);
+  const F32 = () => new Float32Array(N);
+  const r1 = F32(), r2 = F32(), r3 = F32(), r4 = F32();
+  for (let i = 0; i < N; i++) { r1[i] = R(); r2[i] = R(); r3[i] = R(); r4[i] = R(); }
+
+  // current (drawn) / from (morph snapshot) / target
+  const pX = F32(), pY = F32(), pH = F32(), pA = F32(), pS = F32();
+  const fX = F32(), fY = F32(), fH = F32(), fA = F32(), fS = F32();
+  const tX = F32(), tY = F32(), tH = F32(), tA = F32(), tS = F32();
+  const oX = F32(), oY = F32();
+
+  /* ---------- spectrum palette + sprites ---------- */
+  const STOPS = [[62, 231, 255], [124, 140, 255], [255, 111, 181], [255, 210, 122]];
+  function colorAt(h) {
+    h = Math.max(0, Math.min(1, h)) * (STOPS.length - 1);
+    const k = Math.min(STOPS.length - 2, Math.floor(h)), f = h - k;
+    const a = STOPS[k], b = STOPS[k + 1];
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  }
+  const rgb = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const NB = 48, SPR = [];
+  for (let b = 0; b < NB; b++) {
+    const c = colorAt(b / (NB - 1));
+    const s = document.createElement('canvas'); s.width = s.height = 32;
+    const g = s.getContext('2d');
+    const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    const core = [Math.min(255, c[0] + 90), Math.min(255, c[1] + 90), Math.min(255, c[2] + 90)];
+    gr.addColorStop(0, rgb(core, 1));
+    gr.addColorStop(0.16, rgb(c, 0.95));
+    gr.addColorStop(0.42, rgb(c, 0.28));
+    gr.addColorStop(1, rgb(c, 0));
+    g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+    SPR.push(s);
+  }
+
+  /* ---------- formation data ---------- */
+  // 0 sphere (fibonacci)
+  const SPX = F32(), SPY = F32(), SPZ = F32();
+  const GA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2, rr = Math.sqrt(1 - y * y), th = GA * i;
+    SPX[i] = Math.cos(th) * rr; SPY[i] = y; SPZ[i] = Math.sin(th) * rr;
+  }
+
+  // 1 waveform
+  const BARS = SMALL ? 40 : 72;
+  const nBar = Math.floor(N * 0.82);
+  const perBar = Math.ceil(nBar / BARS);
+  const WB = new Uint16Array(N), WU = F32();
+  for (let i = 0; i < N; i++) {
+    if (i < nBar) { WB[i] = i % BARS; const j = Math.floor(i / BARS); WU[i] = ((j + 0.5) / perBar) * 2 - 1; }
+    else { WU[i] = (i - nBar) / (N - nBar); }
+  }
+  const amp = new Float32Array(BARS);
+
+  // 2 receipt
+  const RX = F32(), RY = F32(), RN = F32(), RE = new Uint8Array(N);
+  (function buildReceipt() {
+    const rr = rng(7);
+    const C = Math.max(24, Math.round(Math.sqrt(N / (1.75 * 0.46))));
+    const RT = Math.round(C * 1.75);
+    const g = [];
+    let row = 0;
+    const put = (r, c0, c1, step = 1) => { for (let c = c0; c < c1; c += step) g.push(c, r); };
+    const hw = Math.round(C * 0.5), h0 = Math.round((C - hw) / 2);
+    for (let k = 0; k < 3; k++) put(row++, h0, h0 + hw);
+    row++;
+    const sw = Math.round(C * 0.34), s0 = Math.round((C - sw) / 2); put(row++, s0, s0 + sw);
+    row += 2;
+    put(row++, 0, C, 2); row++;
+    while (row < RT - 20) {
+      const L = Math.round(C * (0.25 + rr() * 0.33)), pr = 5 + Math.floor(rr() * 3);
+      for (let k = 0; k < 2; k++) { put(row, 0, L); put(row, C - pr, C); row++; }
+      row++;
+      if (rr() < 0.3) { put(row++, 3, 3 + Math.round(C * (0.12 + rr() * 0.12))); row++; }
+    }
+    put(row++, 0, C, 2); row++;
+    for (let k = 0; k < 3; k++) { put(row, 0, Math.round(C * 0.32)); put(row, C - 11, C); row++; }
+    row++;
+    put(row++, 0, C, 2); row++;
+    const bars = []; for (let c = 0; c < C - 4; c++) bars.push(rr() < 0.56);
+    for (let k = 0; k < 6; k++) { for (let c = 2; c < C - 2; c++) if (bars[c - 2]) g.push(c, row); row++; }
+    const rows = row, d = 1.9 / rows, slots = g.length / 2;
+    const take = Math.min(slots, N);
+    for (let i = 0; i < take; i++) {
+      const si = Math.floor(i * slots / take);
+      const c = g[si * 2], r = g[si * 2 + 1];
+      RX[i] = (c - (C - 1) / 2) * d; RY[i] = (r - (rows - 1) / 2) * d; RN[i] = r / (rows - 1);
+    }
+    // leftovers trace the receipt edge, zig-zag tear at the bottom
+    const left = N - take;
+    if (left > 0) {
+      const hx = (C / 2 + 1.2) * d, hy = (rows / 2 + 1.2) * d;
+      const per = hx * 4 + hy * 4;
+      for (let k = 0; k < left; k++) {
+        const i = take + k; let s = (k / left) * per, x, y;
+        if (s < hx * 2) { x = -hx + s; y = -hy; }
+        else if ((s -= hx * 2) < hy * 2) { x = hx; y = -hy + s; }
+        else if ((s -= hy * 2) < hx * 2) { x = hx - s; y = hy + (Math.abs(((s / (d * 3)) % 2) - 1) - 0.5) * d * 2.2; }
+        else { s -= hx * 2; x = -hx; y = hy - s; }
+        RX[i] = x; RY[i] = y; RN[i] = (y + hy) / (2 * hy); RE[i] = 1;
+      }
+    }
+  })();
+
+  // 3 rings (speaker zones)
+  const SPK = [[-0.62, -0.42], [0.58, -0.5], [-0.42, 0.5], [0.66, 0.4]];
+  const RING_N = 7;
+  const RS = new Uint8Array(N), RP = F32(), RCORE = new Uint8Array(N);
+  for (let i = 0; i < N; i++) { RS[i] = i % 4; RCORE[i] = r1[i] < 0.07 ? 1 : 0; RP[i] = Math.floor(r2[i] * RING_N) / RING_N + r3[i] * 0.012; }
+  const DAYPARTS = [
+    { speed: 0.12, h0: 0.0, h1: 0.32, gain: 0.85 },
+    { speed: 0.2, h0: 0.12, h1: 0.55, gain: 0.95 },
+    { speed: 0.4, h0: 0.5, h1: 0.98, gain: 1.15 },
+    { speed: 0.08, h0: 0.72, h1: 1.0, gain: 0.7 }
+  ];
+  const dp = Object.assign({}, DAYPARTS[0]);
+  let dpTarget = 0, ringClock = 0;
+
+  // 4 constellation
+  const NC = 14, CL = [];
+  for (let k = 0; k < NC; k++) {
+    const rr = 0.98 * Math.sqrt((k + 0.6) / NC), a = k * 2.39996 + 0.7;
+    CL.push([Math.cos(a) * rr * 1.12, Math.sin(a) * rr * 0.98]);
+  }
+  const EDGES = [];
+  (function () {
+    const seen = new Set();
+    for (let k = 0; k < NC; k++) {
+      const dists = CL.map((c, j) => [j, (c[0] - CL[k][0]) ** 2 + (c[1] - CL[k][1]) ** 2]).filter(e => e[0] !== k).sort((a, b) => a[1] - b[1]);
+      for (let m = 0; m < 2; m++) { const j = dists[m][0]; const key = Math.min(j, k) + '-' + Math.max(j, k); if (!seen.has(key)) { seen.add(key); EDGES.push([k, j]); } }
+    }
+  })();
+  const CC = new Uint8Array(N), CR = F32(), CAng = F32();
+  for (let i = 0; i < N; i++) { CC[i] = i % NC; CR[i] = 0.012 + 0.17 * Math.pow(r1[i], 1.7); CAng[i] = r2[i] * TAU; }
+  let hlIdx = -1, hlTarget = -1, hlAmt = 0;
+
+  // 5 triad (product family)
+  const TRI = [
+    { c: [Math.cos(-Math.PI / 2) * 0.36, Math.sin(-Math.PI / 2) * 0.36], tx: 1.15, ty: 0.0, h0: 0.0, h1: 0.3 },
+    { c: [Math.cos(-Math.PI / 2 + TAU / 3) * 0.36, Math.sin(-Math.PI / 2 + TAU / 3) * 0.36], tx: 0.9, ty: 2.1, h0: 0.6, h1: 0.72 },
+    { c: [Math.cos(-Math.PI / 2 + 2 * TAU / 3) * 0.36, Math.sin(-Math.PI / 2 + 2 * TAU / 3) * 0.36], tx: 1.25, ty: 4.2, h0: 0.88, h1: 1.0 }
+  ];
+
+  // 6 globe
+  const NODES = [];
+  (function () { const rr = rng(42); for (let n = 0; n < 10; n++) NODES.push([(rr() - 0.5) * 1.9, rr() * TAU]); })();
+  const ARCS = [];
+  (function () {
+    const v = NODES.map(n => [Math.cos(n[0]) * Math.sin(n[1]), -Math.sin(n[0]), Math.cos(n[0]) * Math.cos(n[1])]);
+    const seen = new Set();
+    v.forEach((a, i) => {
+      v.map((b, j) => [j, Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])))])
+        .filter(e => e[0] !== i && e[1] < 1.7).sort((x, y) => x[1] - y[1]).slice(0, 2)
+        .forEach(([j]) => { const k = Math.min(i, j) + '-' + Math.max(i, j); if (!seen.has(k)) { seen.add(k); ARCS.push([i, j]); } });
+    });
+  })();
+  const GLat = F32(), GLon = F32(), GT = new Uint8Array(N), GN = new Uint8Array(N);
+  const PARS = [-1.05, -0.7, -0.35, 0, 0.35, 0.7, 1.05];
+  for (let i = 0; i < N; i++) {
+    if (r1[i] < 0.64) {
+      if (i % 2 === 0) { GLon[i] = Math.floor(r2[i] * 12) * TAU / 12; GLat[i] = (r3[i] - 0.5) * Math.PI; }
+      else { GLat[i] = PARS[Math.floor(r2[i] * PARS.length)]; GLon[i] = r3[i] * TAU; }
+      GT[i] = 0;
+    } else if (r1[i] < 0.76) {
+      const n = Math.floor(r2[i] * NODES.length); GN[i] = n; GT[i] = 1;
+      GLat[i] = NODES[n][0] + (r3[i] - 0.5) * 0.05; GLon[i] = NODES[n][1] + (r4[i] - 0.5) * 0.05;
+    } else { GT[i] = 2; GLat[i] = Math.asin(2 * r3[i] - 1); GLon[i] = r4[i] * TAU; }
+  }
+
+  // 7 path
+  const PNX = [-1.5, -0.5, 0.5, 1.5];
+
+  /* ---------- anchors ---------- */
+  function anchor(k) {
+    const m = Math.min(W, H);
+    if (W < 900) {
+      switch (k) {
+        case 0: return [W * 0.5, H * 0.42, Math.min(W * 0.42, H * 0.32)];
+        case 1: return [W * 0.5, H * 0.46, W * 0.29];
+        case 2: return [W * 0.5, H * 0.5, H * 0.3];
+        case 7: return [W * 0.5, H * 0.5, W * 0.28];
+        case 8: return [W * 0.5, H * 0.45, Math.min(W * 0.42, H * 0.3)];
+        default: return [W * 0.5, H * 0.48, Math.min(W * 0.4, H * 0.3)];
+      }
+    }
+    switch (k) {
+      case 0: return [W * 0.5, H * 0.47, m * 0.37];
+      case 1: return [W * 0.7, H * 0.36, W * 0.13];
+      case 2: return [W * 0.29, H * 0.5, H * 0.36];
+      case 3: return [W * 0.68, H * 0.5, Math.min(W * 0.15, H * 0.34)];
+      case 4: return [W * 0.25, H * 0.75, Math.min(W * 0.13, H * 0.19)];
+      case 5: return [W * 0.76, H * 0.3, Math.min(W * 0.13, H * 0.22)];
+      case 6: return [W * 0.7, H * 0.5, Math.min(W * 0.17, H * 0.34)];
+      case 7: return [W * 0.5, H * 0.66, W * 0.27];
+      case 8: return [W * 0.27, H * 0.5, m * 0.3];
+    }
+    return [W / 2, H / 2, m * 0.3];
+  }
+
+  /* ---------- formation functions: write tX..tS ---------- */
+  function fSphere(t, cx, cy, sc, dr) {
+    const rot = t * 0.12, tilt = 0.38, cr = Math.cos(rot), sr = Math.sin(rot), ct = Math.cos(tilt), st = Math.sin(tilt);
+    const br = (1 + 0.035 * Math.sin(t * 0.9) * dr) * sc;
+    for (let i = 0; i < N; i++) {
+      const j = 1 + (r1[i] - 0.5) * 0.05 + Math.sin(t * 1.3 + r2[i] * TAU) * 0.012 * dr;
+      const x = SPX[i] * j, y = SPY[i] * j, z = SPZ[i] * j;
+      const x1 = x * cr + z * sr, z1 = -x * sr + z * cr;
+      const y2 = y * ct - z1 * st, z2 = y * st + z1 * ct;
+      const f = 3 / (3 - z2) * br;
+      tX[i] = cx + x1 * f; tY[i] = cy + y2 * f;
+      const d = (z2 + 1) * 0.5;
+      tA[i] = 0.14 + 0.86 * d * d; tS[i] = 0.62 + 0.62 * d;
+      tH[i] = 0.5 + 0.46 * y2 + 0.1 * x1;
+    }
+  }
+  function fWave(t, cx, cy, sc, dr) {
+    for (let b = 0; b < BARS; b++) {
+      const p = b / (BARS - 1), win = Math.pow(Math.sin(Math.PI * p), 0.7);
+      const e = Math.abs(Math.sin(p * 9 + t * 2.3) * 0.55 + Math.sin(p * 23 - t * 3.1) * 0.3 + Math.sin(p * 4 + t * 1.1) * 0.35);
+      amp[b] = 0.05 + 0.78 * e * win * (0.6 + 0.4 * Math.sin(t * 1.7 + p * 3));
+    }
+    for (let i = 0; i < N; i++) {
+      if (i < nBar) {
+        const b = WB[i], p = b / (BARS - 1), u = WU[i];
+        tX[i] = cx + (p * 3 - 1.5) * sc;
+        tY[i] = cy + u * amp[b] * sc;
+        const au = Math.abs(u);
+        tA[i] = 0.4 + 0.6 * (1 - au * 0.6); tS[i] = 0.8 + 0.25 * (1 - au);
+        tH[i] = p * 0.98;
+      } else {
+        const p = WU[i], x = p * 3.4 - 1.7;
+        tX[i] = cx + x * sc;
+        tY[i] = cy + (Math.sin(x * 5 - t * 2.2) * 0.05 + Math.sin(x * 11 + t * 3) * 0.02) * sc + (r3[i] - 0.5) * 3;
+        tA[i] = 0.32 * Math.sin(Math.PI * p); tS[i] = 0.6; tH[i] = p;
+      }
+    }
+  }
+  function fReceipt(t, cx, cy, sc, dr) {
+    const sway = 0.3 + Math.sin(t * 0.35) * 0.12 * dr, ca = Math.cos(sway), sa = Math.sin(sway);
+    const scan = reduced ? 0.42 : ((t * 0.2) % 1.4) - 0.2;
+    for (let i = 0; i < N; i++) {
+      const x = RX[i], y = RY[i], z = x * sa;
+      const f = 3.2 / (3.2 - z) * sc;
+      tX[i] = cx + x * ca * f + Math.sin(t * 0.8 + r1[i] * TAU) * 0.6 * dr;
+      tY[i] = cy + y * f;
+      const ny = RN[i], g = Math.exp(-((ny - scan) * (ny - scan)) / 0.0018);
+      tA[i] = (RE[i] ? 0.28 : 0.62) + g * 0.7; tS[i] = 0.82 + g * 0.6;
+      tH[i] = 0.04 + ny * 0.92;
+    }
+  }
+  function fRings(t, cx, cy, sc, dr) {
+    for (let i = 0; i < N; i++) {
+      const s = RS[i], sp = SPK[s];
+      let rad, a, h;
+      if (RCORE[i]) {
+        rad = 0.02 + r3[i] * 0.05 * (1 + 0.4 * Math.sin(ringClock * TAU * 2)); a = r4[i] * TAU + t * 0.5 * dr;
+        tA[i] = 0.85 * dp.gain; tS[i] = 1.05; h = dp.h0;
+      } else {
+        const fr = (RP[i] + ringClock) % 1;
+        rad = fr * 0.62 + (r3[i] - 0.5) * 0.012; a = r4[i] * TAU;
+        const fade = Math.pow(1 - fr, 1.35);
+        tA[i] = (0.1 + 0.9 * fade) * dp.gain * Math.min(1, fr * 14); tS[i] = 0.7 + 0.45 * fade;
+        h = dp.h0 + (dp.h1 - dp.h0) * fr;
+      }
+      tX[i] = cx + (sp[0] + Math.cos(a) * rad) * sc;
+      tY[i] = cy + (sp[1] + Math.sin(a) * rad * 0.6) * 0.82 * sc;
+      tH[i] = h + s * 0.025;
+    }
+  }
+  function fConst(t, cx, cy, sc, dr) {
+    const hl = hlIdx, amt = hlAmt;
+    for (let i = 0; i < N; i++) {
+      const c = CC[i], ce = CL[c];
+      const ang = CAng[i] + t * 0.09 * (c % 2 ? 1 : -1) * dr;
+      tX[i] = cx + (ce[0] + Math.cos(ang) * CR[i]) * sc;
+      tY[i] = cy + (ce[1] + Math.sin(ang) * CR[i] * 0.9) * sc;
+      let a = 0.42 + 0.4 * (1 - CR[i] * 5) + 0.18 * Math.sin(t * 2 * dr + r3[i] * TAU);
+      let s = 0.8 + 0.3 * (1 - CR[i] * 5);
+      if (amt > 0.001 && hl >= 0) {
+        if (c === hl) { a *= 1 + 1.3 * amt; s *= 1 + 0.55 * amt; }
+        else { a *= 1 - 0.6 * amt; }
+      }
+      tA[i] = a; tS[i] = s;
+      tH[i] = c / (NC - 1) * 0.98;
+    }
+  }
+  function fTriad(t, cx, cy, sc, dr) {
+    for (let i = 0; i < N; i++) {
+      const k = i % 3, T = TRI[k];
+      let x, y, z, h;
+      if (r1[i] < 0.07) {
+        const rr = 0.1 * Math.cbrt(r2[i]), th = r3[i] * TAU, ph = Math.acos(2 * r4[i] - 1);
+        x = Math.sin(ph) * Math.cos(th) * rr; y = Math.sin(ph) * Math.sin(th) * rr; z = Math.cos(ph) * rr;
+        h = 0.5 + (r2[i] - 0.5) * 0.9;
+      } else {
+        const a = r2[i] * TAU + t * 0.24 * (k === 1 ? -1 : 1) * dr;
+        const rr = 0.6 + (r3[i] - 0.5) * 0.03;
+        const lx = Math.cos(a) * rr, ly = Math.sin(a) * rr;
+        const cxk = Math.cos(T.tx), sxk = Math.sin(T.tx);
+        const y1 = ly * cxk, z1 = ly * sxk;
+        const ay = T.ty + t * 0.14 * dr, cyk = Math.cos(ay), syk = Math.sin(ay);
+        x = lx * cyk + z1 * syk + T.c[0]; z = -lx * syk + z1 * cyk; y = y1 + T.c[1];
+        h = T.h0 + (T.h1 - T.h0) * (0.5 + 0.5 * Math.sin(a));
+      }
+      const f = 3 / (3 - z) * sc, d = Math.max(0, Math.min(1, (z + 0.8) / 1.6));
+      tX[i] = cx + x * f; tY[i] = cy + y * f;
+      tA[i] = 0.2 + 0.8 * d; tS[i] = 0.65 + 0.55 * d; tH[i] = h;
+    }
+  }
+  const GROT = { rot: 0, ct: undefined, st: 0 };
+  function fGlobe(t, cx, cy, sc, dr) {
+    const rot = t * 0.11, tilt = 0.36, ct = Math.cos(tilt), st = Math.sin(tilt);
+    GROT.rot = rot; GROT.ct = ct; GROT.st = st;
+    for (let i = 0; i < N; i++) {
+      const lat = GLat[i], lon = GLon[i] + rot, type = GT[i];
+      const rad = type === 2 ? 1.06 + r2[i] * 0.06 : 1;
+      const cl = Math.cos(lat);
+      const x = cl * Math.sin(lon) * rad, y = -Math.sin(lat) * rad, z = cl * Math.cos(lon) * rad;
+      const y2 = y * ct - z * st, z2 = y * st + z * ct;
+      const f = 3 / (3 - z2) * sc;
+      tX[i] = cx + x * f; tY[i] = cy + y2 * f;
+      const d = (z2 + 1) * 0.5;
+      if (type === 1) { tA[i] = (0.25 + 0.95 * d) * (0.75 + 0.25 * Math.sin(t * 2.2 * dr + GN[i])); tS[i] = 1.0 + 0.6 * d; }
+      else if (type === 0) { tA[i] = 0.06 + 0.6 * d * d; tS[i] = 0.6 + 0.4 * d; }
+      else { tA[i] = 0.05 + 0.22 * d; tS[i] = 0.55; }
+      tH[i] = 0.5 + 0.47 * Math.sin(GLon[i]) * cl;
+    }
+  }
+  function fPath(t, cx, cy, sc, dr) {
+    for (let i = 0; i < N; i++) {
+      if (r1[i] < 0.3) {
+        const n = i % 4, ring = Math.floor(r2[i] * 3), rr = 0.07 + ring * 0.055;
+        const a = r3[i] * TAU + t * (0.35 + ring * 0.1) * (ring % 2 ? -1 : 1) * dr;
+        tX[i] = cx + (PNX[n] + Math.cos(a) * rr) * sc;
+        tY[i] = cy + Math.sin(a) * rr * sc;
+        tA[i] = 0.9 - ring * 0.2; tS[i] = 0.95 - ring * 0.1; tH[i] = n / 3 * 0.98;
+      } else {
+        const fr = (r2[i] + t * 0.05 * dr) % 1, x = -1.7 + fr * 3.4;
+        let near = 0; for (let n = 0; n < 4; n++) { const dd = Math.abs(x - PNX[n]); if (dd < 0.3) near = Math.max(near, 1 - dd / 0.3); }
+        const spread = 0.12 * (1 - near * 0.85);
+        tX[i] = cx + x * sc;
+        tY[i] = cy + (Math.sin(x * 2.4 - t * 1.1 * dr) * 0.07 * (1 - near) + (r3[i] - 0.5) * spread) * sc;
+        tA[i] = 0.55 * Math.sin(Math.PI * fr); tS[i] = 0.7; tH[i] = fr * 0.98;
+      }
+    }
+  }
+  const FN = [fSphere, fWave, fReceipt, fRings, fConst, fTriad, fGlobe, fPath, fSphere];
+
+  /* ---------- lines (hairlines) ---------- */
+  const LW = new Float32Array(9);
+  function project(lat, lon, rad, cx, cy, sc) {
+    const cl = Math.cos(lat), l = lon + GROT.rot;
+    const x = cl * Math.sin(l) * rad, y = -Math.sin(lat) * rad, z = cl * Math.cos(l) * rad;
+    const y2 = y * GROT.ct - z * GROT.st, z2 = y * GROT.st + z * GROT.ct;
+    const f = 3 / (3 - z2) * sc;
+    return [cx + x * f, cy + y2 * f, z2];
+  }
+  function drawLines() {
+    ctx.lineWidth = 1;
+    if (LW[4] > 0.01) {
+      const [cx, cy, sc] = anchor(4);
+      for (const [a, b] of EDGES) {
+        const lit = hlIdx >= 0 && (a === hlIdx || b === hlIdx);
+        const k = lit ? hlAmt : 0;
+        ctx.globalAlpha = LW[4] * (0.16 + 0.5 * k);
+        ctx.strokeStyle = lit ? rgb(colorAt(hlIdx / (NC - 1) * 0.98), 1) : '#8F97B8';
+        ctx.beginPath();
+        ctx.moveTo(cx + CL[a][0] * sc, cy + CL[a][1] * sc);
+        ctx.lineTo(cx + CL[b][0] * sc, cy + CL[b][1] * sc);
+        ctx.stroke();
+      }
+      if (hlIdx >= 0 && hlAmt > 0.05 && tileNames[hlIdx]) {
+        const c = CL[hlIdx];
+        ctx.globalAlpha = LW[4] * hlAmt;
+        ctx.fillStyle = '#F2F4FF';
+        ctx.font = '500 10.5px "Martian Mono", ui-monospace, monospace';
+        const label = String(hlIdx + 1).padStart(2, '0') + ' ' + tileNames[hlIdx].toUpperCase();
+        const dir = c[0] > 0.15 ? -1 : 1;
+        const lx = cx + c[0] * sc + dir * 0.24 * sc, ly = cy + c[1] * sc - 0.2 * sc;
+        ctx.strokeStyle = rgb(colorAt(hlIdx / (NC - 1) * 0.98), 1);
+        ctx.beginPath(); ctx.moveTo(cx + c[0] * sc + dir * 0.08 * sc, cy + c[1] * sc - 0.07 * sc); ctx.lineTo(lx - dir * 4, ly + 4); ctx.stroke();
+        ctx.textAlign = dir < 0 ? 'right' : 'left';
+        ctx.fillText(label, lx, ly);
+        ctx.textAlign = 'left';
+      }
+    }
+    if (LW[6] > 0.01 && GROT.ct !== undefined) {
+      const [cx, cy, sc] = anchor(6);
+      for (const [a, b] of ARCS) {
+        const A = NODES[a], B = NODES[b];
+        const va = [Math.cos(A[0]) * Math.sin(A[1]), -Math.sin(A[0]), Math.cos(A[0]) * Math.cos(A[1])];
+        const vb = [Math.cos(B[0]) * Math.sin(B[1]), -Math.sin(B[0]), Math.cos(B[0]) * Math.cos(B[1])];
+        ctx.strokeStyle = rgb(colorAt(((a * 7 + b * 3) % 10) / 10), 1);
+        let prev = null;
+        for (let s = 0; s <= 28; s++) {
+          const u = s / 28;
+          let x = va[0] + (vb[0] - va[0]) * u, y = va[1] + (vb[1] - va[1]) * u, z = va[2] + (vb[2] - va[2]) * u;
+          const len = Math.hypot(x, y, z) || 1, lift = 1 + 0.12 * Math.sin(Math.PI * u);
+          x = x / len * lift; y = y / len * lift; z = z / len * lift;
+          const lat = Math.asin(-y / lift), lon = Math.atan2(x, z);
+          const p = project(lat, lon, lift, cx, cy, sc);
+          if (prev) {
+            const dz = (p[2] + prev[2]) * 0.5;
+            if (dz > -0.25) {
+              ctx.globalAlpha = LW[6] * 0.42 * Math.min(1, (dz + 0.25) * 1.6) * Math.sin(Math.PI * u + 0.2);
+              ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+            }
+          }
+          prev = p;
+        }
+      }
+    }
+    if (LW[7] > 0.01) {
+      const [cx, cy, sc] = anchor(7);
+      const g = ctx.createLinearGradient(cx - 1.6 * sc, 0, cx + 1.6 * sc, 0);
+      g.addColorStop(0, 'rgba(62,231,255,0)'); g.addColorStop(0.15, '#3EE7FF'); g.addColorStop(0.5, '#7C8CFF'); g.addColorStop(0.8, '#FF6FB5'); g.addColorStop(1, 'rgba(255,210,122,0)');
+      ctx.strokeStyle = g; ctx.globalAlpha = LW[7] * 0.35;
+      ctx.beginPath(); ctx.moveTo(cx - 1.6 * sc, cy); ctx.lineTo(cx + 1.6 * sc, cy); ctx.stroke();
+    }
+  }
+
+  /* ---------- state + loop ---------- */
+  let cur = 0, morphT0 = 0, morphDur = 1200, raf = 0, last = 0;
+  let mx = -9999, my = -9999, pointerOn = false;
+  const STATIC_T = 9.3;
+
+  function resize() {
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = canvas.clientWidth || window.innerWidth; H = canvas.clientHeight || window.innerHeight;
+    canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    if (reduced) renderStatic(); else kick();
+  }
+
+  function draw() {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    drawLines();
+    const base = SMALL ? 6.2 : 7.4;
+    for (let i = 0; i < N; i++) {
+      let a = pA[i]; if (a < 0.015) continue;
+      const x = pX[i] + oX[i], y = pY[i] + oY[i];
+      if (x < -12 || x > W + 12 || y < -12 || y > H + 12) continue;
+      const s = base * pS[i];
+      let hb = (pH[i] * (NB - 1) + 0.5) | 0; hb = hb < 0 ? 0 : hb >= NB ? NB - 1 : hb;
+      ctx.globalAlpha = a > 1 ? 1 : a;
+      ctx.drawImage(SPR[hb], x - s * 0.5, y - s * 0.5, s, s);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  const ease = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+
+  function frame(now) {
+    raf = 0;
+    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now;
+    const t = now / 1000;
+    // smooth params
+    const D = DAYPARTS[dpTarget];
+    dp.speed += (D.speed - dp.speed) * 0.04; dp.h0 += (D.h0 - dp.h0) * 0.05; dp.h1 += (D.h1 - dp.h1) * 0.05; dp.gain += (D.gain - dp.gain) * 0.05;
+    ringClock = (ringClock + dt * dp.speed) % 1;
+    if (hlTarget >= 0) { hlIdx = hlTarget; hlAmt += (1 - hlAmt) * 0.12; } else { hlAmt += (0 - hlAmt) * 0.1; if (hlAmt < 0.005) { hlAmt = 0; hlIdx = -1; } }
+    for (let k = 0; k < LW.length; k++) LW[k] += (((k === cur) ? 1 : 0) - LW[k]) * 0.06;
+
+    const [cx, cy, sc] = anchor(cur);
+    FN[cur](t, cx, cy, sc, 1);
+
+    const el = now - morphT0, morphing = el < morphDur + 10;
+    const stag = morphDur * 0.25, span = morphDur - stag;
+    const R2 = 120 * 120;
+    for (let i = 0; i < N; i++) {
+      if (morphing) {
+        let u = (el - r1[i] * stag) / span; u = u < 0 ? 0 : u > 1 ? 1 : u;
+        const e = ease(u);
+        pX[i] = fX[i] + (tX[i] - fX[i]) * e; pY[i] = fY[i] + (tY[i] - fY[i]) * e;
+        pH[i] = fH[i] + (tH[i] - fH[i]) * e; pA[i] = fA[i] + (tA[i] - fA[i]) * e; pS[i] = fS[i] + (tS[i] - fS[i]) * e;
+        // gentle arc during flight
+        const lift = Math.sin(Math.PI * u) * (r4[i] - 0.5) * 60;
+        pX[i] += lift; pY[i] += lift * 0.4;
+      } else {
+        pX[i] = tX[i]; pY[i] = tY[i]; pH[i] = tH[i]; pA[i] = tA[i]; pS[i] = tS[i];
+      }
+      if (pointerOn) {
+        const dx = pX[i] + oX[i] - mx, dy = pY[i] + oY[i] - my, d2 = dx * dx + dy * dy;
+        if (d2 < R2 && d2 > 0.01) { const d = Math.sqrt(d2), f = (1 - d / 120) * 2.6; oX[i] += dx / d * f; oY[i] += dy / d * f; }
+      }
+      oX[i] *= 0.9; oY[i] *= 0.9;
+    }
+    draw();
+    if (!document.hidden && !reduced) raf = requestAnimationFrame(frame);
+  }
+  function kick() { if (!raf && !document.hidden && !reduced) { last = 0; raf = requestAnimationFrame(frame); } }
+
+  function renderStatic() {
+    const D = DAYPARTS[dpTarget]; Object.assign(dp, D);
+    ringClock = 0.18 + dpTarget * 0.07;
+    hlIdx = hlTarget; hlAmt = hlTarget >= 0 ? 1 : 0;
+    for (let k = 0; k < LW.length; k++) LW[k] = k === cur ? 1 : 0;
+    const [cx, cy, sc] = anchor(cur);
+    FN[cur](STATIC_T, cx, cy, sc, 0);
+    pX.set(tX); pY.set(tY); pH.set(tH); pA.set(tA); pS.set(tS); oX.fill(0); oY.fill(0);
+    draw();
+  }
+
+  function setFormation(k, dur) {
+    if (k === cur && !dur) return;
+    cur = k;
+    if (reduced) { renderStatic(); return; }
+    for (let i = 0; i < N; i++) { fX[i] = pX[i] + oX[i]; fY[i] = pY[i] + oY[i]; fH[i] = pH[i]; fA[i] = pA[i]; fS[i] = pS[i]; oX[i] = 0; oY[i] = 0; }
+    morphT0 = performance.now(); morphDur = dur || 1200;
+    kick();
+  }
+
+  // initial: drifting dust that gathers into the sphere
+  function boot() {
+    resize();
+    for (let i = 0; i < N; i++) {
+      pX[i] = r3[i] * W; pY[i] = r4[i] * H; pH[i] = r2[i]; pA[i] = 0.05 + r1[i] * 0.2; pS[i] = 0.6;
+    }
+    if (reduced) { renderStatic(); }
+    else { setFormation(0, 2200); }
+  }
+
+  window.addEventListener('resize', () => { clearTimeout(resize._t); resize._t = setTimeout(resize, 120); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+  window.addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; pointerOn = true; }, { passive: true });
+  window.addEventListener('pointerdown', e => { mx = e.clientX; my = e.clientY; pointerOn = true; }, { passive: true });
+  document.addEventListener('pointerleave', () => { pointerOn = false; });
+  window.addEventListener('blur', () => { pointerOn = false; });
+  const onMQ = () => { reduced = mq.matches; if (reduced) { if (raf) cancelAnimationFrame(raf); raf = 0; renderStatic(); } else kick(); };
+  if (mq.addEventListener) mq.addEventListener('change', onMQ); else if (mq.addListener) mq.addListener(onMQ);
+
+  /* ================= Chapters + rail ================= */
+  const railBtns = [...document.querySelectorAll('.rail button')];
+  function setRail(ch) { railBtns.forEach(b => b.setAttribute('aria-current', String(+b.dataset.ch === ch))); }
+  railBtns.forEach(b => b.addEventListener('click', () => {
+    const el = document.getElementById(b.dataset.go);
+    if (el) el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  }));
+  const sections = [...document.querySelectorAll('[data-form]')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) { setFormation(+en.target.dataset.form); setRail(+en.target.dataset.ch); }
+      });
+    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+    sections.forEach(s => io.observe(s));
+  }
+
+  /* ================= Nav ================= */
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 24);
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  const menuBtn = nav.querySelector('.menu-btn');
+  menuBtn.addEventListener('click', () => {
+    const open = !nav.classList.contains('open');
+    nav.classList.toggle('open', open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+    menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  });
+  document.getElementById('menuPanel').addEventListener('click', e => {
+    if (e.target.closest('a')) { nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.setAttribute('aria-label', 'Open menu'); }
+  });
+
+  /* ================= Voice switch ================= */
+  const sw = document.getElementById('voiceSwitch'), swState = document.getElementById('swState');
+  sw.addEventListener('click', () => {
+    const on = sw.getAttribute('aria-checked') !== 'true';
+    sw.setAttribute('aria-checked', String(on));
+    swState.textContent = on ? 'On · same customers, same calendar, same menu' : 'Off · the POS runs on its own';
+  });
+
+  /* ================= Dayparts ================= */
+  const DP_DATA = [
+    { time: '9:00 AM', name: 'Doors open', c: '#3EE7FF', next: '10:00 AM · Welcome message, all zones',
+      z: [['Warm acoustic · 84 BPM', .45], ['Ambient piano · 70 BPM', .3], ['Bright indie · 96 BPM', .55], ['Acoustic soul · 88 BPM', .4]] },
+    { time: '12:30 PM', name: 'Midday', c: '#7C8CFF', next: '12:45 PM · Curbside pickup is ready at Door 2',
+      z: [['Indie pop · 104 BPM', .6], ['Lo-fi soul · 86 BPM', .4], ['Indie pop · 104 BPM', .65], ['Neo-soul · 92 BPM', .5]] },
+    { time: '4:00 PM', name: 'After-work rush', c: '#FF6FB5', next: '4:30 PM · Weekend event, Zones A and C',
+      z: [['Energy set · 118 BPM', .88], ['Nu-disco · 112 BPM', .6], ['Energy set · 118 BPM', .92], ['Funk edits · 108 BPM', .7]] },
+    { time: '8:45 PM', name: 'Closing', c: '#FFD27A', next: '8:45 PM · 15 minutes to close, all zones',
+      z: [['Downtempo · 78 BPM', .3], ['Ambient · 66 BPM', .2], ['Downtempo · 78 BPM', .35], ['Quiet jazz · 72 BPM', .3]] }
+  ];
+  const dpBtns = [...document.querySelectorAll('.dp')];
+  const zoneRows = [...document.querySelectorAll('#zones li')];
+  dpBtns.forEach(b => b.addEventListener('click', () => {
+    const k = +b.dataset.dp, d = DP_DATA[k];
+    dpBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    document.querySelector('.daypart').style.setProperty('--dpc', d.c);
+    document.getElementById('dpTime').textContent = d.time;
+    document.getElementById('dpName').textContent = d.name;
+    document.getElementById('dpNext').textContent = d.next;
+    zoneRows.forEach((li, i) => { li.querySelector('.zt').textContent = d.z[i][0]; li.querySelector('.lvl i').style.setProperty('--v', d.z[i][1]); });
+    dpTarget = k;
+    if (reduced) renderStatic(); else kick();
+  }));
+
+  /* ================= Vertical tiles ↔ clusters ================= */
+  const tiles = [...document.querySelectorAll('.tile')];
+  const tileNames = tiles.map(t => t.querySelector('.t-name').textContent);
+  const nowDot = document.getElementById('nowDot'), nowText = document.getElementById('nowText');
+  let pinned = -1;
+  tiles.forEach(t => { const k = +t.dataset.cl; t.style.setProperty('--tone', rgb(colorAt(k / (NC - 1) * 0.98), 1)); });
+  function highlight(k) {
+    hlTarget = k;
+    if (k >= 0) { nowDot.style.setProperty('--now', rgb(colorAt(k / (NC - 1) * 0.98), 1)); nowText.innerHTML = 'Cluster ' + String(k + 1).padStart(2, '0') + ' · <b></b>'; nowText.querySelector('b').textContent = tileNames[k]; }
+    else { nowDot.style.removeProperty('--now'); nowText.textContent = '14 verticals · one platform'; }
+    if (reduced) renderStatic(); else kick();
+  }
+  tiles.forEach(t => {
+    const k = +t.dataset.cl;
+    t.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') highlight(k); });
+    t.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') highlight(pinned); });
+    t.addEventListener('focus', () => highlight(k));
+    t.addEventListener('blur', () => highlight(pinned));
+    t.addEventListener('click', () => {
+      pinned = pinned === k ? -1 : k;
+      tiles.forEach(x => x.setAttribute('aria-pressed', String(+x.dataset.cl === pinned)));
+      highlight(pinned === -1 ? (t.matches(':hover') ? k : -1) : pinned);
+    });
+  });
+
+  /* ================= Form ================= */
+  const form = document.getElementById('demoForm'), ok = document.getElementById('formOk'), err = document.getElementById('formErr');
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    err.textContent = '';
+    const bad = [...form.querySelectorAll('input[required]')].find(i => !i.checkValidity());
+    if (bad) {
+      err.style.color = 'var(--s3)';
+      err.textContent = bad.type === 'email' && bad.value ? 'Please enter a valid work email.' : 'Please fill in your ' + bad.labels[0].textContent.toLowerCase() + '.';
+      bad.focus();
+      return;
+    }
+    const data = new FormData(form);
+    const first = String(data.get('name')).trim().split(/\s+/)[0];
+    const interests = data.getAll('interest');
+    document.getElementById('okTitle').textContent = 'Thanks, ' + first + '. You’re on the schedule.';
+    document.getElementById('okText').textContent =
+      'We’ll reach out to ' + data.get('email') + ' to set up a walkthrough' +
+      (interests.length ? ' of ' + interests.join(', ').replace(/, ([^,]*)$/, ' and $1') : '') +
+      ' for ' + data.get('company') + ' (' + data.get('locations') + (data.get('locations') === '1' ? ' location' : ' locations') + '). Want to hear it now? Call 941-430-4049.';
+    form.hidden = true; ok.hidden = false; ok.focus();
+  });
+  document.getElementById('formReset').addEventListener('click', () => {
+    form.reset(); ok.hidden = true; form.hidden = false; form.querySelector('input').focus();
+  });
+
+  boot();
+})();
+</script>
+</body>
+</html>
