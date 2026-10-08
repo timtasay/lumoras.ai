@@ -1,0 +1,1621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumoras · Score</title>
+<meta name="description" content="Lumoras builds sound orchestration for business: AI voice, point of sale and in-store audio working as one system.">
+<script>
+  try { var t = localStorage.getItem('lumoras-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F7FB; --surface:#FFFFFF; --surface-2:#EEF1F7; --ink:#0A0F1F; --ink-2:#2B3349; --mute:#5B6478;
+  --rule:#DCE1EC; --rule-2:#C4CBDA;
+  --cobalt:#1F3BFF; --cobalt-fill:#1F3BFF; --cobalt-hover:#1530E0; --on-cobalt:#FFFFFF;
+  --cobalt-soft:rgba(31,59,255,.07); --cobalt-mid:rgba(31,59,255,.16); --cobalt-line:rgba(31,59,255,.38);
+  --brass:#D9A21B; --brass-text:#8A6205; --brass-soft:rgba(217,162,27,.16);
+  --ok:#0E7A52;
+  --nav-bg:rgba(245,247,251,.84);
+  --shadow:0 1px 0 rgba(10,15,31,.03), 0 18px 40px -22px rgba(10,15,31,.22);
+  --band-bg:#0A0F1F; --band-ink:#F2F4FA; --band-mute:#9AA3BA; --band-rule:rgba(255,255,255,.14); --band-field:rgba(255,255,255,.05);
+  --chip-bg:rgba(10,15,31,.92); --chip-ink:#F2F4FA; --chip-mute:#9AA3BA;
+  --ease:cubic-bezier(.2,.7,.1,1);
+  --f-display:"Anybody","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Instrument Sans","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --gutter:clamp(16px,4vw,48px);
+  --maxw:1320px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#090C16; --surface:#10152A; --surface-2:#151B33; --ink:#EEF1F8; --ink-2:#C9CFDF; --mute:#8F98B0;
+    --rule:#212944; --rule-2:#323C5E;
+    --cobalt:#5C74FF; --cobalt-fill:#4660FF; --cobalt-hover:#5C74FF; --on-cobalt:#FFFFFF;
+    --cobalt-soft:rgba(92,116,255,.10); --cobalt-mid:rgba(92,116,255,.24); --cobalt-line:rgba(92,116,255,.5);
+    --brass:#F0BE45; --brass-text:#F0BE45; --brass-soft:rgba(240,190,69,.14);
+    --ok:#4FD1A0;
+    --nav-bg:rgba(9,12,22,.80);
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 22px 48px -24px rgba(0,0,0,.7);
+    --band-bg:#10152A; --band-ink:#EEF1F8; --band-mute:#8F98B0; --band-rule:rgba(255,255,255,.12); --band-field:rgba(255,255,255,.04);
+    --chip-bg:rgba(238,241,248,.94); --chip-ink:#0A0F1F; --chip-mute:#5B6478;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#090C16; --surface:#10152A; --surface-2:#151B33; --ink:#EEF1F8; --ink-2:#C9CFDF; --mute:#8F98B0;
+  --rule:#212944; --rule-2:#323C5E;
+  --cobalt:#5C74FF; --cobalt-fill:#4660FF; --cobalt-hover:#5C74FF; --on-cobalt:#FFFFFF;
+  --cobalt-soft:rgba(92,116,255,.10); --cobalt-mid:rgba(92,116,255,.24); --cobalt-line:rgba(92,116,255,.5);
+  --brass:#F0BE45; --brass-text:#F0BE45; --brass-soft:rgba(240,190,69,.14);
+  --ok:#4FD1A0;
+  --nav-bg:rgba(9,12,22,.80);
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 22px 48px -24px rgba(0,0,0,.7);
+  --band-bg:#10152A; --band-ink:#EEF1F8; --band-mute:#8F98B0; --band-rule:rgba(255,255,255,.12); --band-field:rgba(255,255,255,.04);
+  --chip-bg:rgba(238,241,248,.94); --chip-ink:#0A0F1F; --chip-mute:#5B6478;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+img,svg{display:block;max-width:100%}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+::selection{background:var(--cobalt);color:var(--on-cobalt)}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:3px;border-radius:4px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:16px;top:-60px;z-index:100;background:var(--cobalt-fill);color:var(--on-cobalt);padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:600}
+.skip:focus{top:12px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--gutter)}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-variant-numeric:tabular-nums}
+.mute{color:var(--mute)}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 20px;border-radius:8px;border:1px solid transparent;
+  font-weight:600;font-size:15px;text-decoration:none;cursor:pointer;white-space:nowrap;
+  transition:background-color .25s var(--ease),border-color .25s var(--ease),color .25s var(--ease),transform .25s var(--ease)}
+.btn-primary{background:var(--cobalt-fill);color:var(--on-cobalt)}
+.btn-primary:hover{background:var(--cobalt-hover)}
+.btn-ghost{border-color:var(--rule-2);background:var(--surface);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--ink)}
+.btn svg{width:16px;height:16px;flex:none}
+.btn .num{font-family:var(--f-mono);font-weight:500;letter-spacing:.02em}
+.btn-sm{height:38px;padding:0 14px;font-size:14px}
+
+/* ---------- Nav ---------- */
+.nav{position:sticky;top:0;z-index:50;background:var(--nav-bg);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--rule)}
+.nav-in{display:flex;align-items:center;gap:24px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);flex:none}
+.brand svg{width:30px;height:22px}
+.brand b{font-family:var(--f-display);font-weight:720;font-stretch:118%;font-size:21px;letter-spacing:-.01em}
+.nav-links{display:flex;gap:4px;margin:0 auto;padding:0;list-style:none}
+.nav-links a{display:block;padding:8px 12px;border-radius:6px;font-size:14.5px;color:var(--ink-2);text-decoration:none;transition:color .2s var(--ease),background-color .2s var(--ease)}
+.nav-links a:hover{color:var(--ink);background:var(--cobalt-soft)}
+.nav-right{display:flex;align-items:center;gap:8px;flex:none}
+.signin{font-size:14.5px;color:var(--ink-2);text-decoration:none;padding:8px 10px;border-radius:6px}
+.signin:hover{color:var(--ink)}
+.icon-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--rule);background:var(--surface);cursor:pointer;color:var(--ink);transition:border-color .2s var(--ease)}
+.icon-btn:hover{border-color:var(--ink)}
+.icon-btn svg{width:18px;height:18px}
+.theme-btn .moon{display:none}
+:root[data-theme="dark"] .theme-btn .sun{display:none}
+:root[data-theme="dark"] .theme-btn .moon{display:block}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .theme-btn .sun{display:none}
+  :root:not([data-theme="light"]) .theme-btn .moon{display:block}
+}
+.menu-btn{display:none}
+.mobile-panel{display:none}
+@media (max-width:1060px){
+  .nav-links,.signin{display:none}
+  .menu-btn{display:grid}
+  .nav-in{justify-content:space-between}
+  .nav.open .mobile-panel{display:block}
+  .mobile-panel{border-top:1px solid var(--rule);padding:8px var(--gutter) 20px}
+  .mobile-panel ul{list-style:none;margin:0;padding:0}
+  .mobile-panel a{display:block;padding:12px 0;border-bottom:1px solid var(--rule);text-decoration:none;font-size:17px}
+  .mobile-panel .mp-cta{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+}
+@media (max-width:480px){ .nav-right .btn-primary{display:none} }
+
+/* ---------- Section scaffolding ---------- */
+section{position:relative}
+.sec{padding-block:clamp(84px,11vw,152px);border-top:1px solid var(--rule)}
+.sh{max-width:900px;margin-bottom:clamp(40px,5vw,72px)}
+.sh-meta{display:flex;align-items:center;gap:14px;margin-bottom:28px;color:var(--mute)}
+.rm{display:inline-grid;place-items:center;width:28px;height:28px;border:1.5px solid var(--ink);color:var(--ink);font-family:var(--f-display);font-weight:800;font-stretch:100%;font-size:15px;line-height:1;border-radius:2px;flex:none}
+.sh-line{flex:1;height:1px;background:var(--rule);min-width:24px}
+.sh-wide{max-width:none;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:24px 64px;align-items:end}
+.sh-wide .sh-meta{grid-column:1/-1;margin-bottom:0}
+.h2{font-family:var(--f-display);font-weight:740;font-stretch:78%;font-size:clamp(38px,5.4vw,80px);line-height:.96;letter-spacing:-.022em;margin:0;text-wrap:balance}
+.h2 em{font-style:normal;color:var(--cobalt)}
+.lede{font-size:clamp(17px,1.35vw,20px);line-height:1.55;color:var(--ink-2);max-width:620px;margin:24px 0 0;text-wrap:pretty}
+.sh-wide .lede{margin:0}
+@media (max-width:860px){ .sh-wide{grid-template-columns:1fr} }
+
+/* ---------- Hero ---------- */
+.hero{padding-top:clamp(40px,6vw,88px);padding-bottom:clamp(56px,7vw,96px);overflow:hidden}
+.hero-staff{position:absolute;inset:clamp(110px,14vw,190px) 0 auto 0;height:clamp(140px,18vw,260px);pointer-events:none;
+  background:repeating-linear-gradient(to bottom,var(--rule) 0 1px,transparent 1px 25%);opacity:.55;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.hero-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:var(--mute);margin-bottom:clamp(20px,3vw,36px);position:relative}
+.hero-meta .tempo{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid var(--rule);border-radius:999px;background:var(--surface);color:var(--ink-2)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--cobalt);box-shadow:0 0 0 0 var(--cobalt-mid);animation:pulse 2.4s var(--ease) infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--cobalt-line)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.hero-h1{position:relative;font-family:var(--f-display);font-weight:760;font-stretch:72%;font-size:clamp(46px,8vw,124px);line-height:.9;letter-spacing:-.03em;margin:0;max-width:11.5em;text-wrap:balance}
+.hero-h1 .w{display:inline-block;animation:h1in 1.4s var(--ease) both}
+.hero-h1 .w:nth-child(2){animation-delay:.06s}.hero-h1 .w:nth-child(3){animation-delay:.12s}
+.hero-h1 .w:nth-child(4){animation-delay:.18s}.hero-h1 .w:nth-child(5){animation-delay:.24s}.hero-h1 .w:nth-child(6){animation-delay:.30s}
+@keyframes h1in{from{font-stretch:56%;font-weight:300}to{font-stretch:72%;font-weight:760}}
+.rotator{position:relative;display:grid;margin:clamp(18px,2.4vw,28px) 0 0;font-family:var(--f-display);font-weight:560;font-size:clamp(26px,4.1vw,60px);line-height:1.1;letter-spacing:-.015em;color:var(--cobalt);white-space:nowrap;overflow:hidden;padding-bottom:.08em}
+.rotator span{grid-area:1/1;font-stretch:100%;opacity:1;transform:none;transition:font-stretch 1s var(--ease) .18s,opacity .6s var(--ease) .26s,transform .9s var(--ease) .18s,letter-spacing 1s var(--ease)}
+.rotator span.pre{font-stretch:50%;opacity:0;transform:translateY(38%);transition:none}
+.rotator span.out{font-stretch:150%;opacity:0;transform:translateY(-38%);letter-spacing:.01em;transition:font-stretch .8s var(--ease),opacity .3s var(--ease),transform .8s var(--ease),letter-spacing .8s var(--ease)}
+.rot-bar{display:flex;gap:6px;margin-top:14px}
+.rot-bar i{display:block;width:22px;height:3px;border-radius:2px;background:var(--rule-2);transition:background-color .4s var(--ease),width .6s var(--ease)}
+.rot-bar i.on{background:var(--cobalt);width:40px}
+.hero-foot{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px 56px;align-items:end;margin-top:clamp(32px,4vw,56px)}
+.hero-foot .lede{margin:0;max-width:580px}
+.hero-ctas{display:flex;gap:10px;flex-wrap:wrap}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;margin:28px 0 0;padding:0;list-style:none;color:var(--mute)}
+.facts li{display:flex;align-items:center;gap:8px}
+.facts li::before{content:"";width:6px;height:6px;border-radius:50%;border:1.5px solid var(--cobalt)}
+@media (max-width:860px){ .hero-foot{grid-template-columns:1fr} }
+
+/* ---------- Score ---------- */
+.score{margin:clamp(40px,5vw,64px) 0 0;background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.score-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--rule);color:var(--mute)}
+.score-bar strong{color:var(--ink);font-weight:500}
+.score-bar .sp{flex:1}
+.score-bar .tag{padding:3px 8px;border:1px solid var(--rule);border-radius:4px}
+.score-scroll{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+.score-scroll:focus-visible{outline-offset:-3px}
+#scoreSvg{width:100%;min-width:980px;height:auto}
+.score-cap{display:flex;gap:10px 24px;flex-wrap:wrap;align-items:center;padding:12px 18px;border-top:1px solid var(--rule);color:var(--mute)}
+.score-cap span{display:inline-flex;align-items:center;gap:8px}
+.lg-pill{width:22px;height:10px;border-radius:6px;border:1px solid var(--rule-2);background:var(--surface)}
+.lg-pill.lit{background:var(--cobalt-fill);border-color:var(--cobalt-fill)}
+.lg-tie{width:24px;height:0;border-top:1.5px solid var(--cobalt)}
+.lg-head{width:2px;height:12px;background:var(--brass)}
+.scroll-hint{display:none}
+@media (max-width:980px){ .scroll-hint{display:inline-flex} }
+
+.sv-staff line{stroke:var(--rule-2);stroke-width:1}
+.sv-bar{stroke:var(--rule);stroke-width:1}
+.sv-bracket{fill:none;stroke:var(--ink);stroke-width:3}
+.sv-time{font-family:var(--f-mono);font-size:11px;fill:var(--mute);letter-spacing:.04em}
+.sv-label{font-family:var(--f-mono);font-size:11px;fill:var(--ink-2);letter-spacing:.08em}
+.sv-idx{font-family:var(--f-mono);font-size:11px;fill:var(--mute)}
+.pill rect{fill:var(--surface);stroke:var(--rule-2);stroke-width:1;transition:fill .45s var(--ease),stroke .45s var(--ease)}
+.pill circle{fill:var(--cobalt);transition:fill .45s var(--ease)}
+.pill text{font-family:var(--f-mono);font-size:11px;fill:var(--ink-2);transition:fill .45s var(--ease)}
+.pill.lit rect{fill:var(--cobalt-fill);stroke:var(--cobalt-fill)}
+.pill.lit circle{fill:var(--on-cobalt)}
+.pill.lit text{fill:var(--on-cobalt)}
+.pill.audio circle{fill:var(--brass)}
+.pill.audio.lit rect{fill:var(--ink);stroke:var(--ink)}
+.pill.audio.lit text{fill:var(--paper)}
+.pill.audio.lit circle{fill:var(--brass)}
+.tie-base{fill:none;stroke:var(--cobalt-line);stroke-width:1.25;stroke-dasharray:2 4;stroke-linecap:round}
+.tie-lit{fill:none;stroke:var(--cobalt);stroke-width:1.75;stroke-linecap:round;stroke-dasharray:1 1;stroke-dashoffset:1;transition:stroke-dashoffset .9s var(--ease)}
+.tie-lit.lit{stroke-dashoffset:0}
+.tie-end{fill:var(--surface);stroke:var(--cobalt);stroke-width:1.5}
+.ph-line{stroke:var(--brass);stroke-width:1.5}
+.ph-head{fill:var(--brass)}
+.ph-label rect{fill:var(--ink)}
+.ph-label text{font-family:var(--f-mono);font-size:11px;fill:var(--paper)}
+.ph-wash{fill:url(#phWash)}
+
+/* ---------- Instruments ---------- */
+.inst{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule);border-radius:14px;background:var(--surface);overflow:hidden}
+.mv{position:relative;padding:28px 26px 30px;border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:14px;transition:background-color .35s var(--ease)}
+.mv:first-child{border-left:0}
+.mv:hover{background:var(--cobalt-soft)}
+.mv-top{display:flex;align-items:center;justify-content:space-between;color:var(--mute)}
+.mv-staff{height:25px;margin:6px 0 4px;background:repeating-linear-gradient(to bottom,var(--rule-2) 0 1px,transparent 1px 6px);position:relative}
+.mv-staff i{position:absolute;top:50%;width:11px;height:8px;margin-top:-4px;border-radius:50%;background:var(--cobalt);transform:rotate(-18deg)}
+.mv-icon{width:40px;height:40px;color:var(--cobalt)}
+.mv h3{font-family:var(--f-display);font-weight:720;font-stretch:92%;font-size:clamp(24px,2.1vw,30px);line-height:1.05;letter-spacing:-.015em;margin:0}
+.mv .tl{font-weight:600;color:var(--ink);margin:0;font-size:17px;line-height:1.35}
+.mv p{margin:0;color:var(--ink-2);font-size:15.5px}
+.mv ul{list-style:none;padding:14px 0 0;margin:auto 0 0;border-top:1px solid var(--rule);display:grid;gap:7px}
+.mv li{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);display:flex;gap:10px;letter-spacing:.01em}
+.mv li::before{content:"";width:10px;height:1px;background:var(--cobalt);margin-top:9px;flex:none}
+.mv.tutti{background:linear-gradient(180deg,var(--cobalt-soft),transparent 70%)}
+.mv.tutti::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--cobalt)}
+@media (max-width:1020px){ .inst{grid-template-columns:repeat(2,minmax(0,1fr))} .mv:nth-child(3){border-left:0} .mv:nth-child(n+3){border-top:1px solid var(--rule)} }
+@media (max-width:620px){ .inst{grid-template-columns:1fr} .mv{border-left:0} .mv:nth-child(n+2){border-top:1px solid var(--rule)} }
+
+/* ---------- How (morph) ---------- */
+.how-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(32px,6vw,96px)}
+.how-visual{position:relative}
+.how-sticky{position:sticky;top:max(88px,calc(50vh - 260px));background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.how-sticky svg{width:100%;height:auto;aspect-ratio:1/1}
+.how-state{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:1px solid var(--rule);color:var(--mute)}
+.how-state b{color:var(--ink);font-weight:500}
+.how-prog{display:flex;gap:4px}
+.how-prog i{width:18px;height:3px;border-radius:2px;background:var(--rule-2);transition:background-color .4s var(--ease)}
+.how-prog i.on{background:var(--cobalt)}
+.md-dot{fill:var(--cobalt)}
+.md-dot.br{fill:var(--brass)}
+.md-stem{stroke:var(--cobalt);stroke-width:1.5}
+.md-path{fill:none;stroke:var(--cobalt-line);stroke-width:1.5}
+.md-staff line{stroke:var(--rule-2);stroke-width:1.25}
+.md-grid line{stroke:var(--rule);stroke-width:1}
+.steps{list-style:none;margin:0;padding:0}
+.step{min-height:68vh;display:flex;flex-direction:column;justify-content:center;padding:24px 0;border-top:1px solid var(--rule);color:var(--mute);transition:color .5s var(--ease)}
+.step:first-child{border-top:0}
+.step.on{color:var(--ink)}
+.step .sn{display:flex;gap:12px;align-items:center;color:var(--mute)}
+.step .sn b{font-weight:500;color:var(--cobalt)}
+.step h3{font-family:var(--f-display);font-weight:720;font-stretch:84%;font-size:clamp(34px,3.8vw,56px);line-height:1;letter-spacing:-.02em;margin:14px 0 6px;transition:font-stretch .8s var(--ease)}
+.step.on h3{font-stretch:100%}
+.step .sub{font-size:clamp(19px,1.6vw,23px);font-weight:600;margin:0 0 12px;color:inherit}
+.step p{margin:0;max-width:520px;color:var(--ink-2)}
+.step ul{list-style:none;padding:0;margin:20px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.step li{font-family:var(--f-mono);font-size:12px;padding:5px 10px;border:1px solid var(--rule);border-radius:999px;color:var(--ink-2);background:var(--surface)}
+@media (max-width:860px){
+  .how-grid{grid-template-columns:1fr;gap:0}
+  .how-visual{position:sticky;top:64px;z-index:3;background:var(--paper);padding:10px 0 12px;margin-inline:calc(var(--gutter) * -1);padding-inline:var(--gutter);border-bottom:1px solid var(--rule)}
+  .how-sticky{position:relative;top:0;display:grid;grid-template-columns:150px 1fr;align-items:stretch}
+  .how-sticky svg{width:150px;height:150px}
+  .how-state{border-top:0;border-left:1px solid var(--rule);flex-direction:column;align-items:flex-start;justify-content:center;gap:10px}
+  .step{min-height:58vh}
+}
+
+/* ---------- Repertoire ---------- */
+.rep-hint{display:flex;justify-content:space-between;gap:16px;padding:0 0 14px;color:var(--mute);border-bottom:2px solid var(--ink)}
+.rep{list-style:none;margin:0;padding:0}
+.rep-row{border-bottom:1px solid var(--rule);transition:background-color .35s var(--ease)}
+.rep-head{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:56px minmax(0,1fr) auto 28px;align-items:center;gap:20px;padding:18px 8px;cursor:pointer}
+.rep-head:focus-visible{outline:2px solid var(--cobalt);outline-offset:-2px;border-radius:6px}
+.rep-num{color:var(--mute)}
+.rep-name{font-family:var(--f-display);font-weight:640;font-stretch:76%;font-size:clamp(28px,4.2vw,58px);line-height:1;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:clip;transition:font-stretch .7s var(--ease),font-weight .7s var(--ease),color .4s var(--ease)}
+.rep-prod{color:var(--ink-2);text-align:right}
+.rep-prod.soon{color:var(--brass-text)}
+.rep-x{width:28px;height:28px;border:1px solid var(--rule-2);border-radius:50%;display:grid;place-items:center;transition:transform .5s var(--ease),background-color .3s var(--ease),border-color .3s var(--ease)}
+.rep-x svg{width:12px;height:12px}
+.rep-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s var(--ease)}
+.rep-inner{overflow:hidden;min-height:0}
+.rep-body{display:grid;grid-template-columns:56px minmax(0,1.4fr) minmax(0,.8fr) minmax(0,1fr);gap:20px;padding:4px 8px 28px}
+.rep-quote{grid-column:2;font-family:var(--f-display);font-weight:450;font-stretch:96%;font-size:clamp(19px,1.7vw,24px);line-height:1.3;margin:0;color:var(--ink)}
+.rep-quote::before{content:"Voice";display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--cobalt);margin-bottom:8px}
+.rep-meta{font-size:15px;color:var(--ink-2)}
+.rep-meta b{display:block;font-family:var(--f-mono);font-size:11px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.rep-meta a{color:var(--cobalt);text-underline-offset:3px}
+.rep-tags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+.rep-tags li{font-family:var(--f-mono);font-size:12px;padding:5px 10px;border-radius:999px;background:var(--cobalt-soft);color:var(--ink-2);border:1px solid var(--rule)}
+.rep-row.open,.rep-row:has(.rep-panel :focus-visible){background:var(--surface)}
+.rep-row.open .rep-panel,.rep-row:has(.rep-panel :focus-visible) .rep-panel{grid-template-rows:1fr}
+.rep-row.open .rep-name,.rep-row:has(.rep-panel :focus-visible) .rep-name{font-stretch:108%;font-weight:720;color:var(--cobalt)}
+.rep-row.open .rep-x,.rep-row:has(.rep-panel :focus-visible) .rep-x{transform:rotate(45deg);background:var(--cobalt-fill);border-color:var(--cobalt-fill);color:var(--on-cobalt)}
+@media (hover:hover) and (min-width:861px){
+  .rep-row:hover{background:var(--surface)}
+  .rep-row:hover .rep-panel{grid-template-rows:1fr}
+  .rep-row:hover .rep-name{font-stretch:108%;font-weight:720;color:var(--cobalt)}
+  .rep-row:hover .rep-x{transform:rotate(45deg);background:var(--cobalt-fill);border-color:var(--cobalt-fill);color:var(--on-cobalt)}
+}
+@media (max-width:860px){
+  .rep-head{grid-template-columns:32px minmax(0,1fr) 28px;gap:12px;padding:16px 0}
+  .rep-prod{grid-column:2;grid-row:2;text-align:left;margin-top:-4px}
+  .rep-x{grid-column:3;grid-row:1}
+  .rep-body{grid-template-columns:1fr;padding:0 0 24px 44px;gap:16px}
+  .rep-quote{grid-column:auto}
+  .rep-sp{display:none}
+  .rep-name{font-size:clamp(26px,7.4vw,40px)}
+  .rep-row.open .rep-name{font-stretch:92%}
+}
+
+/* ---------- Products ---------- */
+.prods{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:16px}
+.card{position:relative;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--rule)}
+.status{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ok)}
+.status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.status.soon{color:var(--brass-text)}
+.status.soon::before{background:transparent;border:1.5px solid currentColor}
+.card-body{padding:24px 22px 26px;display:flex;flex-direction:column;gap:14px;flex:1}
+.card h3{font-family:var(--f-display);font-weight:760;font-stretch:104%;font-size:clamp(30px,2.6vw,40px);line-height:1;margin:0;letter-spacing:-.02em}
+.card .head{font-family:var(--f-display);font-weight:520;font-stretch:88%;font-size:clamp(20px,1.7vw,24px);line-height:1.15;margin:0;color:var(--ink)}
+.card p{margin:0;color:var(--ink-2);font-size:15.5px}
+.card .foot{margin-top:auto;padding-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;border-top:1px solid var(--rule)}
+.tlink{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:var(--cobalt);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s var(--ease)}
+.tlink:hover{border-bottom-color:currentColor}
+.tlink svg{width:14px;height:14px}
+.vig{margin:0 22px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);padding:14px;font-size:13px}
+.vig-h{display:flex;justify-content:space-between;color:var(--mute);margin-bottom:10px}
+/* calendar vignette */
+.cal{display:grid;grid-template-columns:38px repeat(3,minmax(0,1fr));grid-template-rows:auto repeat(6,22px);gap:0 6px;position:relative}
+.cal .ch{font-family:var(--f-mono);font-size:11px;color:var(--ink-2);padding-bottom:6px;border-bottom:1px solid var(--rule);margin-bottom:2px}
+.cal .ct{font-family:var(--f-mono);font-size:10.5px;color:var(--mute);border-top:1px dashed var(--rule);padding-top:2px}
+.cal .cl{border-top:1px dashed var(--rule)}
+.blk{border-radius:6px;padding:4px 7px;font-size:11.5px;line-height:1.25;overflow:hidden;z-index:1;margin:2px 0}
+.blk b{display:block;font-weight:600}
+.blk.a{background:var(--cobalt-fill);color:var(--on-cobalt)}
+.blk.b{background:var(--surface);border:1px solid var(--rule-2);color:var(--ink-2)}
+.blk.c{background:var(--brass-soft);border:1px solid var(--brass);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.stats div{background:var(--surface);padding:12px 14px}
+.stats strong{display:block;font-family:var(--f-display);font-weight:700;font-stretch:90%;font-size:28px;line-height:1;letter-spacing:-.01em}
+.stats span{font-size:13px;color:var(--mute);line-height:1.3;display:block;margin-top:4px}
+.card .attr,.attr{font-family:var(--f-mono);font-size:11px;color:var(--mute);letter-spacing:.03em}
+.price{font-size:15px;color:var(--ink-2)}
+.price b{font-family:var(--f-display);font-stretch:96%;font-size:22px;color:var(--ink);font-weight:700}
+/* ticket vignette */
+.ticket{background:var(--surface);border:1px solid var(--rule-2);border-radius:4px;padding:12px 14px;font-family:var(--f-mono);font-size:12px;color:var(--ink);position:relative;
+  -webkit-mask:radial-gradient(circle 5px at 50% 0,transparent 98%,#000) 0 0/12px 51% repeat-x,radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 100%/12px 51% repeat-x;
+  mask:radial-gradient(circle 5px at 50% 0,transparent 98%,#000) 0 0/12px 51% repeat-x,radial-gradient(circle 5px at 50% 100%,transparent 98%,#000) 0 100%/12px 51% repeat-x}
+.ticket .tk-h{display:flex;justify-content:space-between;font-weight:500;padding:4px 0 8px;border-bottom:1px dashed var(--rule-2)}
+.ticket .tk-m{color:var(--mute);padding:6px 0;border-bottom:1px dashed var(--rule-2);font-size:11px}
+.ticket ul{list-style:none;margin:0;padding:8px 0;display:grid;gap:5px}
+.ticket li{display:grid;grid-template-columns:22px 1fr}
+.mod{grid-column:2;justify-self:start;margin-top:2px;padding:2px 7px;border-radius:3px;background:var(--brass-soft);border:1px solid var(--brass);font-weight:500;text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+.ticket .tk-f{display:flex;justify-content:space-between;color:var(--mute);border-top:1px dashed var(--rule-2);padding:8px 0 4px;font-size:11px}
+/* dish vignette */
+.dishes{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.dishes li{display:grid;grid-template-columns:minmax(0,1fr) 70px 30px;gap:10px;align-items:center;font-size:13px}
+.dishes .bar{height:6px;border-radius:3px;background:var(--rule);overflow:hidden}
+.dishes .bar i{display:block;height:100%;background:var(--cobalt);border-radius:3px}
+.dishes .r{font-family:var(--f-mono);font-size:12px;text-align:right}
+.cities{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.cities li{font-family:var(--f-mono);font-size:11.5px;padding:4px 9px;border:1px solid var(--rule-2);border-radius:999px;color:var(--ink-2)}
+@media (max-width:1100px){ .prods{grid-template-columns:1fr 1fr} .card.sonorch{grid-column:1/-1} }
+@media (max-width:720px){ .prods{grid-template-columns:1fr} }
+
+/* ---------- Voice switch ---------- */
+.vs{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(32px,6vw,88px);align-items:center}
+.vs-copy .h2{font-size:clamp(36px,4.6vw,68px)}
+.checks{list-style:none;padding:0;margin:28px 0 0;display:grid;gap:12px}
+.checks li{display:flex;gap:12px;align-items:flex-start;color:var(--ink-2)}
+.checks svg{width:18px;height:18px;color:var(--cobalt);flex:none;margin-top:3px}
+.switch-row{display:flex;align-items:center;gap:16px;margin-top:32px;padding:16px 18px;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+.switch{all:unset;box-sizing:border-box;flex:none;position:relative;width:64px;height:36px;border-radius:999px;background:var(--rule-2);cursor:pointer;transition:background-color .45s var(--ease)}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:28px;height:28px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .45s var(--ease)}
+.switch[aria-checked="true"]{background:var(--cobalt-fill)}
+.switch[aria-checked="true"]::after{transform:translateX(28px)}
+.switch:focus-visible{outline:2px solid var(--cobalt);outline-offset:3px}
+.switch-txt b{display:block;font-weight:600}
+.switch-txt span{font-size:14px;color:var(--mute)}
+.pos{background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.pos-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.pos-top b{font-family:var(--f-display);font-stretch:110%;font-weight:700;font-size:15px}
+.pos-cols{display:grid;grid-template-columns:minmax(0,1fr) 190px}
+.pos-list{list-style:none;margin:0;padding:6px 0}
+.pos-list li{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;font-size:14px}
+.pos-list li+li{border-top:1px solid var(--rule)}
+.pos-list time{font-family:var(--f-mono);font-size:12px;color:var(--mute)}
+.pos-list small{display:block;color:var(--mute);font-size:12.5px}
+.pos-list em{font-style:normal;font-family:var(--f-mono);font-size:11px;padding:3px 8px;border-radius:4px;border:1px solid var(--rule);color:var(--ink-2);white-space:nowrap}
+.pos-list .vrow{display:grid;grid-template-rows:0fr;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:0;padding:0 16px;border-top:0;transition:grid-template-rows .6s var(--ease),padding .6s var(--ease),background-color .6s var(--ease)}
+.pos-list .vrow > div{overflow:hidden;min-height:0;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center}
+.vbadge{font-style:normal;font-family:var(--f-mono);font-size:11px;padding:3px 8px;border-radius:4px;background:var(--cobalt-fill);color:var(--on-cobalt);white-space:nowrap}
+.voice-on .pos-list .vrow{grid-template-rows:1fr;padding:10px 16px;border-top:1px solid var(--rule);background:var(--cobalt-soft)}
+.pos-side{border-left:1px solid var(--rule);padding:14px 16px;display:flex;flex-direction:column;gap:12px;background:var(--paper)}
+.pos-side .k{font-family:var(--f-mono);font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.pos-side .v{font-family:var(--f-display);font-stretch:90%;font-weight:700;font-size:26px;line-height:1}
+.pos-side .v.sm{font-size:18px}
+.pos-side .vv{transition:color .4s var(--ease)}
+.voice-on .pos-side .vv{color:var(--cobalt)}
+.lanes{border-top:1px solid var(--rule);padding:12px 16px 14px;display:grid;gap:8px}
+.lane{display:grid;grid-template-columns:56px minmax(0,1fr);align-items:center;gap:10px}
+.lane-k{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--ink-2)}
+.track{position:relative;height:26px;display:flex;gap:6px;align-items:center;overflow:hidden;
+  background:repeating-linear-gradient(to bottom,transparent 0 3px,var(--rule) 3px 4px,transparent 4px 8px) 0 1px/100% 26px no-repeat}
+.lp{flex:none;font-family:var(--f-mono);font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--rule-2);background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.lane-voice{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s var(--ease)}
+.lane-voice > div{overflow:hidden;min-height:0}
+.voice-on .lane-voice{grid-template-rows:1fr}
+.lane-voice .lp{background:var(--cobalt-fill);border-color:var(--cobalt-fill);color:var(--on-cobalt);opacity:0;transform:translateX(48px);transition:opacity .6s var(--ease),transform .8s var(--ease)}
+.voice-on .lane-voice .lp{opacity:1;transform:none}
+.voice-on .lane-voice .lp:nth-child(2){transition-delay:.15s}
+.voice-on .lane-voice .lp:nth-child(3){transition-delay:.3s}
+.voice-on .lane-voice .lp:nth-child(4){transition-delay:.45s}
+@media (max-width:960px){ .vs{grid-template-columns:1fr} }
+@media (max-width:560px){ .pos-cols{grid-template-columns:1fr} .pos-side{border-left:0;border-top:1px solid var(--rule);flex-direction:row;flex-wrap:wrap;gap:12px 24px} .pos-list li,.pos-list .vrow > div{grid-template-columns:44px minmax(0,1fr)} .pos-list li > em,.pos-list .vrow em{grid-column:2;justify-self:start} }
+
+/* ---------- Retail sound ---------- */
+.rs{background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.rs-head{display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--rule)}
+.dps{display:flex;flex-wrap:wrap;gap:6px}
+.dp{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 13px;border-radius:8px;border:1px solid var(--rule);font-size:14px;font-weight:550;color:var(--ink-2);transition:background-color .3s var(--ease),color .3s var(--ease),border-color .3s var(--ease)}
+.dp small{font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--mute);margin-left:6px;transition:color .3s var(--ease)}
+.dp:hover{border-color:var(--ink)}
+.dp[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.dp[aria-pressed="true"] small{color:var(--paper);opacity:.75}
+.dp:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+.chart-scroll{overflow-x:auto;scrollbar-width:thin}
+#energySvg{width:100%;min-width:680px;height:auto}
+.ec-band{fill:var(--paper)}
+.ec-band.alt{fill:transparent}
+.ec-band-hit{fill:transparent;cursor:pointer}
+.ec-axis{stroke:var(--rule-2);stroke-width:1}
+.ec-grid{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 4}
+.ec-tick{font-family:var(--f-mono);font-size:11px;fill:var(--mute)}
+.ec-area{fill:var(--cobalt-soft)}
+.ec-area-hi{fill:var(--cobalt-mid)}
+.ec-line{fill:none;stroke:var(--cobalt);stroke-width:2.25;stroke-linejoin:round}
+.ec-line-dim{fill:none;stroke:var(--cobalt-line);stroke-width:1.5}
+.ec-dp{font-family:var(--f-mono);font-size:10.5px;fill:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.ec-dp.on{fill:var(--ink)}
+.ec-mk line{stroke:var(--brass);stroke-width:1.25;stroke-dasharray:3 3}
+.ec-mk path{fill:var(--brass)}
+.ec-mk text{font-family:var(--f-mono);font-size:10.5px;fill:var(--ink);font-weight:500}
+.ec-note{font-family:var(--f-mono);font-size:10.5px;fill:var(--mute);letter-spacing:.06em}
+.mk-list{list-style:none;margin:0;padding:12px 18px;display:flex;flex-wrap:wrap;gap:8px 22px;border-top:1px solid var(--rule);color:var(--ink-2);font-size:13.5px}
+.mk-list li{display:flex;gap:8px;align-items:center}
+.mk-list b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:4px;background:var(--brass-soft);border:1px solid var(--brass);font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--ink)}
+.mk-list time{font-family:var(--f-mono);font-size:12px;color:var(--mute)}
+.zones{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--rule)}
+.zone{padding:16px 18px 18px;border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:8px}
+.zone:first-child{border-left:0}
+.zchip{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;padding:4px 10px;border-radius:999px;border:1px solid var(--rule-2);color:var(--ink)}
+.zchip i{width:6px;height:6px;border-radius:50%;background:var(--cobalt)}
+.zset{font-weight:600;font-size:15px;line-height:1.3;min-height:2.6em;transition:opacity .3s var(--ease)}
+.zmeter{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
+.zmeter i{display:block;height:100%;background:var(--cobalt);border-radius:2px;transition:width .8s var(--ease)}
+.zdb{font-family:var(--f-mono);font-size:12px;color:var(--mute);transition:opacity .3s var(--ease)}
+.fade{opacity:0}
+.rs-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 20px;padding:12px 18px;border-top:1px solid var(--rule);color:var(--mute)}
+.rs-foot b{color:var(--ink);font-weight:500}
+.feat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:clamp(40px,5vw,64px);border-top:1px solid var(--rule)}
+.feat div{padding:22px 24px 22px 0;border-bottom:1px solid var(--rule)}
+.feat h3{font-size:17px;font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+.feat h3 span{font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--cobalt)}
+.feat p{margin:0;color:var(--ink-2);font-size:15px;max-width:360px}
+@media (max-width:1020px){ .zones{grid-template-columns:repeat(2,minmax(0,1fr))} .zone{border-top:1px solid var(--rule)} .zone:nth-child(odd){border-left:0} .zone:nth-child(-n+2){border-top:0} .zone:last-child{grid-column:1/-1} }
+@media (max-width:860px){ .feat{grid-template-columns:1fr 1fr} }
+@media (max-width:560px){ .feat{grid-template-columns:1fr} .zone{padding:14px} .zset{font-size:14px} }
+
+/* ---------- Enterprise ---------- */
+.ent{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(32px,6vw,96px);align-items:start}
+.ent-l{position:sticky;top:96px}
+.ent-l .h2{font-size:clamp(36px,4.4vw,64px)}
+.sheet{background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.sheet-h{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:14px 20px;border-bottom:2px solid var(--ink);color:var(--mute)}
+.sheet-h b{color:var(--ink);font-weight:500}
+.spec{margin:0}
+.spec > div{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px 24px;padding:16px 20px;border-bottom:1px solid var(--rule);transition:background-color .3s var(--ease)}
+.spec > div:last-child{border-bottom:0}
+.spec > div:hover{background:var(--cobalt-soft)}
+.spec dt{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding-top:3px}
+.spec dt span{color:var(--cobalt);margin-right:8px}
+.spec dd{margin:0;font-size:15.5px;color:var(--ink-2)}
+.spec dd strong{display:block;color:var(--ink);font-weight:600;font-size:16.5px;margin-bottom:2px}
+.ent-cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+@media (max-width:960px){ .ent{grid-template-columns:1fr} .ent-l{position:static} }
+@media (max-width:560px){ .spec > div{grid-template-columns:1fr;gap:6px} }
+
+/* ---------- CTA band ---------- */
+.band{background:var(--band-bg);color:var(--band-ink);border-top:0}
+.band .rm{border-color:var(--band-ink);color:var(--band-ink)}
+.band .sh-meta{color:var(--band-mute)}
+.band .sh-line{background:var(--band-rule)}
+.band-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(40px,6vw,96px);align-items:start}
+.band .h2{font-size:clamp(44px,6.4vw,104px);font-stretch:74%}
+.band .lede{color:var(--band-mute)}
+.phone{margin-top:36px;padding:22px 0;border-top:1px solid var(--band-rule);border-bottom:1px solid var(--band-rule)}
+.phone .k{color:var(--band-mute);display:flex;align-items:center;gap:10px}
+.phone .k .live-dot{background:var(--brass);animation:none}
+.phone-num{display:block;white-space:nowrap;font-family:var(--f-display);font-weight:700;font-stretch:84%;font-size:clamp(40px,5.6vw,80px);line-height:1;letter-spacing:-.01em;margin:12px 0 18px;user-select:all;-webkit-user-select:all;font-variant-numeric:tabular-nums}
+.phone-acts{display:flex;gap:10px;flex-wrap:wrap}
+.band .btn-ghost{background:transparent;border-color:var(--band-rule);color:var(--band-ink)}
+.band .btn-ghost:hover{border-color:var(--band-ink)}
+.copy-msg{font-family:var(--f-mono);font-size:12px;color:var(--brass);align-self:center;min-width:1px}
+.form{background:var(--band-field);border:1px solid var(--band-rule);border-radius:14px;padding:clamp(20px,3vw,32px)}
+.form h3{margin:0 0 4px;font-size:20px;font-weight:600}
+.form > p{margin:0 0 22px;color:var(--band-mute);font-size:15px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld.full{grid-column:1/-1}
+.fld label,.fld legend{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--band-mute)}
+.fld input,.fld select{height:46px;border-radius:8px;border:1px solid var(--band-rule);background:transparent;color:var(--band-ink);padding:0 14px;font-size:16px;transition:border-color .2s var(--ease)}
+.fld select option{color:#0A0F1F;background:#fff}
+.fld input:focus,.fld select:focus{border-color:var(--band-ink);outline:none}
+.fld input:focus-visible,.fld select:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+fieldset.fld{border:0;padding:0;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chips label{position:relative;cursor:pointer;font-family:var(--f-body);text-transform:none;letter-spacing:0;font-size:14px;color:var(--band-ink)}
+.chips input{position:absolute;opacity:0;width:1px;height:1px}
+.chips span{display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid var(--band-rule);font-size:14px;transition:background-color .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease)}
+.chips input:checked + span{background:var(--band-ink);color:var(--band-bg);border-color:var(--band-ink)}
+.chips input:focus-visible + span{outline:2px solid var(--cobalt);outline-offset:2px}
+.form .btn{margin-top:22px;width:100%;justify-content:center}
+.fine{font-size:12.5px;color:var(--band-mute);margin:12px 0 0}
+.confirm{display:none;padding:8px 0}
+.confirm .ok{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--cobalt-fill);color:var(--on-cobalt);margin-bottom:18px}
+.confirm h3{font-family:var(--f-display);font-stretch:90%;font-weight:700;font-size:32px;line-height:1.05;margin:0 0 10px}
+.confirm p{color:var(--band-mute);margin:0 0 6px}
+.form.sent .confirm{display:block}
+.form.sent .form-fields{display:none}
+@media (max-width:960px){ .band-grid{grid-template-columns:1fr} }
+@media (max-width:520px){ .fg{grid-template-columns:1fr} }
+
+/* ---------- Footer ---------- */
+.footer{padding:64px 0 120px;border-top:1px solid var(--rule)}
+.f-grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:32px}
+.f-grid h4{font-family:var(--f-mono);font-size:11.5px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:0 0 14px}
+.f-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.f-grid a{text-decoration:none;color:var(--ink-2);font-size:15px}
+.f-grid a:hover{color:var(--cobalt)}
+.f-grid .soon{font-family:var(--f-mono);font-size:10.5px;color:var(--brass-text);margin-left:6px;letter-spacing:.04em;text-transform:uppercase}
+.f-brand p{color:var(--mute);max-width:300px;margin:14px 0 0;font-size:15px}
+.f-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 24px;margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);color:var(--mute)}
+.f-bottom strong{color:var(--ink);font-weight:500}
+@media (max-width:960px){ .f-grid{grid-template-columns:repeat(2,minmax(0,1fr))} .f-brand{grid-column:1/-1} }
+
+/* ---------- Direction chip ---------- */
+.dirchip{position:fixed;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:60;display:flex;align-items:center;gap:2px;flex-wrap:wrap;
+  max-width:calc(100vw - 24px);padding:5px;border-radius:12px;background:var(--chip-bg);color:var(--chip-ink);box-shadow:0 10px 30px -10px rgba(0,0,0,.45);font-family:var(--f-mono);font-size:11.5px;letter-spacing:.02em;backdrop-filter:blur(10px)}
+.dirchip .lbl{padding:6px 8px;color:var(--chip-mute);text-transform:uppercase;letter-spacing:.08em;font-size:10.5px}
+.dirchip a{padding:6px 9px;border-radius:8px;text-decoration:none;color:var(--chip-ink);white-space:nowrap}
+.dirchip a:hover{background:rgba(127,127,127,.18)}
+.dirchip a[aria-current="page"]{background:var(--cobalt-fill);color:#fff}
+.dirchip a:focus-visible{outline:2px solid var(--brass);outline-offset:1px}
+@media (max-width:520px){ .dirchip .lbl{display:none} .dirchip{font-size:11px} .dirchip a{padding:6px 7px} }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0s!important}
+  .hero-h1 .w{animation:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ================= NAV ================= -->
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Lumoras home">
+      <svg viewBox="0 0 30 22" aria-hidden="true">
+        <g stroke="currentColor" stroke-width="1.2"><line x1="0" y1="3" x2="30" y2="3"/><line x1="0" y1="7" x2="30" y2="7"/><line x1="0" y1="11" x2="30" y2="11"/><line x1="0" y1="15" x2="30" y2="15"/><line x1="0" y1="19" x2="30" y2="19"/></g>
+        <path d="M7 15 C 12 4, 18 4, 23 7" fill="none" stroke="var(--cobalt)" stroke-width="2"/>
+        <ellipse cx="7" cy="15" rx="3.6" ry="2.7" fill="var(--cobalt)" transform="rotate(-20 7 15)"/>
+        <ellipse cx="23" cy="7" rx="3.6" ry="2.7" fill="var(--brass)" transform="rotate(-20 23 7)"/>
+      </svg>
+      <b>lumoras</b>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#platform">Platform</a></li>
+      <li><a href="#verticals">Verticals</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#sound">Retail Sound</a></li>
+      <li><a href="#enterprise">Enterprise</a></li>
+      <li><a href="#company">Company</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="icon-btn theme-btn" id="themeBtn" type="button" aria-label="Switch color theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+      </button>
+      <a class="signin" href="#signin">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="#demo">Book a demo</a>
+      <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mobilePanel" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-panel" id="mobilePanel">
+    <ul>
+      <li><a href="#platform">Platform</a></li>
+      <li><a href="#verticals">Verticals</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#sound">Retail Sound</a></li>
+      <li><a href="#enterprise">Enterprise</a></li>
+      <li><a href="#company">Company</a></li>
+    </ul>
+    <div class="mp-cta"><a class="btn btn-primary" href="#demo">Book a demo</a><a class="btn btn-ghost" href="#signin">Sign in</a></div>
+  </div>
+</header>
+
+<main id="main">
+<!-- ================= HERO ================= -->
+<section class="hero" id="top" aria-labelledby="heroTitle">
+  <div class="hero-staff" aria-hidden="true"></div>
+  <div class="wrap">
+    <div class="hero-meta mono">
+      <span class="tempo"><span class="live-dot" aria-hidden="true"></span>Sound orchestration for business</span>
+      <span>Voice · POS · Sound</span>
+    </div>
+    <h1 class="hero-h1" id="heroTitle"><span class="w">Conduct</span> <span class="w">every</span> <span class="w">sound</span> <span class="w">your</span> <span class="w">business</span> <span class="w">makes.</span></h1>
+    <p class="rotator" id="rotator" aria-hidden="true"><span>Every call answered.</span></p>
+    <p class="sr-only">Every call answered. Every chair filled. Every table sat. Every aisle in tune. Every patient booked.</p>
+    <div class="rot-bar" id="rotBar" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+    <div class="hero-foot">
+      <div>
+        <p class="lede">Lumoras brings AI voice, point of sale and in-store audio into one system. The phone, the counter, the checkout, the music on the floor and the announcements overhead, all playing from the same score.</p>
+        <ul class="facts mono">
+          <li>24/7 answering</li><li>First-ring pickup</li><li>Multilingual</li><li>Every location, one console</li>
+        </ul>
+      </div>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#demo">Book a demo
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <a class="btn btn-ghost" href="tel:+19414304049">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5.5 2.5 4 2.3 2.4 3.9c-.3 4.8 4.9 10 9.7 9.7l1.6-1.6-.2-1.5-2.6-1.2-1.4 1.2C7.8 9.8 6.2 8.2 5.5 6.5l1.2-1.4z"/></svg>
+          Live demo <span class="num">941-430-4049</span></a>
+      </div>
+    </div>
+
+    <figure class="score" aria-labelledby="scoreCap">
+      <div class="score-bar mono">
+        <span class="live-dot" aria-hidden="true"></span><strong>Live score</strong>
+        <span>Tue · 4:00–4:30 pm</span>
+        <span class="sp"></span>
+        <span id="scoreCount">5 staves</span>
+        <span class="tag">Illustrative</span>
+      </div>
+      <div class="score-scroll" tabindex="0" role="region" aria-label="Orchestration score, scrolls horizontally on small screens">
+        <svg id="scoreSvg" viewBox="0 0 1400 452" role="img" aria-labelledby="scoreTitle scoreDesc">
+          <title id="scoreTitle">One half hour of a business, written as a score</title>
+          <desc id="scoreDesc">Five staves: phone, POS, bookings, kitchen and floor, store audio. Events on each stave are tied across channels: a 42-second call books a balayage and takes a $25 deposit; a pickup call creates kitchen ticket 218 with no peanuts and is paid; Zone A switches to the 4 pm set; a curbside arrival call triggers an announcement at the door.</desc>
+        </svg>
+      </div>
+      <figcaption class="score-cap mono" id="scoreCap">
+        <span><i class="lg-pill" aria-hidden="true"></i>Event</span>
+        <span><i class="lg-pill lit" aria-hidden="true"></i>Played</span>
+        <span><i class="lg-tie" aria-hidden="true"></i>Tie: one action across channels</span>
+        <span><i class="lg-head" aria-hidden="true"></i>Playhead</span>
+        <span class="scroll-hint">Swipe to read the score</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ================= I. INSTRUMENTS ================= -->
+<section class="sec" id="platform" aria-labelledby="platTitle">
+  <div class="wrap">
+    <header class="sh sh-wide">
+      <div class="sh-meta"><span class="rm">A</span><span class="mono">Platform</span><span class="sh-line"></span><span class="mono">m. 01</span></div>
+      <h2 class="h2" id="platTitle">Four instruments, <em>one conductor.</em></h2>
+      <p class="lede">Each Lumoras product plays on its own. Together they share one customer record, one calendar, one menu and one console, so nothing your business says or does falls out of time.</p>
+    </header>
+
+    <div class="inst">
+      <article class="mv">
+        <div class="mv-top mono"><span>I. Voice</span><span>Solo</span></div>
+        <svg class="mv-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 20v0M11 15v10M16 9v22M21 13v14M26 6v28M31 14v12M36 19v2"/></svg>
+        <h3>Lumoras Voice</h3>
+        <p class="tl">An AI receptionist that already speaks your trade.</p>
+        <p>Picks up on the first ring, recognizes regulars by number, checks live availability and books before the caller hangs up. Turn it on day one, or a year in.</p>
+        <ul><li>24/7, first-ring pickup</li><li>Books, reschedules, takes deposits</li><li>Multilingual, escalates to staff</li></ul>
+      </article>
+      <article class="mv">
+        <div class="mv-top mono"><span>II. POS</span><span>Rhythm</span></div>
+        <svg class="mv-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="5" width="26" height="30" rx="3"/><path d="M12 12h16M12 18h10M12 24h16" stroke-linecap="round"/><path d="M24 18h4" stroke-linecap="round"/><circle cx="27" cy="29.5" r="1.4" fill="currentColor" stroke="none"/></svg>
+        <h3>Lumoras POS</h3>
+        <p class="tl">One point of sale for any service business.</p>
+        <p>Appointments or tickets, payments, staff, inventory and multi-location reporting, configured for how your business actually runs.</p>
+        <ul><li>Appointments, tickets, tables</li><li>Commission and tip splits</li><li>Payroll-ready reporting</li></ul>
+      </article>
+      <article class="mv">
+        <div class="mv-top mono"><span>III. Sound</span><span>Ensemble</span></div>
+        <svg class="mv-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M7 16h6l8-7v22l-8-7H7z"/><path d="M26 15c2 2.8 2 7.2 0 10M30 11c4.4 5 4.4 13 0 18"/></svg>
+        <h3>Lumoras Sound</h3>
+        <p class="tl">Custom sound orchestration for retail.</p>
+        <p>Zoned music, dayparted playlists and automated announcements, synchronized across every store from one console.</p>
+        <ul><li>Zones and dayparts</li><li>Branded audio identity</li><li>Announcements and paging</li></ul>
+      </article>
+      <article class="mv tutti">
+        <div class="mv-top mono"><span>IV. Orchestrator</span><span>Tutti</span></div>
+        <svg class="mv-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 12h32M4 20h32M4 28h32" stroke-width="1.2" opacity=".45"/><path d="M8 28C14 10 26 10 32 12"/><circle cx="8" cy="28" r="3" fill="currentColor" stroke="none"/><circle cx="20" cy="15" r="3" fill="currentColor" stroke="none"/><circle cx="32" cy="12" r="3" fill="var(--brass)" stroke="none"/></svg>
+        <h3>Orchestrator</h3>
+        <p class="tl">The conductor between them.</p>
+        <p>Every call, sale and sound in one console with live analytics. A booked call becomes a calendar entry, a deposit and a reminder without anyone touching a screen.</p>
+        <ul><li>One customer record</li><li>Live analytics, every channel</li><li>Open API and webhooks</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= II. HOW IT WORKS (morph) ================= -->
+<section class="sec" id="how" aria-labelledby="howTitle">
+  <div class="wrap">
+    <header class="sh sh-wide">
+      <div class="sh-meta"><span class="rm">B</span><span class="mono">How it works</span><span class="sh-line"></span><span class="mono">m. 02</span></div>
+      <h2 class="h2" id="howTitle">From first call to full orchestra in <em>four movements.</em></h2>
+      <p class="lede">No rip-and-replace. Bring what you run today, tune it to sound like you, go live on your existing number and conduct everything from one place.</p>
+    </header>
+
+    <div class="how-grid">
+      <div class="how-visual">
+        <div class="how-sticky">
+          <svg id="morphSvg" viewBox="0 0 480 480" role="img" aria-label="A field of points that gathers into a waveform, then a ring, then a five-line staff as each step is read">
+            <g class="md-grid" aria-hidden="true">
+              <line x1="0" y1="120" x2="480" y2="120"/><line x1="0" y1="240" x2="480" y2="240"/><line x1="0" y1="360" x2="480" y2="360"/>
+              <line x1="120" y1="0" x2="120" y2="480"/><line x1="240" y1="0" x2="240" y2="480"/><line x1="360" y1="0" x2="360" y2="480"/>
+            </g>
+            <g class="md-staff" id="mdStaff" opacity="0"><line x1="36" y1="180" x2="444" y2="180"/><line x1="36" y1="205" x2="444" y2="205"/><line x1="36" y1="230" x2="444" y2="230"/><line x1="36" y1="255" x2="444" y2="255"/><line x1="36" y1="280" x2="444" y2="280"/></g>
+            <path class="md-path" id="mdPath" d="" opacity="0"/>
+            <g id="mdStems"></g>
+            <g id="mdDots"></g>
+          </svg>
+          <div class="how-state mono">
+            <span><span id="mdIdx">01</span> / 04 · <b id="mdName">Connect</b></span>
+            <span class="how-prog" id="mdProg" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+      <ol class="steps" id="steps">
+        <li class="step on">
+          <div class="sn mono"><b>01</b><span>Connect</span></div>
+          <h3>Connect</h3>
+          <p class="sub">Bring what you already run.</p>
+          <p>Import your POS data, calendar, menu or service list, or start fresh on Lumoras POS. Staff, hours, prices and policies come across once and stay in sync.</p>
+          <ul><li>POS and calendar import</li><li>Menus and service lists</li><li>Or start on Lumoras POS</li></ul>
+        </li>
+        <li class="step">
+          <div class="sn mono"><b>02</b><span>Tune</span></div>
+          <h3>Tune</h3>
+          <p class="sub">Make it sound like you.</p>
+          <p>Set the voice and the greeting, your deposit and cancellation policies, hours and escalation rules. For stores, compose the soundscape: zones, dayparts, announcements.</p>
+          <ul><li>Voice and greeting</li><li>Policies and escalation</li><li>Store soundscapes</li></ul>
+        </li>
+        <li class="step">
+          <div class="sn mono"><b>03</b><span>Go live</span></div>
+          <h3>Go live</h3>
+          <p class="sub">Forward a number. Pair a speaker.</p>
+          <p>Point your existing line at Lumoras and pair your store speakers. Calls are answered on the first ring, music starts on schedule, and your phone number never changes.</p>
+          <ul><li>Keep your number</li><li>Speaker pairing</li><li>Staff escalation paths</li></ul>
+        </li>
+        <li class="step">
+          <div class="sn mono"><b>04</b><span>Orchestrate</span></div>
+          <h3>Orchestrate</h3>
+          <p class="sub">Conduct it all from one console.</p>
+          <p>Every call, sale and sound lands in one console with live analytics, across every location. See what was booked, what was sold and what played, then adjust the score.</p>
+          <ul><li>Live analytics</li><li>Every location</li><li>Roles and audit trail</li></ul>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================= III. VERTICALS ================= -->
+<section class="sec" id="verticals" aria-labelledby="repTitle">
+  <div class="wrap">
+    <header class="sh sh-wide">
+      <div class="sh-meta"><span class="rm">C</span><span class="mono">Verticals</span><span class="sh-line"></span><span class="mono">m. 03</span></div>
+      <h2 class="h2" id="repTitle">The <em>repertoire.</em></h2>
+      <p class="lede">Purpose-built voice agents that already know the vocabulary of the trade: a balayage versus a gloss, a 4-top at 7:30, a 60,000-mile service.</p>
+    </header>
+
+    <div class="rep-hint mono"><span>14 verticals</span><span>Hover or select a row</span></div>
+    <ol class="rep" id="rep">
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp1" id="rh1"><span class="rep-num mono">01</span><span class="rep-name">Salons &amp; spas</span><span class="rep-prod mono">Sonorch</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp1" role="region" aria-labelledby="rh1"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Books a 90-minute balayage with Maya on Thursday and takes the $25 deposit.</p>
+          <div class="rep-meta"><b>Served by</b>Sonorch, live at <a href="https://sonorch.ai">sonorch.ai</a></div>
+          <ul class="rep-tags"><li>Deposits &amp; no-show policy</li><li>Rebooks regulars</li><li>Checkout at the chair</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp2" id="rh2"><span class="rep-num mono">02</span><span class="rep-name">Restaurants</span><span class="rep-prod mono soon">SeasonX · Soon</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp2" role="region" aria-labelledby="rh2"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Takes a pickup order for two birria tacos and an horchata, ready at 6:40.</p>
+          <div class="rep-meta"><b>Served by</b>SeasonX, coming soon to seasonx.ai. Restaurants run on <a href="https://sonorch.ai">sonorch.ai</a> today.</div>
+          <ul class="rep-tags"><li>Reservations &amp; tables</li><li>Kitchen tickets with modifiers</li><li>Menu &amp; allergen answers</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp3" id="rh3"><span class="rep-num mono">03</span><span class="rep-name">Retail stores</span><span class="rep-prod mono">Lumoras Sound</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp3" role="region" aria-labelledby="rh3"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Plays the 4 pm energy set in Zone A and announces curbside pickup at the door.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras Sound, with Lumoras Voice for store lines</div>
+          <ul class="rep-tags"><li>Zoned music</li><li>Dayparted playlists</li><li>Automated announcements</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp4" id="rh4"><span class="rep-num mono">04</span><span class="rep-name">Medical &amp; dental</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp4" role="region" aria-labelledby="rh4"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Moves a cleaning to next Tuesday and sends the new-patient forms.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Reschedules &amp; recalls</li><li>Intake forms by text</li><li>Routes clinical questions to staff</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp5" id="rh5"><span class="rep-num mono">05</span><span class="rep-name">Med spas</span><span class="rep-prod mono">Sonorch</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp5" role="region" aria-labelledby="rh5"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Books a filler consult for Friday, takes the deposit and texts the pre-care instructions.</p>
+          <div class="rep-meta"><b>Served by</b>Sonorch, live at <a href="https://sonorch.ai">sonorch.ai</a></div>
+          <ul class="rep-tags"><li>Consults &amp; packages</li><li>Deposits</li><li>Two-way text reminders</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp6" id="rh6"><span class="rep-num mono">06</span><span class="rep-name">Auto service</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp6" role="region" aria-labelledby="rh6"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Quotes the 60,000-mile service and holds the 8:00 drop-off bay.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Service quotes</li><li>Bay scheduling</li><li>Ready-for-pickup calls</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp7" id="rh7"><span class="rep-num mono">07</span><span class="rep-name">Home services</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp7" role="region" aria-labelledby="rh7"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Triages a no-heat call, books the after-hours tech and texts the ETA.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice. HVAC, plumbing, electrical.</div>
+          <ul class="rep-tags"><li>Emergency triage</li><li>Dispatch windows</li><li>ETA texts</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp8" id="rh8"><span class="rep-num mono">08</span><span class="rep-name">Fitness &amp; wellness</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp8" role="region" aria-labelledby="rh8"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Adds a caller to the 6 am reformer waitlist and confirms the moment a spot opens.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Class waitlists</li><li>Memberships &amp; packs</li><li>Studio music by Lumoras Sound</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp9" id="rh9"><span class="rep-num mono">09</span><span class="rep-name">Hotels &amp; hospitality</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp9" role="region" aria-labelledby="rh9"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Confirms a late check-in, notes a crib for the room and books a 7 pm table downstairs.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS, Voice and Sound</div>
+          <ul class="rep-tags"><li>Front-desk overflow</li><li>Outlet reservations</li><li>Lobby soundscapes</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp10" id="rh10"><span class="rep-num mono">10</span><span class="rep-name">Veterinary &amp; grooming</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp10" role="region" aria-labelledby="rh10"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Books a full groom for a doodle on Saturday and flags that the rabies record is due.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Pet profiles</li><li>Vaccine reminders</li><li>Pickup-ready calls</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp11" id="rh11"><span class="rep-num mono">11</span><span class="rep-name">Professional services</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp11" role="region" aria-labelledby="rh11"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Screens a new estate-planning inquiry and books a 30-minute intake with the right attorney.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice. Legal, accounting, advisory.</div>
+          <ul class="rep-tags"><li>Intake screening</li><li>Conflict-safe routing</li><li>Retainers &amp; invoices</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp12" id="rh12"><span class="rep-num mono">12</span><span class="rep-name">Property management</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp12" role="region" aria-labelledby="rh12"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Logs a leaking faucet in unit 3B and schedules maintenance for Friday morning.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Work orders</li><li>After-hours emergencies</li><li>Showing schedules</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp13" id="rh13"><span class="rep-num mono">13</span><span class="rep-name">Education &amp; tutoring</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp13" role="region" aria-labelledby="rh13"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Matches a parent to a Tuesday SAT math session and sends the prep packet.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Tutor matching</li><li>Session packages</li><li>Parent updates</li></ul>
+        </div></div></div>
+      </li>
+      <li class="rep-row">
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp14" id="rh14"><span class="rep-num mono">14</span><span class="rep-name">Repair shops</span><span class="rep-prod mono">POS + Voice</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <div class="rep-panel" id="rp14" role="region" aria-labelledby="rh14"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
+          <p class="rep-quote">Checks the status of a cracked-screen repair and tells the caller it's ready after 3.</p>
+          <div class="rep-meta"><b>Served by</b>Lumoras POS with Lumoras Voice</div>
+          <ul class="rep-tags"><li>Repair tickets</li><li>Status lookups</li><li>Parts on order</li></ul>
+        </div></div></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= IV. PRODUCTS ================= -->
+<section class="sec" id="products" aria-labelledby="prodTitle">
+  <div class="wrap">
+    <header class="sh sh-wide">
+      <div class="sh-meta"><span class="rm">D</span><span class="mono">Products</span><span class="sh-line"></span><span class="mono">m. 04</span></div>
+      <h2 class="h2" id="prodTitle">The Lumoras <em>product family.</em></h2>
+      <p class="lede">Vertical products built on one core. Each is tuned to a single kind of business and shares everything underneath: the POS, the voice, the console.</p>
+    </header>
+
+    <div class="prods">
+      <article class="card sonorch">
+        <div class="card-top"><span class="status">Live · sonorch.ai</span><span class="mono mute">Salons · Spas · Barbers</span></div>
+        <div class="card-body">
+          <h3>Sonorch</h3>
+          <p class="head">Every call answered. Every chair filled. Every table sat.</p>
+          <p>POS and AI receptionist for salons, barbers, spas, nail and lash studios and med spas. It answers every call, books and reschedules, handles deposits and no-show policies, rebooks regulars and checks out at the chair.</p>
+        </div>
+        <div class="vig" aria-label="Calendar preview: Thursday, three chairs">
+          <div class="vig-h mono"><span>Thu · Chairs</span><span>1–4 pm</span></div>
+          <div class="cal">
+            <span class="ch"></span><span class="ch">Maya</span><span class="ch">Jordan</span><span class="ch">Lina</span>
+            <span class="ct" style="grid-row:2">1:00</span><span class="ct" style="grid-row:4">2:00</span><span class="ct" style="grid-row:6">3:00</span>
+            <span class="cl" style="grid-row:2;grid-column:2/5"></span><span class="cl" style="grid-row:4;grid-column:2/5"></span><span class="cl" style="grid-row:6;grid-column:2/5"></span>
+            <div class="blk b" style="grid-column:2;grid-row:2/4"><b>Gloss</b>1:00 · 45 min</div>
+            <div class="blk a" style="grid-column:2;grid-row:4/7"><b>Balayage · 90 min</b>Deposit $25 paid</div>
+            <div class="blk b" style="grid-column:3;grid-row:2/3"><b>Fade · 1:00</b></div>
+            <div class="blk c" style="grid-column:3;grid-row:3/6"><b>Cut &amp; style</b>Booked by voice</div>
+            <div class="blk b" style="grid-column:4;grid-row:3/5"><b>Gel mani</b>Regular</div>
+            <div class="blk c" style="grid-column:4;grid-row:5/7"><b>Lash fill</b>From waitlist</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="stats">
+            <div><strong>98%+</strong><span>of calls answered</span></div>
+            <div><strong>70%</strong><span>fewer missed calls</span></div>
+            <div><strong>100%</strong><span>of bookings on the live calendar</span></div>
+            <div><strong>10+ hrs</strong><span>returned to the owner each week</span></div>
+          </div>
+          <p class="attr">Results published by Sonorch</p>
+          <div class="foot">
+            <span class="price">From <b>$99</b>/mo for up to 5 staff · month to month · setup included</span>
+            <a class="tlink" href="https://sonorch.ai">Visit sonorch.ai <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 10 10 4M5 4h5v5"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-top"><span class="status soon">Coming soon to seasonx.ai</span><span class="mono mute">Restaurants</span></div>
+        <div class="card-body">
+          <h3>SeasonX</h3>
+          <p class="head">Phone orders, reservations and the kitchen, on one line.</p>
+          <p>POS and AI receptionist for restaurants. Takes orders and reservations, answers menu, allergen and hours questions, sends tickets to the kitchen and takes payment.</p>
+        </div>
+        <div class="vig" aria-label="Kitchen ticket preview">
+          <div class="ticket">
+            <div class="tk-h"><span>TICKET #218</span><span>6:22 PM</span></div>
+            <div class="tk-m">TABLE 12 · COURSE 1 · SERVER 4</div>
+            <ul>
+              <li><span>2</span><span>Birria tacos</span></li>
+              <li><span>1</span><span>Pad see ew</span><span class="mod">No peanuts</span></li>
+              <li><span>1</span><span>Horchata</span></li>
+            </ul>
+            <div class="tk-f"><span>FIRED · LINE 2</span><span>VIA VOICE</span></div>
+          </div>
+        </div>
+        <div class="card-body">
+          <p>Restaurants run on sonorch.ai today, next to salons. The product is moving to its own home at seasonx.ai.</p>
+          <div class="foot">
+            <a class="tlink" href="https://sonorch.ai">Restaurants: start on sonorch.ai <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 10 10 4M5 4h5v5"/></svg></a>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-top"><span class="status">Live · kitchenspot.ai</span><span class="mono mute">Diners</span></div>
+        <div class="card-body">
+          <h3>KitchenSpot</h3>
+          <p class="head">Every restaurant in town, rated dish by dish.</p>
+          <p>Restaurant discovery for diners: full menus, dish-by-dish ratings and reviews from verified diners, and pickup ordering. Connects to SeasonX.</p>
+        </div>
+        <div class="vig" aria-label="Dish ratings preview">
+          <div class="vig-h mono"><span>Top dishes · Sarasota</span><span>Rating</span></div>
+          <ul class="dishes">
+            <li><span>Blackened grouper sandwich</span><span class="bar"><i style="width:96%"></i></span><span class="r">4.8</span></li>
+            <li><span>Key lime pie</span><span class="bar"><i style="width:94%"></i></span><span class="r">4.7</span></li>
+            <li><span>Cuban sandwich</span><span class="bar"><i style="width:90%"></i></span><span class="r">4.5</span></li>
+            <li><span>Stone crab claws</span><span class="bar"><i style="width:88%"></i></span><span class="r">4.4</span></li>
+          </ul>
+          <p class="attr" style="margin:10px 0 0">Verified diners · ratings illustrative</p>
+        </div>
+        <div class="card-body">
+          <ul class="cities" aria-label="Launch cities"><li>Sarasota</li><li>Tampa</li><li>Orlando</li><li>Miami</li></ul>
+          <div class="foot">
+            <a class="tlink" href="https://kitchenspot.ai">Visit kitchenspot.ai <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 10 10 4M5 4h5v5"/></svg></a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= V. VOICE SWITCH ================= -->
+<section class="sec" id="voice" aria-labelledby="vsTitle">
+  <div class="wrap">
+    <div class="vs" id="vsRoot">
+      <div class="vs-copy">
+        <div class="sh-meta"><span class="rm">E</span><span class="mono">POS first</span><span class="sh-line"></span><span class="mono">m. 05</span></div>
+        <h2 class="h2" id="vsTitle">Start with the POS. <em>Add voice whenever you're ready.</em></h2>
+        <p class="lede">Voice is a switch, not a migration. Run your counter on Lumoras POS today. When you want every call answered, flip it on: same customers, same calendar, same menu. Day one, or a year later.</p>
+        <ul class="checks">
+          <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3.5 9.5 3.5 3.5 7.5-8"/></svg>Keep your phone number. Forward it when you're ready.</li>
+          <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3.5 9.5 3.5 3.5 7.5-8"/></svg>No re-entering services, staff, prices or policies.</li>
+          <li><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3.5 9.5 3.5 3.5 7.5-8"/></svg>Turn it off as easily as you turned it on.</li>
+        </ul>
+        <div class="switch-row">
+          <button class="switch" id="voiceSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="switchLbl"></button>
+          <div class="switch-txt"><b id="switchLbl">Lumoras Voice</b><span id="switchState" aria-live="polite">Off. Calls ring your existing line.</span></div>
+        </div>
+      </div>
+
+      <div class="pos" aria-label="Lumoras POS front counter preview">
+        <div class="pos-top"><b>Lumoras POS</b><span class="mono mute">Front counter · Today</span></div>
+        <div class="pos-cols">
+          <ul class="pos-list">
+            <li><time>8:00</time><div>60,000-mile service<small>Bay 2 · returning customer</small></div><em>In service</em></li>
+            <li class="vrow"><div><time>8:12</time><div>Call 0:51 · oil change booked<small>Thu 8:00 · bay held</small></div><span class="vbadge">Voice</span></div></li>
+            <li><time>9:30</time><div>Brake inspection<small>Bay 1 · walk-in</small></div><em>Checked in</em></li>
+            <li class="vrow"><div><time>9:41</time><div>Call 0:33 · status lookup<small>"Ready after 3"</small></div><span class="vbadge">Voice</span></div></li>
+            <li><time>10:05</time><div>Ticket #1042<small>Card · receipt by text</small></div><em>Paid $189.00</em></li>
+            <li class="vrow"><div><time>10:20</time><div>Call 1:04 · quote sent<small>Tire rotation · Sat 9:30</small></div><span class="vbadge">Voice</span></div></li>
+          </ul>
+          <div class="pos-side">
+            <div><div class="k">Sales today</div><div class="v">$1,284</div></div>
+            <div><div class="k">Calls answered</div><div class="v vv" id="posCalls">—</div></div>
+            <div><div class="k">Booked by voice</div><div class="v sm vv" id="posBooked">Voice off</div></div>
+          </div>
+        </div>
+        <div class="lanes" aria-hidden="true">
+          <div class="lane"><span class="lane-k">POS</span><div class="track"><span class="lp">Check-in</span><span class="lp">Ticket #1042</span><span class="lp">Paid $189</span></div></div>
+          <div class="lane-voice"><div><div class="lane"><span class="lane-k">VOICE</span><div class="track"><span class="lp">Call 0:51 → booked</span><span class="lp">Call 0:33 → status</span><span class="lp">Call 1:04 → quote</span><span class="lp">24/7</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VI. RETAIL SOUND ================= -->
+<section class="sec" id="sound" aria-labelledby="soundTitle">
+  <div class="wrap">
+    <header class="sh sh-wide">
+      <div class="sh-meta"><span class="rm">F</span><span class="mono">Retail Sound</span><span class="sh-line"></span><span class="mono">m. 06</span></div>
+      <h2 class="h2" id="soundTitle">Custom sound orchestration <em>for retail.</em></h2>
+      <p class="lede">Every zone, every daypart, every location. Lumoras Sound shapes the music to traffic and time of day, keeps your audio identity consistent, and handles the announcements so your team doesn't have to.</p>
+    </header>
+
+    <div class="rs">
+      <div class="rs-head">
+        <span class="mono mute">Store day · 6 am to 11 pm</span>
+        <div class="dps" id="dps" role="group" aria-label="Choose a daypart">
+          <button class="dp" type="button" data-dp="0" aria-pressed="false">Open<small>6–10a</small></button>
+          <button class="dp" type="button" data-dp="1" aria-pressed="false">Midday<small>10a–2p</small></button>
+          <button class="dp" type="button" data-dp="2" aria-pressed="false">Afternoon<small>2–4p</small></button>
+          <button class="dp" type="button" data-dp="3" aria-pressed="true">Peak<small>4–8p</small></button>
+          <button class="dp" type="button" data-dp="4" aria-pressed="false">Close<small>8–11p</small></button>
+        </div>
+      </div>
+      <div class="chart-scroll" tabindex="0" role="region" aria-label="Energy curve chart, scrolls horizontally on small screens">
+        <svg id="energySvg" viewBox="0 0 1000 330" role="img" aria-labelledby="ecTitle">
+          <title id="ecTitle">Illustrative energy curve for a store day from 6 am to 11 pm, rising to a peak between 4 and 8 pm, with five scheduled announcements.</title>
+        </svg>
+      </div>
+      <ol class="mk-list" aria-label="Scheduled announcements">
+        <li><b>1</b><time>9:58a</time>Doors-open chime</li>
+        <li><b>2</b><time>11:30a</time>Curbside pickup ready</li>
+        <li><b>3</b><time>4:00p</time>Fall denim promo</li>
+        <li><b>4</b><time>7:45p</time>Fitting rooms close in 15 minutes</li>
+        <li><b>5</b><time>10:45p</time>Store closing in 15 minutes</li>
+      </ol>
+      <div class="zones" id="zones" aria-live="polite">
+        <div class="zone"><span class="zchip"><i></i>Entrance</span><span class="zset">—</span><span class="zmeter"><i></i></span><span class="zdb">—</span></div>
+        <div class="zone"><span class="zchip"><i></i>Floor</span><span class="zset">—</span><span class="zmeter"><i></i></span><span class="zdb">—</span></div>
+        <div class="zone"><span class="zchip"><i></i>Fitting rooms</span><span class="zset">—</span><span class="zmeter"><i></i></span><span class="zdb">—</span></div>
+        <div class="zone"><span class="zchip"><i></i>Checkout</span><span class="zset">—</span><span class="zmeter"><i></i></span><span class="zdb">—</span></div>
+        <div class="zone"><span class="zchip"><i></i>Back of house</span><span class="zset">—</span><span class="zmeter"><i></i></span><span class="zdb">—</span></div>
+      </div>
+      <div class="rs-foot mono"><span>Daypart: <b id="dpName">Peak · 4–8 pm</b></span><span id="dpNote">Scheduled: 4 pm energy set, Zone A</span><span>Illustrative · levels and sets vary by store</span></div>
+    </div>
+
+    <div class="feat">
+      <div><h3><span>01</span>Zoned in-store music</h3><p>Entrance, floor, fitting rooms and checkout each get their own mix and level.</p></div>
+      <div><h3><span>02</span>Dayparted playlists</h3><p>Sets that follow traffic and time of day, from a calm open to a high-energy evening.</p></div>
+      <div><h3><span>03</span>Branded audio identity</h3><p>Your sonic signature, chimes and voice, consistent in every store.</p></div>
+      <div><h3><span>04</span>Automated announcements</h3><p>Store closing, curbside ready and promotions, scheduled or triggered by events.</p></div>
+      <div><h3><span>05</span>Voice paging</h3><p>Page a department or a zone without touching a handset.</p></div>
+      <div><h3><span>06</span>One console, every location</h3><p>Synchronized schedules across every store and time zone, changed in one place.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VII. ENTERPRISE ================= -->
+<section class="sec" id="enterprise" aria-labelledby="entTitle">
+  <div class="wrap ent">
+    <div class="ent-l">
+      <div class="sh-meta"><span class="rm">G</span><span class="mono">Enterprise</span><span class="sh-line"></span><span class="mono">m. 07</span></div>
+      <h2 class="h2" id="entTitle">Ready for the <em>whole organization.</em></h2>
+      <p class="lede">For groups, franchises and multi-brand operators who need control, visibility and a clean audit trail, from the first location to the last.</p>
+      <div class="ent-cta"><a class="btn btn-primary" href="#demo">Talk to sales</a><a class="btn btn-ghost" href="#demo">Request the security overview</a></div>
+    </div>
+    <div class="sheet">
+      <div class="sheet-h mono"><span><b>Specification</b> · Lumoras platform</span><span>Rev. 2026.10</span></div>
+      <dl class="spec">
+        <div><dt><span>01</span>Locations</dt><dd><strong>Multi-location rollups</strong>Revenue, utilization, no-shows and top sellers by location, region or brand, in one view.</dd></div>
+        <div><dt><span>02</span>Identity</dt><dd><strong>SSO and SCIM</strong>Single sign-on with your identity provider, and user provisioning and deprovisioning through SCIM.</dd></div>
+        <div><dt><span>03</span>Access</dt><dd><strong>Role-based access control</strong>Roles scoped by location and function. Individual staff logins, never shared accounts.</dd></div>
+        <div><dt><span>04</span>Audit</dt><dd><strong>Audit logs</strong>Every configuration change, refund and voice-policy edit, with who, what and when.</dd></div>
+        <div><dt><span>05</span>Integrations</dt><dd><strong>Open API and webhooks</strong>Calls, bookings, tickets, payments and sound events, available to the systems you already run.</dd></div>
+        <div><dt><span>06</span>Payments</dt><dd><strong>Card data handled by the processor</strong>Card numbers go straight to the payment processor. Lumoras never stores them.</dd></div>
+        <div><dt><span>07</span>Data</dt><dd><strong>Full data export</strong>Customers, history and reports, exportable whenever you need them.</dd></div>
+        <div><dt><span>08</span>Onboarding</dt><dd><strong>Dedicated onboarding and success team</strong>A named team for migration, tuning and rollout across locations.</dd></div>
+        <div><dt><span>09</span>Coverage</dt><dd><strong>24/7 answering</strong>First-ring pickup, multilingual voice and staff escalation rules you control.</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ================= VIII. CTA ================= -->
+<section class="sec band" id="demo" aria-labelledby="ctaTitle">
+  <div class="wrap band-grid">
+    <div>
+      <div class="sh-meta"><span class="rm">H</span><span class="mono">Finale</span><span class="sh-line"></span><span class="mono">m. 08</span></div>
+      <h2 class="h2" id="ctaTitle">Hear it for yourself.</h2>
+      <p class="lede">Call the live demo and talk to the receptionist yourself. Ask for a booking, a menu question, the hours. Then tell us about your business.</p>
+      <div class="phone">
+        <div class="k mono"><span class="live-dot" aria-hidden="true"></span>Call the live demo</div>
+        <span class="phone-num" id="phoneNum">941-430-4049</span>
+        <div class="phone-acts">
+          <button class="btn btn-primary" type="button" id="copyBtn">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5"/><path d="M10.5 5V3.5A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9A1.5 1.5 0 0 0 3.5 10.5H5"/></svg>
+            <span id="copyLbl">Copy number</span></button>
+          <a class="btn btn-ghost" href="tel:+19414304049">Call now</a>
+          <span class="copy-msg" id="copyMsg" role="status" aria-live="polite"></span>
+        </div>
+      </div>
+    </div>
+
+    <form class="form" id="demoForm" novalidate>
+      <div class="form-fields">
+        <h3>Book a demo</h3>
+        <p>Tell us a little about your business and we'll set up a walkthrough with the right specialist.</p>
+        <div class="fg">
+          <div class="fld"><label for="fName">Full name</label><input id="fName" name="name" autocomplete="name" required></div>
+          <div class="fld"><label for="fEmail">Work email</label><input id="fEmail" name="email" type="email" autocomplete="email" required></div>
+          <div class="fld"><label for="fCo">Company</label><input id="fCo" name="company" autocomplete="organization" required></div>
+          <div class="fld"><label for="fLoc">Locations</label>
+            <select id="fLoc" name="locations"><option>1</option><option>2–10</option><option>11–50</option><option>51–250</option><option>250+</option></select></div>
+          <fieldset class="fld full"><legend>Interested in</legend>
+            <div class="chips">
+              <label><input type="checkbox" name="interest" value="Voice" checked><span>Voice</span></label>
+              <label><input type="checkbox" name="interest" value="POS"><span>POS</span></label>
+              <label><input type="checkbox" name="interest" value="Sound"><span>Retail Sound</span></label>
+              <label><input type="checkbox" name="interest" value="Enterprise"><span>Enterprise</span></label>
+            </div>
+          </fieldset>
+        </div>
+        <button class="btn btn-primary" type="submit">Request a demo
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+        <p class="fine" id="formErr" role="alert"></p>
+      </div>
+      <div class="confirm" id="confirm" role="status" aria-live="polite" tabindex="-1">
+        <div class="ok"><svg viewBox="0 0 18 18" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3.5 9.5 3.5 3.5 7.5-8"/></svg></div>
+        <h3 id="confirmTitle">You're on the schedule.</h3>
+        <p id="confirmText">A Lumoras specialist will be in touch shortly.</p>
+        <p>In the meantime, call the live demo at 941-430-4049.</p>
+      </div>
+    </form>
+  </div>
+</section>
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer" id="company">
+  <div class="wrap">
+    <div class="f-grid">
+      <div class="f-brand">
+        <a class="brand" href="#top" aria-label="Lumoras home">
+          <svg viewBox="0 0 30 22" aria-hidden="true"><g stroke="currentColor" stroke-width="1.2"><line x1="0" y1="3" x2="30" y2="3"/><line x1="0" y1="7" x2="30" y2="7"/><line x1="0" y1="11" x2="30" y2="11"/><line x1="0" y1="15" x2="30" y2="15"/><line x1="0" y1="19" x2="30" y2="19"/></g><path d="M7 15 C 12 4, 18 4, 23 7" fill="none" stroke="var(--cobalt)" stroke-width="2"/><ellipse cx="7" cy="15" rx="3.6" ry="2.7" fill="var(--cobalt)" transform="rotate(-20 7 15)"/><ellipse cx="23" cy="7" rx="3.6" ry="2.7" fill="var(--brass)" transform="rotate(-20 23 7)"/></svg>
+          <b>lumoras</b>
+        </a>
+        <p>Sound orchestration for business. AI voice, point of sale and in-store audio, working as one system.</p>
+      </div>
+      <div><h4>Platform</h4><ul><li><a href="#platform">Lumoras Voice</a></li><li><a href="#voice">Lumoras POS</a></li><li><a href="#sound">Lumoras Sound</a></li><li><a href="#how">Orchestrator</a></li></ul></div>
+      <div><h4>Products</h4><ul><li><a href="https://sonorch.ai">Sonorch</a></li><li><a href="https://sonorch.ai">SeasonX</a><span class="soon">Soon</span></li><li><a href="https://kitchenspot.ai">KitchenSpot</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#company">About</a></li><li><a href="#company">Careers</a></li><li><a href="#demo">Contact</a></li><li><a href="#enterprise">Security</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="#verticals">Verticals</a></li><li><a href="#enterprise">API &amp; webhooks</a></li><li><a href="#company">Privacy</a></li><li><a href="#company">Terms</a></li></ul></div>
+    </div>
+    <div class="f-bottom mono"><span>© 2026 Lumoras</span><strong>Prototype · figures are illustrative</strong><span>Live demo 941-430-4049</span></div>
+  </div>
+</footer>
+
+<nav class="dirchip" aria-label="Design directions">
+  <span class="lbl">Direction</span>
+  <a href="a-voice-core.html">A Voice Core</a>
+  <a href="b-score.html" aria-current="page">B Score</a>
+  <a href="c-spectrum.html">C Spectrum</a>
+  <a href="index.html">All directions</a>
+</nav>
+
+<script>
+(function(){
+  'use strict';
+  var RM = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var reduced = RM.matches;
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs, parent){ var n = document.createElementNS(NS, tag); for (var k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function ease(t){ return t<.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+
+  /* ---------- Theme ---------- */
+  var root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    var cur = root.getAttribute('data-theme');
+    var isDark = cur ? cur === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('lumoras-theme', next); } catch(e){}
+  });
+
+  /* ---------- Mobile nav ---------- */
+  var nav = document.getElementById('nav'), menuBtn = document.getElementById('menuBtn');
+  menuBtn.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  });
+  document.querySelectorAll('#mobilePanel a').forEach(function(a){ a.addEventListener('click', function(){ nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); }); });
+
+  /* ---------- Rotator ---------- */
+  var phrases = ['Every call answered.','Every chair filled.','Every table sat.','Every aisle in tune.','Every patient booked.'];
+  var rot = document.getElementById('rotator'), bars = document.querySelectorAll('#rotBar i'), ri = 0;
+  function rotate(){
+    var cur = rot.querySelector('span:not(.out)');
+    ri = (ri + 1) % phrases.length;
+    var nx = document.createElement('span');
+    nx.textContent = phrases[ri];
+    nx.className = 'pre';
+    rot.appendChild(nx);
+    void nx.offsetWidth;
+    nx.className = '';
+    if (cur){ cur.className = 'out'; setTimeout(function(){ if (cur.parentNode) cur.parentNode.removeChild(cur); }, 1100); }
+    bars.forEach(function(b,i){ b.classList.toggle('on', i === ri); });
+  }
+  var rotTimer = null;
+  function startRot(){ if (!reduced && !rotTimer) rotTimer = setInterval(function(){ if (!document.hidden) rotate(); }, 3000); }
+  startRot();
+
+  /* ---------- Score ---------- */
+  (function(){
+    var svg = document.getElementById('scoreSvg');
+    var X0 = 184, X1 = 1380, W = 1400;
+    var STAVES = [{k:'PHONE',y:104},{k:'POS',y:180},{k:'BOOKINGS',y:256},{k:'KITCHEN / FLOOR',y:332},{k:'STORE AUDIO',y:408}];
+    var EV = [
+      {id:'a',s:0,x:200,t:'Call 0:42 → Booked balayage'},
+      {id:'b',s:0,x:600,t:'Call 1:18 → Pickup order'},
+      {id:'c',s:0,x:960,t:'Call 0:31 → Curbside arrival'},
+      {id:'d',s:1,x:470,t:'Deposit $25'},
+      {id:'e',s:1,x:880,t:'Paid $31.40 · takeout'},
+      {id:'f',s:1,x:1190,t:'Checkout · chair 3'},
+      {id:'g',s:2,x:300,t:'Thu 2:00 · Maya · 90 min'},
+      {id:'h',s:2,x:510,t:'Waitlist → 3:30 filled'},
+      {id:'i',s:2,x:930,t:'Table 12 · 4-top · 7:30'},
+      {id:'l',s:3,x:200,t:'Chair 3 · color started'},
+      {id:'j',s:3,x:720,t:'Ticket #218 → no peanuts'},
+      {id:'k',s:3,x:1210,t:'Table 12 → seated'},
+      {id:'m',s:4,x:200,t:'Zone A → morning set'},
+      {id:'n',s:4,x:640,t:'Zone A → 4 pm set'},
+      {id:'o',s:4,x:1180,t:'Door → curbside ready'}
+    ];
+    var TIES = [['a','g'],['g','d'],['b','j'],['j','e'],['c','o'],['i','k']];
+    var byId = {};
+    var defs = el('defs', {}, svg);
+    var lg = el('linearGradient', {id:'phWash', x1:'0', x2:'1', y1:'0', y2:'0'}, defs);
+    el('stop', {offset:'0', 'stop-color':'var(--cobalt)', 'stop-opacity':'0'}, lg);
+    el('stop', {offset:'1', 'stop-color':'var(--cobalt)', 'stop-opacity':'.10'}, lg);
+
+    var gGrid = el('g', {'aria-hidden':'true'}, svg);
+    // time header + bar lines
+    for (var i = 0; i <= 6; i++){
+      var bx = X0 + i * (X1 - X0) / 6;
+      el('line', {x1:bx, x2:bx, y1:84, y2:428, class:'sv-bar'}, gGrid);
+      var tt = el('text', i === 6 ? {x:bx - 4, y:62, class:'sv-time', 'text-anchor':'end'} : {x:bx + 6, y:62, class:'sv-time'}, gGrid);
+      tt.textContent = '4:' + String(i*5).padStart(2,'0') + ' pm';
+    }
+    el('line', {x1:X0, x2:X1, y1:72, y2:72, class:'sv-bar'}, gGrid);
+    // bracket
+    el('path', {d:'M178 84 H172 V428 H178', class:'sv-bracket'}, gGrid);
+    // staves
+    STAVES.forEach(function(st, si){
+      var g = el('g', {class:'sv-staff'}, gGrid);
+      for (var l = -2; l <= 2; l++) el('line', {x1:X0, x2:X1, y1:st.y + l*6, y2:st.y + l*6}, g);
+      var idx = el('text', {x:24, y:st.y + 4, class:'sv-idx'}, gGrid); idx.textContent = '0' + (si+1);
+      var lb = el('text', {x:52, y:st.y + 4, class:'sv-label'}, gGrid); lb.textContent = st.k;
+    });
+    // wash + ties
+    var wash = el('rect', {x:X0, y:84, width:160, height:344, class:'ph-wash'}, svg);
+    var gTies = el('g', {'aria-hidden':'true'}, svg);
+    var gPills = el('g', {'aria-hidden':'true'}, svg);
+    EV.forEach(function(e){
+      e.y = STAVES[e.s].y;
+      e.w = Math.round(34 + e.t.length * 6.6);
+      var g = el('g', {class:'pill' + (e.s === 4 ? ' audio' : ''), transform:'translate(' + e.x + ',' + (e.y - 12) + ')'}, gPills);
+      el('rect', {width:e.w, height:24, rx:12}, g);
+      el('circle', {cx:13, cy:12, r:3.5}, g);
+      var t = el('text', {x:23, y:16}, g); t.textContent = e.t;
+      e.node = g; e.lit = false;
+      byId[e.id] = e;
+    });
+    var ties = TIES.map(function(p){
+      var s = byId[p[0]], t = byId[p[1]];
+      var down = t.y > s.y;
+      var x1 = s.x + Math.round(s.w * 0.6), y1 = down ? s.y + 12 : s.y - 12;
+      var x2 = t.x + 16, y2 = down ? t.y - 12 : t.y + 12;
+      var my = (y1 + y2) / 2;
+      var d = 'M' + x1 + ' ' + y1 + ' C' + x1 + ' ' + my + ' ' + x2 + ' ' + my + ' ' + x2 + ' ' + y2;
+      el('path', {d:d, class:'tie-base'}, gTies);
+      var lit = el('path', {d:d, class:'tie-lit', pathLength:'1'}, gTies);
+      el('circle', {cx:x1, cy:y1, r:3, class:'tie-end'}, gTies);
+      el('circle', {cx:x2, cy:y2, r:3, class:'tie-end'}, gTies);
+      return {node:lit, at:s.x + 6, lit:false};
+    });
+    // playhead
+    var ph = el('g', {'aria-hidden':'true'}, svg);
+    el('line', {x1:0, x2:0, y1:78, y2:432, class:'ph-line'}, ph);
+    el('path', {d:'M-6 72 L6 72 L0 82 Z', class:'ph-head'}, ph);
+    var lbl = el('g', {class:'ph-label', transform:'translate(-34,20)'}, ph);
+    el('rect', {width:68, height:22, rx:4}, lbl);
+    var phT = el('text', {x:34, y:15, 'text-anchor':'middle'}, lbl);
+    document.getElementById('scoreCount').textContent = '5 staves · ' + EV.length + ' events · ' + TIES.length + ' ties';
+
+    function setX(x){
+      ph.setAttribute('transform', 'translate(' + x.toFixed(1) + ',0)');
+      wash.setAttribute('x', Math.max(X0, x - 160)); wash.setAttribute('width', Math.max(0, Math.min(160, x - X0)));
+      var p = (x - X0) / (X1 - X0), secs = Math.round(p * 1800);
+      phT.textContent = '4:' + String(Math.floor(secs/60)).padStart(2,'0') + ':' + String(secs%60).padStart(2,'0');
+      EV.forEach(function(e){ var on = x >= e.x + 4; if (on !== e.lit){ e.lit = on; e.node.classList.toggle('lit', on); } });
+      ties.forEach(function(t){ var on = x >= t.at; if (on !== t.lit){ t.lit = on; t.node.classList.toggle('lit', on); } });
+    }
+    var SWEEP = 17000, HOLD = 1600, CYCLE = SWEEP + HOLD;
+    var start = performance.now() - SWEEP * 0.46, visible = true, raf = null;
+    function frame(now){
+      raf = null;
+      var e = (now - start) % CYCLE;
+      var p = e < SWEEP ? e / SWEEP : 1;
+      setX(X0 + p * (X1 - X0));
+      if (visible && !reduced) raf = requestAnimationFrame(frame);
+    }
+    if (reduced){ setX(X1); }
+    else {
+      setX(X0 + 0.46 * (X1 - X0));
+      raf = requestAnimationFrame(frame);
+      if ('IntersectionObserver' in window){
+        new IntersectionObserver(function(en){ visible = en[0].isIntersecting; if (visible && !raf && !reduced) raf = requestAnimationFrame(frame); }).observe(svg);
+      }
+    }
+  })();
+
+  /* ---------- Morph (how it works) ---------- */
+  (function(){
+    var N = 40, dotsG = document.getElementById('mdDots'), stemsG = document.getElementById('mdStems');
+    var path = document.getElementById('mdPath'), staff = document.getElementById('mdStaff');
+    var seed = 7; function rnd(){ seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+    var S0 = [], S1 = [], S2 = [], S3 = [];
+    for (var i = 0; i < N; i++){
+      S0.push({x:50 + rnd()*380, y:50 + rnd()*380, r:2.5 + rnd()*4.5});
+      var u = i/(N-1), env = Math.sin(Math.PI*u);
+      S1.push({x:40 + u*400, y:240 + Math.sin(u*Math.PI*5) * 110 * env, r:4});
+      var a = i/N * Math.PI*2 - Math.PI/2;
+      S2.push({x:240 + Math.cos(a)*150, y:240 + Math.sin(a)*150, r:5});
+    }
+    var mel = [2,4,5,7,6,4,3,5,7,8,6,5,3,2,4,6,5,3,1,2];
+    for (var c = 0; c < 20; c++){
+      var x = 58 + c*19.5;
+      S3.push({x:x, y:280 - mel[c]*12.5, r:5.5});
+      S3.push({x:x, y:280 - Math.max(0, mel[c]-2)*12.5, r:5.5});
+    }
+    var STATES = [S0, S1, S2, S3];
+    var PATHW = [0, 1, 1, 0], STAFFW = [0, 0, 0, 1];
+    var dots = [], stems = [];
+    for (var k = 0; k < N; k++){
+      dots.push(el('circle', {class:'md-dot' + (k % 9 === 4 ? ' br' : ''), r:4}, dotsG));
+      stems.push(el('line', {class:'md-stem', opacity:0}, stemsG));
+    }
+    var NAMES = ['Connect','Tune','Go live','Orchestrate'];
+    var idxEl = document.getElementById('mdIdx'), nameEl = document.getElementById('mdName'), prog = document.querySelectorAll('#mdProg i');
+    var steps = Array.prototype.slice.call(document.querySelectorAll('#steps .step'));
+    var lastActive = -1;
+    function render(p){
+      var a = Math.min(2, Math.floor(p)), t = ease(clamp(p - a, 0, 1));
+      var A = STATES[a], B = STATES[a+1], pts = [];
+      var sw = lerp(STAFFW[a], STAFFW[a+1], t);
+      for (var i = 0; i < N; i++){
+        var x = lerp(A[i].x, B[i].x, t), y = lerp(A[i].y, B[i].y, t), r = lerp(A[i].r, B[i].r, t);
+        dots[i].setAttribute('cx', x.toFixed(1)); dots[i].setAttribute('cy', y.toFixed(1)); dots[i].setAttribute('r', r.toFixed(2));
+        pts.push(x.toFixed(1) + ' ' + y.toFixed(1));
+        if (i % 2 === 0){ stems[i].setAttribute('x1', (x+5).toFixed(1)); stems[i].setAttribute('x2', (x+5).toFixed(1)); stems[i].setAttribute('y1', y.toFixed(1)); stems[i].setAttribute('y2', (y-40).toFixed(1)); stems[i].setAttribute('opacity', sw.toFixed(2)); }
+      }
+      path.setAttribute('d', 'M' + pts.join(' L') + (p > 1.5 && p < 2.5 ? ' Z' : ''));
+      path.setAttribute('opacity', lerp(PATHW[a], PATHW[a+1], t).toFixed(2));
+      staff.setAttribute('opacity', sw.toFixed(2));
+      var active = clamp(Math.round(p), 0, 3);
+      if (active !== lastActive){
+        lastActive = active;
+        idxEl.textContent = '0' + (active+1); nameEl.textContent = NAMES[active];
+        prog.forEach(function(b, i){ b.classList.toggle('on', i <= active); });
+        steps.forEach(function(s, i){ s.classList.toggle('on', i === active); });
+      }
+    }
+    function progress(){
+      var mid = window.innerHeight * 0.5, cs = steps.map(function(s){ var r = s.getBoundingClientRect(); return r.top + r.height/2; });
+      if (mid <= cs[0]) return 0;
+      if (mid >= cs[3]) return 3;
+      for (var i = 0; i < 3; i++) if (mid < cs[i+1]) return i + (mid - cs[i]) / (cs[i+1] - cs[i]);
+      return 3;
+    }
+    if (reduced){ render(3); steps.forEach(function(s){ s.classList.add('on'); }); return; }
+    var ticking = false;
+    function onScroll(){ if (!ticking){ ticking = true; requestAnimationFrame(function(){ ticking = false; render(progress()); }); } }
+    window.addEventListener('scroll', onScroll, {passive:true});
+    window.addEventListener('resize', onScroll);
+    render(progress());
+  })();
+
+  /* ---------- Repertoire rows ---------- */
+  (function(){
+    var rows = document.querySelectorAll('.rep-row');
+    rows.forEach(function(row){
+      var btn = row.querySelector('.rep-head');
+      btn.addEventListener('click', function(){
+        var open = !row.classList.contains('open');
+        rows.forEach(function(r){ r.classList.remove('open'); r.querySelector('.rep-head').setAttribute('aria-expanded','false'); });
+        if (open){ row.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+      });
+    });
+  })();
+
+  /* ---------- Voice switch ---------- */
+  (function(){
+    var sw = document.getElementById('voiceSwitch'), rootEl = document.getElementById('vsRoot');
+    var st = document.getElementById('switchState'), calls = document.getElementById('posCalls'), booked = document.getElementById('posBooked');
+    sw.addEventListener('click', function(){
+      var on = sw.getAttribute('aria-checked') !== 'true';
+      sw.setAttribute('aria-checked', on ? 'true' : 'false');
+      rootEl.classList.toggle('voice-on', on);
+      st.textContent = on ? 'On. Answering on the first ring, 24/7.' : 'Off. Calls ring your existing line.';
+      calls.textContent = on ? '3 of 3' : '—';
+      booked.textContent = on ? '2 jobs' : 'Voice off';
+    });
+  })();
+
+  /* ---------- Retail energy chart ---------- */
+  (function(){
+    var svg = document.getElementById('energySvg');
+    var E = [18,26,36,44,50,58,72,74,60,56,64,82,90,86,70,52,36,20]; // 6..23
+    var L = 56, R = 976, T = 70, B = 262;
+    function X(h){ return L + (h - 6) / 17 * (R - L); }
+    function Y(e){ return B - e / 100 * (B - T); }
+    var DP = [
+      {n:'Open', r:[6,10], lbl:'Open · 6–10 am', note:'Scheduled: doors-open chime, 9:58 am',
+        z:[['Morning acoustic',58,40],['Soft indie',54,34],['Ambient piano',50,26],['Soft indie',55,34],['Paging only',0,8]]},
+      {n:'Midday', r:[10,14], lbl:'Midday · 10 am–2 pm', note:'Scheduled: curbside pickup ready, 11:30 am',
+        z:[['Bright pop',64,66],['Upbeat indie',60,60],['Warm soul',54,44],['Upbeat indie',60,58],['Radio mix',58,40]]},
+      {n:'Afternoon', r:[14,16], lbl:'Afternoon · 2–4 pm', note:'Scheduled: no announcements, steady set',
+        z:[['Laid-back groove',61,54],['Neo-soul',58,50],['Ambient',52,34],['Neo-soul',57,48],['Radio mix',58,40]]},
+      {n:'Peak', r:[16,20], lbl:'Peak · 4–8 pm', note:'Scheduled: 4 pm energy set, Zone A · fall denim promo',
+        z:[['4 pm energy set',68,90],['4 pm energy set',64,82],['Uptempo R&B',57,60],['Energy set',63,78],['Paging + radio',60,46]]},
+      {n:'Close', r:[20,23], lbl:'Close · 8–11 pm', note:'Scheduled: store closing in 15 minutes, 10:45 pm',
+        z:[['Evening downtempo',58,36],['Downtempo',55,30],['Closing chime',52,22],['Downtempo',54,30],['Close-out paging',56,18]]}
+    ];
+    var MK = [[9+58/60,'1'],[11.5,'2'],[16,'3'],[19.75,'4'],[22.75,'5']];
+    var defs = el('defs', {}, svg);
+    var cp = el('clipPath', {id:'ecClip'}, defs);
+    var clipRect = el('rect', {x:X(16), y:0, width:X(20)-X(16), height:330}, cp);
+    // bands
+    DP.forEach(function(d, i){
+      el('rect', {x:X(d.r[0]), y:T-20, width:X(d.r[1])-X(d.r[0]), height:B-T+20, class:'ec-band' + (i%2 ? ' alt' : '')}, svg);
+    });
+    // grid
+    [25,50,75].forEach(function(v){ el('line', {x1:L, x2:R, y1:Y(v), y2:Y(v), class:'ec-grid'}, svg); });
+    el('line', {x1:L, x2:R, y1:B, y2:B, class:'ec-axis'}, svg);
+    el('line', {x1:L, x2:L, y1:T-20, y2:B, class:'ec-axis'}, svg);
+    var yl = el('text', {x:L-10, y:Y(90), 'text-anchor':'end', class:'ec-tick'}, svg); yl.textContent = 'High';
+    var yl2 = el('text', {x:L-10, y:Y(8), 'text-anchor':'end', class:'ec-tick'}, svg); yl2.textContent = 'Low';
+    var en = el('text', {x:L+8, y:T-30, class:'ec-note'}, svg); en.textContent = 'ENERGY · ILLUSTRATIVE';
+    [6,8,10,12,14,16,18,20,22,23].forEach(function(h){
+      el('line', {x1:X(h), x2:X(h), y1:B, y2:B+5, class:'ec-axis'}, svg);
+      var t = el('text', {x:X(h), y:B+20, 'text-anchor':'middle', class:'ec-tick'}, svg);
+      t.textContent = (h === 12 ? '12p' : (h > 12 ? (h-12) + 'p' : h + 'a'));
+    });
+    var dpLabels = DP.map(function(d){
+      var t = el('text', {x:(X(d.r[0])+X(d.r[1]))/2, y:B+44, 'text-anchor':'middle', class:'ec-dp'}, svg); t.textContent = d.n; return t;
+    });
+    // curve (Catmull-Rom → Bezier)
+    var P = E.map(function(e, i){ return [X(6+i), Y(e)]; });
+    var d = 'M' + P[0][0] + ' ' + P[0][1];
+    for (var i = 0; i < P.length - 1; i++){
+      var p0 = P[Math.max(0,i-1)], p1 = P[i], p2 = P[i+1], p3 = P[Math.min(P.length-1,i+2)];
+      var c1x = p1[0] + (p2[0]-p0[0])/6, c1y = p1[1] + (p2[1]-p0[1])/6, c2x = p2[0] - (p3[0]-p1[0])/6, c2y = p2[1] - (p3[1]-p1[1])/6;
+      d += ' C' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ' ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+    }
+    var area = d + ' L' + R + ' ' + B + ' L' + L + ' ' + B + ' Z';
+    el('path', {d:area, class:'ec-area'}, svg);
+    el('path', {d:d, class:'ec-line-dim'}, svg);
+    el('path', {d:area, class:'ec-area-hi', 'clip-path':'url(#ecClip)'}, svg);
+    el('path', {d:d, class:'ec-line', 'clip-path':'url(#ecClip)'}, svg);
+    // markers
+    MK.forEach(function(m){
+      var g = el('g', {class:'ec-mk'}, svg), x = X(m[0]);
+      el('line', {x1:x, x2:x, y1:T-12, y2:B}, g);
+      el('path', {d:'M' + x + ' ' + (T-30) + ' l9 9 l-9 9 l-9 -9 Z'}, g);
+      var t = el('text', {x:x, y:T-46, 'text-anchor':'middle'}, g); t.textContent = m[1];
+    });
+    // band hit areas (pointer convenience; buttons are the accessible control)
+    DP.forEach(function(dd, i){
+      var h = el('rect', {x:X(dd.r[0]), y:T-20, width:X(dd.r[1])-X(dd.r[0]), height:B-T+60, class:'ec-band-hit'}, svg);
+      h.addEventListener('click', function(){ select(i); });
+    });
+
+    var btns = document.querySelectorAll('#dps .dp'), zones = document.querySelectorAll('#zones .zone');
+    var dpName = document.getElementById('dpName'), dpNote = document.getElementById('dpNote');
+    var curX = X(16), curW = X(20) - X(16), anim = null, current = -1;
+    function tweenClip(nx, nw){
+      if (anim) cancelAnimationFrame(anim);
+      if (reduced){ curX = nx; curW = nw; clipRect.setAttribute('x', nx); clipRect.setAttribute('width', nw); return; }
+      var sx = curX, swd = curW, t0 = performance.now(), D = 750;
+      (function step(now){
+        var t = clamp((now - t0) / D, 0, 1), k = 1 - Math.pow(1 - t, 3);
+        curX = lerp(sx, nx, k); curW = lerp(swd, nw, k);
+        clipRect.setAttribute('x', curX.toFixed(1)); clipRect.setAttribute('width', curW.toFixed(1));
+        if (t < 1) anim = requestAnimationFrame(step);
+      })(t0);
+    }
+    function select(i){
+      if (i === current) return;
+      current = i;
+      var dd = DP[i];
+      btns.forEach(function(b, j){ b.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+      dpLabels.forEach(function(t, j){ t.classList.toggle('on', j === i); });
+      tweenClip(X(dd.r[0]), X(dd.r[1]) - X(dd.r[0]));
+      dpName.textContent = dd.lbl; dpNote.textContent = dd.note;
+      zones.forEach(function(z, j){
+        var set = z.querySelector('.zset'), db = z.querySelector('.zdb'), m = z.querySelector('.zmeter i'), v = dd.z[j];
+        var apply = function(){ set.textContent = v[0]; db.textContent = v[1] ? 'Level ' + v[1] + ' dB · energy ' + v[2] : 'Music off · paging live'; set.classList.remove('fade'); db.classList.remove('fade'); };
+        m.style.width = v[2] + '%';
+        if (reduced){ apply(); } else { set.classList.add('fade'); db.classList.add('fade'); setTimeout(apply, 180); }
+      });
+    }
+    btns.forEach(function(b){ b.addEventListener('click', function(){ select(+b.getAttribute('data-dp')); }); });
+    // initial state: render without fade
+    var saved = reduced; reduced = true; select(3); reduced = saved;
+  })();
+
+  /* ---------- Copy phone ---------- */
+  (function(){
+    var btn = document.getElementById('copyBtn'), lbl = document.getElementById('copyLbl'), msg = document.getElementById('copyMsg'), num = document.getElementById('phoneNum');
+    var text = '941-430-4049', timer;
+    function done(ok){
+      lbl.textContent = ok ? 'Copied' : 'Copy number';
+      msg.textContent = ok ? 'Number copied to clipboard' : 'Number selected. Press Ctrl+C or Cmd+C to copy.';
+      clearTimeout(timer); timer = setTimeout(function(){ lbl.textContent = 'Copy number'; msg.textContent = ''; }, 2600);
+    }
+    function fallback(){
+      var ok = false;
+      try {
+        var r = document.createRange(); r.selectNodeContents(num);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        ok = document.execCommand && document.execCommand('copy');
+      } catch(e){ ok = false; }
+      done(!!ok);
+    }
+    btn.addEventListener('click', function(){
+      if (navigator.clipboard && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(function(){ done(true); }, fallback);
+      } else fallback();
+    });
+  })();
+
+  /* ---------- Demo form ---------- */
+  (function(){
+    var f = document.getElementById('demoForm'), err = document.getElementById('formErr');
+    f.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      err.textContent = '';
+      var bad = Array.prototype.filter.call(f.querySelectorAll('input[required]'), function(i){ return !i.checkValidity(); });
+      f.querySelectorAll('input[required]').forEach(function(i){ i.setAttribute('aria-invalid', i.checkValidity() ? 'false' : 'true'); });
+      if (bad.length){
+        err.textContent = bad[0].type === 'email' && bad[0].value ? 'Please enter a valid work email.' : 'Please fill in your name, work email and company.';
+        bad[0].focus();
+        return;
+      }
+      var name = (f.elements.name.value || '').trim().split(/\s+/)[0];
+      var picks = Array.prototype.map.call(f.querySelectorAll('input[name="interest"]:checked'), function(i){ return i.value === 'Sound' ? 'Retail Sound' : i.value; });
+      document.getElementById('confirmTitle').textContent = 'Thanks, ' + name + '. You’re on the schedule.';
+      document.getElementById('confirmText').textContent = 'A Lumoras specialist will reach out at ' + f.elements.email.value + (picks.length ? ' to walk you through ' + picks.join(', ').replace(/, ([^,]*)$/, ' and $1') + '.' : '.');
+      f.classList.add('sent');
+      document.getElementById('confirm').focus();
+    });
+  })();
+
+  /* ---------- Reduced-motion live changes ---------- */
+  if (RM.addEventListener) RM.addEventListener('change', function(e){ reduced = e.matches; if (reduced && rotTimer){ clearInterval(rotTimer); rotTimer = null; } else startRot(); });
+})();
+</script>
+</body>
+</html>
