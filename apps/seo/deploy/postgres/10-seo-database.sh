@@ -57,6 +57,16 @@ SELECT format('GRANT USAGE ON SCHEMA public TO %I', :'app') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', :'owner', :'app') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO %I', :'owner', :'app') \gexec
 SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO %I', :'owner', :'app') \gexec
+-- Phase 3: the job queue (pg-boss) lives in its own schema, owned by the owner role, which
+-- installs and migrates it (scripts/migrate.ts); the app role only reads and writes jobs.
+SELECT format('CREATE SCHEMA IF NOT EXISTS pgboss AUTHORIZATION %I', :'owner') \gexec
+SELECT format('GRANT USAGE ON SCHEMA pgboss TO %I', :'app') \gexec
+SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA pgboss GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO %I', :'owner', :'app') \gexec
+SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA pgboss GRANT USAGE, SELECT ON SEQUENCES TO %I', :'owner', :'app') \gexec
+SELECT format('ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA pgboss GRANT EXECUTE ON FUNCTIONS TO %I', :'owner', :'app') \gexec
+-- re-running the script after pg-boss is installed grants what already exists, too
+SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA pgboss TO %I', :'app') \gexec
+SELECT format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA pgboss TO %I', :'app') \gexec
 SQL
 
 echo "seo database ready: owner role $OWNER, app role $APP"

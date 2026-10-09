@@ -8,19 +8,21 @@ import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Status";
 import { useToast } from "@/components/ui/Toast";
 import { idle, type ActionState } from "@/lib/actions-state";
+import { ROLE_LABEL, type WorkspaceRole } from "@/lib/auth/permissions";
 import { ActionFeedback, ReadOnlyNote, submitKeepingValues } from "./FormBits";
 
-type Role = "owner" | "editor" | "viewer";
+type Role = WorkspaceRole;
 export type MemberView = { memberId: string; userId: string; name: string; email: string; role: Role; joined: string; you: boolean };
 export type InvitationView = { id: string; email: string; role: Role; expires: string; inviter: string; link: string };
 
+// least powerful first: the safest choice is the default
 const ROLE_OPTIONS = [
-  { value: "viewer", label: "Viewer · client reviewer" },
+  { value: "viewer", label: "Viewer · read-only" },
+  { value: "reviewer", label: "Reviewer · approves articles" },
   { value: "editor", label: "Editor" },
   { value: "owner", label: "Owner" },
 ];
-const ROLE_TONE = { owner: "ion", editor: "info", viewer: "neutral" } as const;
-const ROLE_LABEL = { owner: "Owner", editor: "Editor", viewer: "Viewer" } as const;
+const ROLE_TONE = { owner: "ion", editor: "info", reviewer: "amber", viewer: "neutral" } as const;
 
 export function MembersPanel({
   members,

@@ -38,9 +38,12 @@ function runWorker(env: Record<string, string>) {
 }
 
 describe("worker entry", () => {
-  it("starts, logs ready without the password, and exits 0 on SIGTERM", async () => {
-    const w = runWorker({ DATABASE_URL: "postgres://seo_app:top-secret@localhost:5432/seo" });
-    await w.waitFor("worker ready");
+  it("waits for an unreachable database without crashing, never logs the password, and exits 0 on SIGTERM", async () => {
+    // nothing listens on port 1: the worker must keep retrying, not crash-loop (the database-backed
+    // start, "worker ready", is covered by test/integration/jobs.pg.test.ts)
+    const w = runWorker({ DATABASE_URL: "postgres://seo_app:top-secret@127.0.0.1:1/seo" });
+    await w.waitFor("worker starting");
+    await w.waitFor("worker waiting for the database");
     w.child.kill("SIGTERM");
     const code = await w.exited;
     assert.equal(code, 0);

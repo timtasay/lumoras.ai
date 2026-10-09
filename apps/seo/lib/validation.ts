@@ -109,6 +109,14 @@ export const siteInput = z.object({
 });
 export type SiteInput = z.infer<typeof siteInput>;
 
+/** Form checkboxes post "on"; stored JSON holds booleans. */
+const flag = z.preprocess((v) => (v === "on" || v === "true" || v === true ? true : v === "" || v === "off" || v === "false" || v === false || v == null ? false : v), z.boolean());
+
+/**
+ * SEO and structure rules (rule 13: data, not code). The lint step
+ * (lib/content/lint.ts) enforces every one of them. Fields added in Phase 3
+ * have defaults, so profiles saved before then keep validating.
+ */
 export const seoRules = z
   .object({
     titleMax: z.coerce.number().int().min(30).max(120),
@@ -118,10 +126,25 @@ export const seoRules = z
     bodyMaxWords: z.coerce.number().int().min(100).max(20_000),
     internalLinksMin: z.coerce.number().int().min(0).max(30),
     internalLinksMax: z.coerce.number().int().min(0).max(50),
+    // Phase 3
+    /** A direct answer of this many sentences before the first heading (0 turns the rule off). */
+    introMinSentences: z.coerce.number().int().min(0).max(10).default(0),
+    introMaxSentences: z.coerce.number().int().min(0).max(20).default(0),
+    /** At least this many "##" sections. */
+    minSections: z.coerce.number().int().min(0).max(30).default(2),
+    /** The page's H1 is the title: no "#" heading in the body. */
+    noH1InBody: flag.default(true),
+    noEmDash: flag.default(false),
+    noEmoji: flag.default(false),
+    /** Allowed cover-art kinds (empty: any), how many chips, and their maximum length. */
+    coverKinds: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
+    coverChips: z.coerce.number().int().min(0).max(6).default(0),
+    coverChipMax: z.coerce.number().int().min(4).max(80).default(22),
   })
   .refine((r) => r.descriptionMin <= r.descriptionMax, { message: "Description minimum is above the maximum", path: ["descriptionMin"] })
   .refine((r) => r.bodyMinWords <= r.bodyMaxWords, { message: "Body minimum is above the maximum", path: ["bodyMinWords"] })
-  .refine((r) => r.internalLinksMin <= r.internalLinksMax, { message: "Internal-link minimum is above the maximum", path: ["internalLinksMin"] });
+  .refine((r) => r.internalLinksMin <= r.internalLinksMax, { message: "Internal-link minimum is above the maximum", path: ["internalLinksMin"] })
+  .refine((r) => r.introMinSentences <= r.introMaxSentences || r.introMaxSentences === 0, { message: "Direct-answer minimum is above the maximum", path: ["introMinSentences"] });
 export type SeoRules = z.infer<typeof seoRules>;
 
 export const DEFAULT_SEO_RULES: SeoRules = {
@@ -132,7 +155,22 @@ export const DEFAULT_SEO_RULES: SeoRules = {
   bodyMaxWords: 1100,
   internalLinksMin: 3,
   internalLinksMax: 6,
+  introMinSentences: 0,
+  introMaxSentences: 0,
+  minSections: 2,
+  noH1InBody: true,
+  noEmDash: false,
+  noEmoji: false,
+  coverKinds: [],
+  coverChips: 0,
+  coverChipMax: 22,
 };
+
+/** Reads a stored seo_rules object (any age) into the current shape, defaults filled in. */
+export function readSeoRules(stored: unknown): SeoRules {
+  const r = seoRules.safeParse({ ...DEFAULT_SEO_RULES, ...(stored && typeof stored === "object" ? stored : {}) });
+  return r.success ? r.data : DEFAULT_SEO_RULES;
+}
 
 export const keyPage = z.object({
   url: httpsUrl.or(z.string().trim().regex(/^https?:\/\//, "Use a full address").max(2048)),

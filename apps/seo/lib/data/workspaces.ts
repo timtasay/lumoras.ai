@@ -72,7 +72,7 @@ export async function listMembers(db: pg.Pool, workspaceId: string): Promise<Mem
     await db.query<MemberRow>(
       `SELECT m.id AS member_id, u.id AS user_id, u.name, u.email, u.image, m.role, m.created_at AS joined_at
        FROM auth_member m JOIN auth_user u ON u.id = m.user_id WHERE m.organization_id = $1
-       ORDER BY CASE m.role WHEN 'owner' THEN 0 WHEN 'editor' THEN 1 ELSE 2 END, u.email`,
+       ORDER BY CASE m.role WHEN 'owner' THEN 0 WHEN 'editor' THEN 1 WHEN 'reviewer' THEN 2 ELSE 3 END, u.email`,
       [workspaceId],
     )
   ).rows;

@@ -5,6 +5,8 @@
  *   POST {gsc}/sites/{siteUrl}/searchAnalytics/query    Search Console API v3 (updated 2026-08-11)
  *   GET  {admin}/accountSummaries                      GA4 Admin API v1beta (updated 2026-06-18)
  *   POST {data}/properties/{id}:runReport              GA4 Data API v1beta (updated 2026-04-23)
+ *   POST {inspect}                                      URL Inspection API v1 (page updated 2024-07-23, read 9 October 2026;
+ *                                                       webmasters.readonly is enough)
  * Read-only scopes. Responses are untrusted data and read defensively. No
  * Indexing API.
  */
@@ -97,4 +99,21 @@ export async function ga4RunReport(e: GoogleEndpoints, token: string, property: 
     arr(o.metricValues).forEach((v, i) => (out[r.metrics[i]] = num(obj(v).value)));
     return out;
   });
+}
+
+export type UrlInspection = { verdict: string; coverageState: string; indexingState: string; lastCrawlTime: string | null; googleCanonical: string | null; robotsTxtState: string };
+
+/** Search Console URL inspection of one URL in a property (read-only scope). */
+export async function gscInspectUrl(e: GoogleEndpoints, token: string, siteUrl: string, inspectionUrl: string, f: typeof fetch = fetch): Promise<UrlInspection> {
+  const j = await call(e.inspect, token, f, { inspectionUrl, siteUrl, languageCode: "en-US" });
+  const r = obj(obj(obj(j).inspectionResult).indexStatusResult);
+  const s = (v: unknown) => (typeof v === "string" ? v.slice(0, 300) : "");
+  return {
+    verdict: s(r.verdict) || "VERDICT_UNSPECIFIED",
+    coverageState: s(r.coverageState),
+    indexingState: s(r.indexingState),
+    lastCrawlTime: s(r.lastCrawlTime) || null,
+    googleCanonical: s(r.googleCanonical) || null,
+    robotsTxtState: s(r.robotsTxtState),
+  };
 }

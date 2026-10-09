@@ -32,6 +32,7 @@ export const ac = createAccessControl({ ...defaultStatements });
 export const orgRoles = {
   owner: ac.newRole(betterAuthStatements("owner")),
   editor: ac.newRole(betterAuthStatements("editor")),
+  reviewer: ac.newRole(betterAuthStatements("reviewer")),
   viewer: ac.newRole(betterAuthStatements("viewer")),
 };
 

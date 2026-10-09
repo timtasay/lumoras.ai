@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { Icon } from "@/components/Icons";
 import { Button, IconButton } from "@/components/ui/Button";
-import { TextareaField, TextField } from "@/components/ui/Fields";
+import { Checkbox, TextareaField, TextField } from "@/components/ui/Fields";
 import { idle, type ActionState } from "@/lib/actions-state";
 import { ActionFeedback, ReadOnlyNote, submitKeepingValues } from "./FormBits";
 
@@ -19,7 +19,7 @@ export type BrandValues = {
   product_facts: string[];
   forbidden_claims: string[];
   voice_rules: string[];
-  seo_rules: Record<string, number>;
+  seo_rules: Record<string, unknown>;
   banned_words: string[];
   example_articles: string[];
   prefilled_at: string | null;
@@ -33,6 +33,16 @@ const SEO_FIELDS: [string, string, string][] = [
   ["bodyMaxWords", "Body, max words", ""],
   ["internalLinksMin", "Internal links, min", ""],
   ["internalLinksMax", "Internal links, max", ""],
+  ["minSections", "Sections (##), min", ""],
+  ["introMinSentences", "Direct answer, min sentences", "0 turns it off"],
+  ["introMaxSentences", "Direct answer, max sentences", ""],
+  ["coverChips", "Cover chips", "0: no chips"],
+  ["coverChipMax", "Cover chip, max characters", ""],
+];
+const SEO_FLAGS: [string, string, string][] = [
+  ["noH1InBody", "No # heading in the body", "The page title is the H1."],
+  ["noEmDash", "No em dashes", "Flags every — in the copy."],
+  ["noEmoji", "No emoji", ""],
 ];
 
 function Section({ n, title, text, children }: { n: number; title: string; text: string; children: React.ReactNode }) {
@@ -153,7 +163,20 @@ export function BrandForm({
       <Section n={6} title="SEO rules" text="Length and link limits every article must meet.">
         <div className="bf-seo">
           {SEO_FIELDS.map(([k, label, hint]) => (
-            <TextField key={k} label={label} name={`seo.${k}`} type="number" inputMode="numeric" defaultValue={values.seo_rules[k]} hint={hint || undefined} error={fe[`seoRules.${k}`]} disabled={dis} />
+            <TextField key={k} label={label} name={`seo.${k}`} type="number" inputMode="numeric" defaultValue={String(values.seo_rules[k] ?? "")} hint={hint || undefined} error={fe[`seoRules.${k}`]} disabled={dis} />
+          ))}
+        </div>
+        <TextField
+          label="Cover art kinds"
+          name="seo.coverKinds"
+          defaultValue={Array.isArray(values.seo_rules.coverKinds) ? (values.seo_rules.coverKinds as string[]).join(", ") : ""}
+          hint="Comma separated; empty allows any cover. lumoras.ai: call, people, checklist, ticket, calendar, chart."
+          error={fe["seoRules.coverKinds"]}
+          disabled={dis}
+        />
+        <div className="bf-flags">
+          {SEO_FLAGS.map(([k, label, hint]) => (
+            <Checkbox key={k} label={label} hint={hint || undefined} name={`seo.${k}`} defaultChecked={values.seo_rules[k] === true} disabled={dis} />
           ))}
         </div>
       </Section>

@@ -1,5 +1,7 @@
 /**
- * Applies pending SQL migrations as the owner role.
+ * Applies pending SQL migrations as the owner role, then installs or migrates
+ * the job queue's schema (pg-boss, schema "pgboss") and its queues, also as
+ * the owner: the web and worker connect as the app role and never run DDL.
  *
  *   pnpm --filter seo migrate            apply pending migrations
  *   pnpm --filter seo migrate --dry-run  show what would be applied
@@ -11,6 +13,7 @@
 import { EnvError, readMigrateEnv } from "../lib/env.ts";
 import { createLogger, redactUrl } from "../lib/log.ts";
 import { DEFAULT_MIGRATIONS_DIR, MigrationError, runMigrations } from "../lib/db/migrate.ts";
+import { installJobSchema } from "../lib/jobs/install.ts";
 
 async function main(): Promise<number> {
   let env;
@@ -27,6 +30,7 @@ async function main(): Promise<number> {
     const r = await runMigrations({ connectionString: env.ownerUrl, dir: DEFAULT_MIGRATIONS_DIR, log, dryRun });
     if (dryRun) log.info("migrate dry run: nothing applied", { wouldApply: r.pending, previouslyApplied: r.upToDate });
     else log.info(r.applied.length ? "migrate done" : "migrate: up to date", { applied: r.applied, previouslyApplied: r.upToDate });
+    if (!dryRun) await installJobSchema(env.ownerUrl, (msg, fields) => log.info(msg, fields));
     return 0;
   } catch (err) {
     log.error("migrate failed", {
