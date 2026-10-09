@@ -1,0 +1,115 @@
+{
+  "hero": {
+    "eyebrow": "About us",
+    "title": "We build the system behind every sound your business makes.",
+    "lede": "Lumoras LLC makes AI voice, point of sale and in-store audio that work as one system. The phone, the front counter, the checkout and the music on the floor, run from the same calendar, the same menu and the same customer record."
+  },
+  "story": [
+    {
+      "time": "6:52 AM · Tuesday",
+      "title": "A call answered",
+      "text": "A homeowner wakes up to a cold house and calls the HVAC company before the office opens. The voice agent picks up on the first ring, asks the right questions about the furnace, books the first open slot and texts the arrival window."
+    },
+    {
+      "time": "11:10 AM · Tuesday",
+      "title": "A booking made",
+      "text": "A patient calls the dental office to move a cleaning while the front desk is checking someone in. The cleaning moves to next Tuesday at 9:00, the new-patient forms go out by text, and the desk never had to pick up the phone."
+    },
+    {
+      "time": "7:38 PM · Tuesday",
+      "title": "A sale rung up",
+      "text": "A table of six asks to split the check by item at a busy restaurant. The server splits it in a few taps, each guest gets a tip prompt, and a pickup order taken by phone a minute earlier is already in the same kitchen queue."
+    },
+    {
+      "time": "8:15 PM · Tuesday",
+      "title": "A customer brought back",
+      "text": "A salon client called last week, asked about color and never booked. The owner reads a drafted follow-up text, approves it from her phone, and by the time she locks up the client has replied and booked Thursday with her usual stylist."
+    }
+  ],
+  "intro": "Most service businesses run on a patchwork. One tool for the calendar, another for payments, a voicemail box nobody checks after six, and a radio behind the counter. Every gap between those pieces is a missed call, a double booking or a customer who quietly goes elsewhere. Lumoras closes those gaps. We build one system that answers the phone, books the visit, rings up the sale and sets the sound of the room, so the people who run the business can spend their time on the customers standing in front of them.",
+  "build": {
+    "title": "What we build",
+    "items": [
+      {
+        "name": "Lumoras POS",
+        "text": "A point of sale for any service business. The same core that runs salons and restaurants, configured for clinics, auto shops, home services, studios and repair shops.",
+        "points": [
+          "Appointments or tickets, with waitlists that refill cancellations",
+          "Payments at the chair, the table or the counter",
+          "Staff apps, commissions and tip splits",
+          "Inventory and multi-location reporting"
+        ]
+      },
+      {
+        "name": "Lumoras Voice",
+        "text": "An AI receptionist that already knows the vocabulary of your trade. It plugs into Lumoras POS or the system you use now, and you can switch it on whenever you are ready.",
+        "points": [
+          "Answers on the first ring, day and night",
+          "Books into your live calendar and takes orders and deposits",
+          "Follows callers into their language",
+          "Warm transfer to a person with the context already said"
+        ]
+      },
+      {
+        "name": "Lumoras Sound",
+        "text": "Custom sound orchestration for retail stores. Music, announcements and paging that follow the time of day and sound like your brand in every location.",
+        "points": [
+          "Zoned music for the floor, fitting rooms, entrance and checkout",
+          "Dayparted playlists that follow traffic",
+          "Automated announcements and voice paging",
+          "Every location synchronized from one console"
+        ]
+      }
+    ]
+  },
+  "products": [
+    {
+      "name": "Sonorch",
+      "url": "https://sonorch.ai",
+      "text": "POS and AI receptionist for salons, barbers, spas, nail and lash studios and med spas. Answers every call, books and reschedules, handles deposits and no-show policies, and checks out at the chair."
+    },
+    {
+      "name": "SeasonX",
+      "url": "https://seasonx.ai",
+      "text": "AI receptionist and point of sale for restaurants, from full-service dining to cafés, taprooms and takeout kitchens. Takes reservations and phone orders, runs the floor, and sends tickets to a built-in kitchen display."
+    },
+    {
+      "name": "KitchenSpot",
+      "url": "https://kitchenspot.ai",
+      "text": "Restaurant discovery for diners. Every restaurant in town, its full menu, dish-by-dish ratings from verified diners, and pickup ordering that connects to SeasonX."
+    }
+  ],
+  "principles": {
+    "title": "How we work",
+    "items": [
+      {
+        "title": "Your calendar is the source of truth",
+        "text": "The voice agent only offers times you can actually take, prices you actually charge and dishes you actually serve. It reads from your real calendar, menu and service list, so what callers hear matches what happens when they arrive."
+      },
+      {
+        "title": "A person when it matters",
+        "text": "Some calls need judgment, care or a decision only you can make. Those go to a person through a warm transfer, with a summary of what was already said, so nobody has to repeat themselves."
+      },
+      {
+        "title": "You approve what we send",
+        "text": "Follow-up texts and win-back messages are drafted for you and wait for your approval. Nothing goes out to your customers in your name until you say so."
+      },
+      {
+        "title": "Card data stays with the processor",
+        "text": "Card payments are handled by the payment processor. Lumoras never stores card numbers, which keeps your customers' cards out of your systems and ours."
+      },
+      {
+        "title": "Start with the POS, add voice whenever",
+        "text": "Voice is a switch, not a migration. Run the POS on its own for as long as you like, then turn on the AI receptionist on day one or a year later, with the same customers, calendar and menu."
+      },
+      {
+        "title": "Built for the trade",
+        "text": "A balayage is not a gloss, and a 4-top at 7:30 is not a pickup order. We build each product around how its industry actually talks and works, instead of asking every business to fit one generic script."
+      }
+    ]
+  },
+  "closing": {
+    "title": "Hear it on your own business.",
+    "text": "Tell us how you take calls, bookings and payments today, and we will show you how Lumoras fits around it. Start with the POS, add voice when you are ready, and bring your stores into one sound."
+  }
+}
