@@ -1,0 +1,177 @@
+{
+  "groups": [
+    {
+      "id": "basics",
+      "title": "The basics",
+      "intro": "Who we are and how the products fit together.",
+      "items": [
+        {
+          "q": "What is Lumoras?",
+          "a": "Lumoras LLC builds sound orchestration for business: AI voice, point of sale and in-store audio working as one system. The family includes Sonorch for salons and spas, SeasonX for restaurants, KitchenSpot for restaurant discovery, and the Lumoras POS, Voice and Sound platform for other businesses."
+        },
+        {
+          "q": "How do Sonorch, SeasonX and the Lumoras platform relate?",
+          "a": "Sonorch and SeasonX are Lumoras products built for specific industries. Sonorch serves salons, barbers, spas, nail and lash studios and med spas, and SeasonX serves restaurants. Lumoras POS, Lumoras Voice and Lumoras Sound bring the same core to other service businesses and to retail stores."
+        },
+        {
+          "q": "What is KitchenSpot?",
+          "a": "KitchenSpot is a restaurant discovery app with every restaurant in town, full menus, dish-by-dish ratings and reviews from verified diners, and pickup ordering. Its launch cities are Sarasota, Tampa, Orlando and Miami, and it connects to SeasonX."
+        },
+        {
+          "q": "Do I need to use every product?",
+          "a": "No. You can start with the POS and add voice later, run Lumoras Voice alongside another system, or use Lumoras Sound for in-store audio. Pick the pieces you need today and add the rest when you are ready."
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "title": "AI receptionist",
+      "intro": "How the AI receptionist answers, books and hands off calls.",
+      "items": [
+        {
+          "q": "What does the AI receptionist do?",
+          "a": "It answers your business line on the first ring, 24 hours a day, works out what the caller needs and gets it done. That means booking and moving appointments, taking reservations and phone orders, and answering common questions. Bookings land on the same live calendar your staff uses."
+        },
+        {
+          "q": "Can it transfer a call to a real person?",
+          "a": "Yes. You set escalation rules, such as transferring when a caller asks for a person or when a request falls outside your policies, and you choose who receives the transfer."
+        },
+        {
+          "q": "Does it recognize returning customers?",
+          "a": "Yes. It recognizes regulars by their phone number and works from the same customer records as your POS, so a returning client does not have to start from scratch."
+        },
+        {
+          "q": "Do I need a new phone number?",
+          "a": "No. You keep your existing number and forward calls to the AI receptionist, either every call or only the ones nobody picks up. Our knowledge base guide to call forwarding for business explains the options."
+        },
+        {
+          "q": "Can I turn on voice after I start with the POS?",
+          "a": "Yes. Lumoras Voice can be switched on at any time, on day one or a year later. It uses the same customers, calendar and menu you already keep in the POS, so there is nothing to move."
+        },
+        {
+          "q": "What languages does it speak?",
+          "a": "Lumoras Voice is multilingual. Tell us which languages your callers use when you book a demo, and we will show you how it handles them."
+        }
+      ]
+    },
+    {
+      "id": "pos",
+      "title": "Point of sale",
+      "intro": "Point of sale for service businesses and restaurants.",
+      "items": [
+        {
+          "q": "What is Lumoras POS?",
+          "a": "Lumoras POS is the point of sale core behind Sonorch and SeasonX, configured for any service business, including clinics, dental offices, auto service, home services, fitness, pet grooming, tutoring and repair shops. It covers appointments or tickets, payments, staff, inventory and multiple locations."
+        },
+        {
+          "q": "What does the salon POS include?",
+          "a": "Sonorch includes online booking at any hour, staff schedules, two-way text reminders, a walk-in check-in kiosk, a waitlist that refills cancellations and checkout at the chair. Staff get their own apps with no shared logins, and commission and tip reports are payroll-ready."
+        },
+        {
+          "q": "How does the restaurant POS work?",
+          "a": "SeasonX gives you a live floor view by section, sends modifiers straight to the kitchen and runs a kitchen display on a tablet or screen you already have. It splits checks by item or evenly, prompts for tips on screen and takes card payments on a Zettle reader."
+        },
+        {
+          "q": "Does it keep working if the internet goes down?",
+          "a": "SeasonX has an offline mode: orders and cash keep working without internet, and card payments wait and sync when the connection comes back. For other Lumoras products, ask during your demo how offline use applies to your setup."
+        }
+      ]
+    },
+    {
+      "id": "sound",
+      "title": "Retail Sound",
+      "intro": "Music, announcements and paging for retail stores.",
+      "items": [
+        {
+          "q": "What is Lumoras Sound?",
+          "a": "Lumoras Sound is custom sound orchestration for retail stores. It runs zoned in-store music, dayparted playlists that follow traffic and time of day, a branded audio identity, automated announcements and voice paging, all synchronized across locations from one console."
+        },
+        {
+          "q": "Can different parts of my store play different music?",
+          "a": "Yes. You divide the store into zones, such as the sales floor, fitting rooms and checkout, and each zone can follow its own playlist and schedule through the day."
+        },
+        {
+          "q": "Which announcements can it automate?",
+          "a": "Common ones are store closing reminders, curbside pickup ready messages and promotions. Staff can also page by voice when something needs a live announcement."
+        },
+        {
+          "q": "Can I manage several stores at once?",
+          "a": "Yes. Every location is synchronized from one console, so you can roll out a playlist or announcement to every store at once or adjust a single location."
+        }
+      ]
+    },
+    {
+      "id": "industries",
+      "title": "Industries",
+      "intro": "Which product fits your kind of business.",
+      "items": [
+        {
+          "q": "Which industries does Lumoras serve?",
+          "a": "Salons and spas, restaurants, retail stores, medical and dental clinics, med spas, auto service, home services, fitness and wellness studios, hotels, veterinary and pet grooming, professional services, property management, education and repair shops. Each voice agent is built around the vocabulary of its trade."
+        },
+        {
+          "q": "I run a salon or spa. Which product is for me?",
+          "a": "Sonorch, at sonorch.ai. It combines a POS and an AI receptionist for salons, barbers, spas, nail and lash studios and med spas, and it handles bookings, deposits, no-show policies and rebooking regulars."
+        },
+        {
+          "q": "I run a restaurant. Which product is for me?",
+          "a": "SeasonX, at seasonx.ai. It is an AI receptionist and point of sale for restaurants that takes reservations and phone orders, only offers times you can seat, and sends takeout into the same kitchen queue."
+        },
+        {
+          "q": "I run a clinic, dental office or home services company. What fits?",
+          "a": "Lumoras POS with Lumoras Voice. For a dental office, the agent can move a cleaning to next Tuesday and send new-patient forms. For home services, it can triage a no-heat call, book the after-hours tech and text the ETA."
+        }
+      ]
+    },
+    {
+      "id": "pricing-and-setup",
+      "title": "Pricing and setup",
+      "intro": "What it costs and how you get started.",
+      "items": [
+        {
+          "q": "How much does Sonorch cost?",
+          "a": "Sonorch has a free tier for cash and gift card sales. POS plans start at $99 a month for up to 5 staff, month to month, with setup included and the AI receptionist with unlimited calls. Current plans are listed on sonorch.ai."
+        },
+        {
+          "q": "How much does SeasonX cost?",
+          "a": "SeasonX pricing is on seasonx.ai/pricing. You can also book a walkthrough at seasonx.ai/demo to go through it with the team."
+        },
+        {
+          "q": "How is Lumoras Sound or an enterprise rollout priced?",
+          "a": "Pricing for Lumoras Sound and for enterprise rollouts depends on your locations and setup. Book a demo to talk with our sales team."
+        },
+        {
+          "q": "How does setup work?",
+          "a": "First, connect your POS data, calendar, menu or service list, or start on Lumoras POS. Next, tune the voice, greeting, policies, hours and escalation rules. Then go live by forwarding your number and pairing your store speakers, and run every call, sale and sound from one console."
+        },
+        {
+          "q": "Is there a long-term contract?",
+          "a": "Sonorch POS plans are month to month. For SeasonX, Lumoras Sound and enterprise plans, ask about terms during your walkthrough or demo."
+        }
+      ]
+    },
+    {
+      "id": "data-and-trust",
+      "title": "Data and trust",
+      "intro": "How we handle payments, customer data and access.",
+      "items": [
+        {
+          "q": "Do you store card numbers?",
+          "a": "No. Card data is handled by the payment processor, and Lumoras never stores card numbers."
+        },
+        {
+          "q": "Who owns my customer data?",
+          "a": "You do. You can export your customer data, and you can delete customer records when a customer asks or when you leave."
+        },
+        {
+          "q": "Do you support SSO and role-based access?",
+          "a": "Yes, for enterprise accounts. Lumoras supports single sign-on and SCIM provisioning, role-based access so each person sees only what their job needs, and audit logs."
+        },
+        {
+          "q": "Which security certifications do you have?",
+          "a": "Ask us during the demo for current security documentation, and we will walk you through what applies to your rollout."
+        }
+      ]
+    }
+  ]
+}
