@@ -91,4 +91,4 @@ Many businesses keep the person and let the AI take overflow, after-hours calls 
 - Divide by the bookings each one could realistically finish, and compare cost per booking.
 - Read [what an AI receptionist is](/knowledge-base/what-is-an-ai-receptionist) if you are new to how they work.
 
-If you run a service business on any system, Lumoras POS gives you the same core, with Lumoras Voice ready to switch on when you want it. You can [see how the POS works](/#pos) or [book a demo](/demo).
+If you run a service business on any system, Lumoras POS gives you the same core, with Lumoras Voice ready to switch on when you want it. Retail stores can use Lumoras Voice on its own for order status, cancellation, change and return calls. You can [see how the POS works](/#pos) or [book a demo](/demo).

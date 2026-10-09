@@ -25,7 +25,7 @@ const CONTENT_DIR = process.env.LUMORAS_CONTENT_DIR
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
 
-export const ART_KINDS = ["call", "people", "checklist", "ticket", "calendar", "music", "chart", "zones"] as const;
+export const ART_KINDS = ["call", "people", "checklist", "ticket", "calendar", "chart"] as const;
 export type ArtKind = (typeof ART_KINDS)[number];
 export type Art = { kind: ArtKind; chips: [string, string] };
 
@@ -75,9 +75,9 @@ export const KB_TOPICS = [
     blurb: "Why calls go unanswered and how to stop losing the business behind them.",
   },
   {
-    id: "store-audio",
-    title: "Store audio",
-    blurb: "Music, paging and announcements that run a store's sound on schedule.",
+    id: "retail-orders",
+    title: "Retail orders",
+    blurb: "Order status, cancellations, changes and returns, answered by phone.",
   },
 ] as const;
 export type KbTopicId = (typeof KB_TOPICS)[number]["id"];
@@ -95,12 +95,11 @@ export const HELP_CATEGORIES = [
   { id: "getting-started", title: "Getting started", blurb: "Set up, pick a product and understand billing." },
   { id: "phone-and-voice", title: "Phone and voice", blurb: "Numbers, hours, transfers and call transcripts." },
   { id: "pos-and-payments", title: "POS and payments", blurb: "Card payments, services and staff." },
-  { id: "retail-sound", title: "Retail Sound", blurb: "Store zones, playlists and announcements." },
   { id: "account-and-data", title: "Account and data", blurb: "Locations, sign-in and customer data." },
 ] as const;
 export type HelpCategoryId = (typeof HELP_CATEGORIES)[number]["id"];
 
-export const APPLIES_TO = ["Sonorch", "SeasonX", "Lumoras POS", "Lumoras Voice", "Lumoras Sound"] as const;
+export const APPLIES_TO = ["Sonorch", "SeasonX", "Lumoras POS", "Lumoras Voice"] as const;
 
 export type HelpArticle = Doc & {
   category: HelpCategoryId;

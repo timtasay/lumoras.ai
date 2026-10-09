@@ -10,9 +10,9 @@ import { pageMeta } from "@/lib/seo";
 import { tone } from "@/lib/tones";
 
 export const metadata: Metadata = pageMeta({
-  title: "About us: voice, POS and sound as one system",
+  title: "About us: voice and POS as one system",
   description:
-    "Lumoras LLC builds AI receptionists, a POS for service businesses and in-store sound for retail, plus Sonorch, SeasonX and KitchenSpot. Here's how we work.",
+    "Lumoras LLC builds AI receptionists and voice agents for every industry, including retail order support, a POS for service businesses, plus Sonorch, SeasonX and KitchenSpot. Here's how we work.",
   path: "/about",
 });
 
@@ -27,7 +27,7 @@ export default function AboutPage() {
           <PageHero
             eyebrow="About us"
             title="About Lumoras"
-            lede="Lumoras LLC builds sound orchestration for business: AI voice, point of sale and in-store audio working as one system. More about us is coming soon."
+            lede="Lumoras LLC builds sound orchestration for business: AI voice and point of sale working as one system. More about us is coming soon."
           />
         ) : (
           <>

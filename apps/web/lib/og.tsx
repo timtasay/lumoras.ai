@@ -63,7 +63,7 @@ export function ogImage({ eyebrow, title, footer = "lumoras.ai" }: { eyebrow?: s
           />
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#C3CAD6" }}>
             <span>{footer}</span>
-            <span style={{ color: "#4DF3D0" }}>AI receptionist · Voice · POS · Sound</span>
+            <span style={{ color: "#4DF3D0" }}>AI receptionist · Voice · POS</span>
           </div>
         </div>
       </div>

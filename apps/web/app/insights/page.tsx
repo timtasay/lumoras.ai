@@ -11,7 +11,7 @@ import { pageMeta } from "@/lib/seo";
 export const metadata: Metadata = pageMeta({
   title: "Insights for owners and operators",
   description:
-    "Practical reads on AI receptionists, missed calls, no-shows, reminders and store music, for the people who run salons, restaurants, clinics and shops.",
+    "Practical reads on AI receptionists, missed calls, no-shows, reminders and retail order calls, for the people who run salons, restaurants, clinics and shops.",
   path: "/insights",
 });
 
@@ -27,7 +27,7 @@ export default function InsightsPage() {
         <PageHero
           eyebrow="Insights"
           title="For the people running the business."
-          lede="Short, practical reads on phones, bookings, payments and the sound of your store. Written for owners and operators who would rather be on the floor than in a manual."
+          lede="Short, practical reads on phones, bookings, payments and the orders your customers call about. Written for owners and operators who would rather be on the floor than in a manual."
         />
 
         {all.length === 0 ? (

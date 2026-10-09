@@ -14,7 +14,7 @@ import { tone } from "@/lib/tones";
 export const metadata: Metadata = pageMeta({
   title: "Help center: setup and how-to guides",
   description:
-    "Step-by-step help for Lumoras: connect your phone number, set answering hours, transfer live calls, take card payments, set up store zones and manage data.",
+    "Step-by-step help for Lumoras: connect your phone number, set answering hours, transfer live calls, review call transcripts, take card payments and manage data.",
   path: "/help-center",
 });
 
@@ -23,8 +23,8 @@ const POPULAR = [
   "connect-your-phone-number",
   "live-call-transfer",
   "answering-hours",
+  "calls-and-transcripts",
   "take-card-payments",
-  "set-up-store-zones",
 ];
 
 export default function HelpCenterPage() {
@@ -42,7 +42,7 @@ export default function HelpCenterPage() {
           center
           eyebrow="Help center"
           title="How can we help?"
-          lede="Setup steps and how-to articles for Lumoras POS, Lumoras Voice, Lumoras Sound, Sonorch and SeasonX."
+          lede="Setup steps and how-to articles for Lumoras Voice, Lumoras POS, Sonorch and SeasonX."
         >
           {articles.length > 0 ? <HelpSearch items={index} /> : null}
         </PageHero>
@@ -112,7 +112,7 @@ export default function HelpCenterPage() {
           <div className="link-cards">
             <Link className="link-card panel" href="/knowledge-base">
               <Icon name="book" />
-              <span><strong>Knowledge base</strong><span>In-depth guides to AI receptionists, voice AI and store audio.</span></span>
+              <span><strong>Knowledge base</strong><span>In-depth guides to AI receptionists, voice AI and retail order calls.</span></span>
             </Link>
             <Link className="link-card panel" href="/faq">
               <Icon name="list" />

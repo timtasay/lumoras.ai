@@ -16,13 +16,13 @@ const VI: Record<string, ReactNode> = {
   building: (<><path d="M5 21V4h10v17M15 9h4v12M3 21h18" /><path d="M8 8h1M11 8h1M8 12h1M11 12h1M8 16h1M11 16h1" /></>),
 };
 
-type Vert = { name: string; icon: keyof typeof VI; col: string; ex: string; badge: string; href?: string; sound?: boolean };
+type Vert = { name: string; icon: keyof typeof VI; col: string; ex: string; badge: string; href?: string };
 
 /** The twelve AI voice verticals. Card order = particle constellation cluster order. */
 export const VERTS: Vert[] = [
   { name: "Salons & spas", icon: "scissors", col: "var(--v-salon)", ex: "Books a 90-minute balayage with Maya on Thursday and takes the $25 deposit.", badge: "Sonorch", href: "https://sonorch.ai" },
   { name: "Restaurants", icon: "fork", col: "var(--v-restaurant)", ex: "Takes a pickup order for two birria tacos and an horchata, ready at 6:40.", badge: "SeasonX", href: "https://seasonx.ai" },
-  { name: "Retail stores", icon: "bag", col: "var(--v-retail)", ex: "Plays the 4 pm energy set in Zone A and announces curbside pickup at the door.", badge: "Lumoras Sound", href: "#sound", sound: true },
+  { name: "Retail & e-commerce", icon: "bag", col: "var(--v-retail)", ex: "Finds order 20814, confirms it is out for delivery by 8 pm and texts the tracking link.", badge: "Lumoras Voice", href: "#retail" },
   { name: "Medical & dental clinics", icon: "med", col: "var(--v-dental)", ex: "Moves a cleaning to next Tuesday and sends the new-patient forms.", badge: "Lumoras Voice" },
   { name: "Med spas", icon: "drop", col: "var(--v-salon)", ex: "Screens a first-time injectables caller, books the consult and holds it with a deposit.", badge: "Sonorch", href: "https://sonorch.ai" },
   { name: "Auto service", icon: "wrench", col: "var(--v-auto)", ex: "Quotes the 60,000-mile service and holds the 8:00 drop-off bay.", badge: "Lumoras Voice" },
@@ -54,7 +54,7 @@ export function Verticals() {
             <h3>{v.name}</h3>
             <p>{v.ex}</p>
             {v.href ? (
-              <a className={v.sound ? "badge sound" : "badge"} href={v.href}>
+              <a className="badge" href={v.href}>
                 <i aria-hidden="true" />
                 {v.badge}
               </a>

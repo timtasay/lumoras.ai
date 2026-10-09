@@ -1,6 +1,6 @@
 /**
  * Spectrum particle field (from prototypes/c-spectrum.html), running behind the
- * Voice Core homepage. Nine formations (sphere, waveform, receipt, speaker
+ * Voice Core homepage. Nine formations (sphere, waveform, receipt, call
  * rings, constellation, orbits, globe, stream, sphere) with staggered morphs.
  * The constellation clusters sit behind the vertical cards (#vgrid .vcard) so a
  * hovered card lights its own cluster. Colours come from CSS tokens and
@@ -200,19 +200,19 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     }
   })();
 
-  // 3 rings (speaker zones)
+  // 3 rings (retail order calls; homeState.dp picks the call, which sets ring speed and hue)
   const SPK = [[-0.62, -0.42], [0.58, -0.5], [-0.42, 0.5], [0.66, 0.4]];
   const RING_N = 7;
   const RS = new Uint8Array(N), RP = F32(), RCORE = new Uint8Array(N);
   for (let i = 0; i < N; i++) { RS[i] = i % 4; RCORE[i] = r1[i] < 0.07 ? 1 : 0; RP[i] = Math.floor(r2[i] * RING_N) / RING_N + r3[i] * 0.012; }
-  const DAYPARTS = [
+  const RING_MOODS = [
     { speed: 0.12, h0: 0.0, h1: 0.32, gain: 0.85 },
     { speed: 0.2, h0: 0.12, h1: 0.55, gain: 0.95 },
     { speed: 0.4, h0: 0.5, h1: 0.98, gain: 1.15 },
     { speed: 0.08, h0: 0.72, h1: 1.0, gain: 0.7 },
   ];
   let dpTarget = Math.max(0, Math.min(3, homeState.dp));
-  const dp = Object.assign({}, DAYPARTS[dpTarget]);
+  const dp = Object.assign({}, RING_MOODS[dpTarget]);
   let ringClock = 0;
 
   // 4 constellation: one cluster per vertical card. Cluster centres follow the
@@ -606,7 +606,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     if (disposed) return;
     const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now;
     const t = now / 1000;
-    const D = DAYPARTS[dpTarget];
+    const D = RING_MOODS[dpTarget];
     dp.speed += (D.speed - dp.speed) * 0.04; dp.h0 += (D.h0 - dp.h0) * 0.05; dp.h1 += (D.h1 - dp.h1) * 0.05; dp.gain += (D.gain - dp.gain) * 0.05;
     ringClock = (ringClock + dt * dp.speed) % 1;
     if (hlTarget >= 0) { hlIdx = hlTarget; hlAmt += (1 - hlAmt) * 0.12; }
@@ -644,7 +644,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   function kick() { if (!raf && !disposed && !document.hidden && !reduced) { last = 0; raf = requestAnimationFrame(frame); } }
 
   function renderStatic() {
-    const D = DAYPARTS[dpTarget]; Object.assign(dp, D);
+    const D = RING_MOODS[dpTarget]; Object.assign(dp, D);
     ringClock = 0.18 + dpTarget * 0.07;
     hlIdx = hlTarget; hlAmt = hlTarget >= 0 ? 1 : 0;
     for (let k = 0; k < LW.length; k++) LW[k] = k === cur ? 1 : 0;

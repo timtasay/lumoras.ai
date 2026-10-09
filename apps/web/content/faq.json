@@ -7,11 +7,11 @@
       "items": [
         {
           "q": "What is Lumoras?",
-          "a": "Lumoras LLC builds sound orchestration for business: AI voice, point of sale and in-store audio working as one system. The family includes Sonorch for salons and spas, SeasonX for restaurants, KitchenSpot for restaurant discovery, and the Lumoras POS, Voice and Sound platform for other businesses."
+          "a": "Lumoras LLC builds sound orchestration for business: AI voice and point of sale working as one system. The family includes Sonorch for salons and spas, SeasonX for restaurants, KitchenSpot for restaurant discovery, and the Lumoras POS and Voice platform for other businesses, including retail and online stores."
         },
         {
           "q": "How do Sonorch, SeasonX and the Lumoras platform relate?",
-          "a": "Sonorch and SeasonX are Lumoras products built for specific industries. Sonorch serves salons, barbers, spas, nail and lash studios and med spas, and SeasonX serves restaurants. Lumoras POS, Lumoras Voice and Lumoras Sound bring the same core to other service businesses and to retail stores."
+          "a": "Sonorch and SeasonX are Lumoras products built for specific industries. Sonorch serves salons, barbers, spas, nail and lash studios and med spas, and SeasonX serves restaurants. Lumoras POS and Lumoras Voice bring the same core to other service businesses, and Lumoras Voice also answers order calls for retail and online stores."
         },
         {
           "q": "What is KitchenSpot?",
@@ -19,7 +19,7 @@
         },
         {
           "q": "Do I need to use every product?",
-          "a": "No. You can start with the POS and add voice later, run Lumoras Voice alongside another system, or use Lumoras Sound for in-store audio. Pick the pieces you need today and add the rest when you are ready."
+          "a": "No. You can start with the POS and add voice later, or run Lumoras Voice alongside the system you already use, such as your current POS or your online store's order system. Pick the pieces you need today and add the rest when you are ready."
         }
       ]
     },
@@ -78,25 +78,25 @@
       ]
     },
     {
-      "id": "sound",
-      "title": "Retail Sound",
-      "intro": "Music, announcements and paging for retail stores.",
+      "id": "retail",
+      "title": "Retail orders",
+      "intro": "Order status, tracking, cancellations, changes and returns, answered by phone.",
       "items": [
         {
-          "q": "What is Lumoras Sound?",
-          "a": "Lumoras Sound is custom sound orchestration for retail stores. It runs zoned in-store music, dayparted playlists that follow traffic and time of day, a branded audio identity, automated announcements and voice paging, all synchronized across locations from one console."
+          "q": "What does Lumoras Voice do for a retail or online store?",
+          "a": "It answers the calls shoppers make about orders they already placed: where an order is, whether it has shipped, tracking and delivery dates, cancellations, changes and returns or exchanges. It handles each request by your store's rules and hands anything else to your team."
         },
         {
-          "q": "Can different parts of my store play different music?",
-          "a": "Yes. You divide the store into zones, such as the sales floor, fitting rooms and checkout, and each zone can follow its own playlist and schedule through the day."
+          "q": "How does it know which order the caller means?",
+          "a": "It verifies the caller first, usually with the order number plus the email, phone number or zip code on the order, and then reads the status from your store's order and shipping systems. Nothing about an order is shared until the caller is verified."
         },
         {
-          "q": "Which announcements can it automate?",
-          "a": "Common ones are store closing reminders, curbside pickup ready messages and promotions. Staff can also page by voice when something needs a live announcement."
+          "q": "Can it cancel or change an order?",
+          "a": "Yes, within the rules you set. It can cancel an order or change the size, color, shipping address or shipping speed while the order has not been packed or shipped, and it sends the caller a confirmation. Refunds go back to the original payment."
         },
         {
-          "q": "Can I manage several stores at once?",
-          "a": "Yes. Every location is synchronized from one console, so you can roll out a playlist or announcement to every store at once or adjust a single location."
+          "q": "Can it handle returns and exchanges?",
+          "a": "Yes. It checks the item against your return policy, such as the return window and final-sale items, sends a prepaid return label by email or text, and starts the exchange or refund. Lost parcels, damaged items and exceptions go to a person with the order and the call transcript attached."
         }
       ]
     },
@@ -107,7 +107,7 @@
       "items": [
         {
           "q": "Which industries does Lumoras serve?",
-          "a": "Salons and spas, restaurants, retail stores, medical and dental clinics, med spas, auto service, home services, fitness and wellness studios, hotels, veterinary and pet grooming, professional services, property management, education and repair shops. Each voice agent is built around the vocabulary of its trade."
+          "a": "Salons and spas, restaurants, retail and online stores, medical and dental clinics, med spas, auto service, home services, fitness and wellness studios, hotels, veterinary and pet grooming, professional services, property management, education and repair shops. Each voice agent is built around the vocabulary of its trade."
         },
         {
           "q": "I run a salon or spa. Which product is for me?",
@@ -116,6 +116,10 @@
         {
           "q": "I run a restaurant. Which product is for me?",
           "a": "SeasonX, at seasonx.ai. It is an AI receptionist and point of sale for restaurants that takes reservations and phone orders, only offers times you can seat, and sends takeout into the same kitchen queue."
+        },
+        {
+          "q": "I run a retail or online store. Which product is for me?",
+          "a": "Lumoras Voice. It answers order calls around the clock, from “Where is my order?” to cancellations, changes and returns, using your store's order and shipping systems and your own policies."
         },
         {
           "q": "I run a clinic, dental office or home services company. What fits?",
@@ -137,16 +141,16 @@
           "a": "SeasonX pricing is on seasonx.ai/pricing. You can also book a walkthrough at seasonx.ai/demo to go through it with the team."
         },
         {
-          "q": "How is Lumoras Sound or an enterprise rollout priced?",
-          "a": "Pricing for Lumoras Sound and for enterprise rollouts depends on your locations and setup. Book a demo to talk with our sales team."
+          "q": "How is retail order support or an enterprise rollout priced?",
+          "a": "Pricing for retail order support and for enterprise rollouts depends on your call volume, locations and setup. Book a demo to talk with our sales team."
         },
         {
           "q": "How does setup work?",
-          "a": "First, connect your POS data, calendar, menu or service list, or start on Lumoras POS. Next, tune the voice, greeting, policies, hours and escalation rules. Then go live by forwarding your number and pairing your store speakers, and run every call, sale and sound from one console."
+          "a": "First, connect your POS data, calendar, menu or service list, or your store's order system, or start on Lumoras POS. Next, tune the voice, greeting, policies, hours and escalation rules. Then go live by forwarding your number, and run every call, sale and order from one console."
         },
         {
           "q": "Is there a long-term contract?",
-          "a": "Sonorch POS plans are month to month. For SeasonX, Lumoras Sound and enterprise plans, ask about terms during your walkthrough or demo."
+          "a": "Sonorch POS plans are month to month. For SeasonX, retail order support and enterprise plans, ask about terms during your walkthrough or demo."
         }
       ]
     },

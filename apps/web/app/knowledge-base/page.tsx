@@ -13,7 +13,7 @@ import { tone } from "@/lib/tones";
 export const metadata: Metadata = pageMeta({
   title: "Knowledge base: AI receptionists and voice AI",
   description:
-    "In-depth guides to AI receptionists, voice AI, AI call centers, call forwarding, missed calls and store audio. Plain answers, with the arithmetic shown.",
+    "In-depth guides to AI receptionists, voice AI, AI call centers, call forwarding, missed calls and retail order calls. Plain answers, with the arithmetic shown.",
   path: "/knowledge-base",
 });
 
@@ -30,7 +30,7 @@ export default function KnowledgeBasePage() {
         <PageHero
           eyebrow="Knowledge base"
           title="How the phone, the counter and the store floor actually work."
-          lede="In-depth guides to AI receptionists, voice AI and store audio. What they do, how they work, what they cost, and how to set them up without disrupting your week."
+          lede="In-depth guides to AI receptionists, voice AI and retail order calls. What they do, how they work, what they cost, and how to set them up without disrupting your week."
         />
 
         {guides.length === 0 ? (
@@ -132,7 +132,7 @@ export default function KnowledgeBasePage() {
             </Link>
             <Link className="link-card panel" href="/faq">
               <Icon name="list" />
-              <span><strong>FAQ</strong><span>Short answers about voice, POS, sound, pricing and data.</span></span>
+              <span><strong>FAQ</strong><span>Short answers about voice, POS, retail orders, pricing and data.</span></span>
             </Link>
             <Link className="link-card panel" href="/insights">
               <Icon name="doc" />

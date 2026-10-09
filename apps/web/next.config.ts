@@ -7,6 +7,20 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./content/**/*"],
   },
+  // Retired in-store audio pages (Lumoras Sound was discontinued). Permanent, so search engines move on.
+  async redirects() {
+    return [
+      {
+        source: "/knowledge-base/overhead-paging-and-store-announcements",
+        destination: "/knowledge-base/where-is-my-order-calls",
+        permanent: true,
+      },
+      { source: "/insights/music-for-retail-stores", destination: "/insights", permanent: true },
+      { source: "/insights/audio-branding-for-stores", destination: "/insights", permanent: true },
+      { source: "/help-center/set-up-store-zones", destination: "/help-center", permanent: true },
+      { source: "/help-center/schedule-announcements", destination: "/help-center", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

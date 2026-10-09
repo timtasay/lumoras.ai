@@ -6,7 +6,7 @@ export const SITE_NAME = "Lumoras";
 export const LEGAL_NAME = "Lumoras LLC";
 export const TAGLINE = "Sound orchestration for every business";
 export const SITE_DESCRIPTION =
-  "Lumoras builds AI receptionists, AI voice agents, a POS for service businesses and in-store sound for retail, working as one system.";
+  "Lumoras builds AI receptionists and AI voice agents for every industry, including order support for retail, and a POS for service businesses, working as one system.";
 
 /** TODO(launch): replace with the real Lumoras contact address. Not rendered anywhere yet. */
 export const CONTACT_EMAIL = "TODO@lumoras.ai";
@@ -52,7 +52,7 @@ export const NAV_SECTIONS = [
   { label: "Platform", href: "/#platform" },
   { label: "Verticals", href: "/#verticals" },
   { label: "Products", href: "/#products" },
-  { label: "Retail Sound", href: "/#sound" },
+  { label: "Retail", href: "/#retail" },
   { label: "Enterprise", href: "/#enterprise" },
 ] as const;
 

@@ -2,7 +2,7 @@
 title: "What Is an AI Receptionist? How It Works and What It Costs"
 description: "An AI receptionist answers every call, books appointments and takes orders. See how it works, where it falls short and how the pricing models compare."
 topic: "ai-receptionists"
-updated: "2026-10-08"
+updated: "2026-10-09"
 readingMinutes: 8
 keyword: "ai receptionist"
 keyPoints:
@@ -87,9 +87,9 @@ The technology is the same everywhere. The vocabulary, rules and integrations di
 - **Restaurants.** Seating times the floor can actually handle, menu modifiers, allergies and realistic pickup times during a rush.
 - **Clinics and dental offices.** New-patient intake, forms to send, insurance questions to route to staff and strict limits on what the agent may say.
 - **Trades.** Triage comes first. A no-heat call in January is urgent. A quote for a new water heater can wait until morning. The agent needs the address, the problem and a way to reach whoever is on call.
-- **Retail.** Hours, stock questions, order pickup and returns. Stock answers are only as good as your inventory data.
+- **Retail.** Where an order is, tracking and delivery dates, cancellations, size or address changes before shipping, and returns and exchanges. Answers are only as good as your order and shipping data, and the caller needs to be verified before the agent shares anything. Our guide to [where is my order calls](/knowledge-base/where-is-my-order-calls) covers the details.
 
-Lumoras builds agents that start with that vocabulary: [Sonorch](https://sonorch.ai) for salons and spas, [SeasonX](https://seasonx.ai) for restaurants, and Lumoras Voice for other service businesses, which plugs into Lumoras POS or another system. The [voice overview](/#voice) shows how these fit together.
+Lumoras builds agents that start with that vocabulary: [Sonorch](https://sonorch.ai) for salons and spas, [SeasonX](https://seasonx.ai) for restaurants, and Lumoras Voice for other service businesses and for retail order support. Lumoras Voice plugs into Lumoras POS or another system. The [voice overview](/#voice) shows how these fit together.
 
 ## How pricing works
 

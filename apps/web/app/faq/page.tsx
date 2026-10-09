@@ -11,9 +11,9 @@ import { getFaq } from "@/lib/content";
 import { faqLd, pageMeta } from "@/lib/seo";
 
 export const metadata: Metadata = pageMeta({
-  title: "FAQ: AI receptionist, POS and Retail Sound",
+  title: "FAQ: AI receptionist, POS and retail orders",
   description:
-    "Answers about Lumoras: how the AI receptionist works, the POS, Retail Sound, which industries we serve, pricing and setup, and how customer data is handled.",
+    "Answers about Lumoras: how the AI receptionist works, the POS, retail order calls, which industries we serve, pricing and setup, and how customer data is handled.",
   path: "/faq",
 });
 
@@ -28,7 +28,7 @@ export default function FaqPage() {
         <PageHero
           eyebrow="FAQ"
           title="Frequently asked questions"
-          lede="Straight answers about the AI receptionist, the point of sale, in-store sound, pricing, setup and your data."
+          lede="Straight answers about the AI receptionist, the point of sale, retail order calls, pricing, setup and your data."
         />
 
         {groups.length === 0 ? (

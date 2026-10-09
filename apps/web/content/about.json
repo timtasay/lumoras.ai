@@ -1,8 +1,8 @@
 {
   "hero": {
     "eyebrow": "About us",
-    "title": "We build the system behind every sound your business makes.",
-    "lede": "Lumoras LLC makes AI voice, point of sale and in-store audio that work as one system. The phone, the front counter, the checkout and the music on the floor, run from the same calendar, the same menu and the same customer record."
+    "title": "We build the system behind every call, sale and order.",
+    "lede": "Lumoras LLC makes AI voice and point of sale that work as one system. The phone, the front counter, the checkout and the orders on their way to customers, run from the same calendar, the same menu and the same customer record."
   },
   "story": [
     {
@@ -26,7 +26,7 @@
       "text": "A salon client called last week, asked about color and never booked. The owner reads a drafted follow-up text, approves it from her phone, and by the time she locks up the client has replied and booked Thursday with her usual stylist."
     }
   ],
-  "intro": "Most service businesses run on a patchwork. One tool for the calendar, another for payments, a voicemail box nobody checks after six, and a radio behind the counter. Every gap between those pieces is a missed call, a double booking or a customer who quietly goes elsewhere. Lumoras closes those gaps. We build one system that answers the phone, books the visit, rings up the sale and sets the sound of the room, so the people who run the business can spend their time on the customers standing in front of them.",
+  "intro": "Most service businesses run on a patchwork. One tool for the calendar, another for payments, a voicemail box nobody checks after six, and an order inbox that fills up overnight. Every gap between those pieces is a missed call, a double booking or a customer who quietly goes elsewhere. Lumoras closes those gaps. We build one system that answers the phone, books the visit, rings up the sale and answers the question about yesterday's order, so the people who run the business can spend their time on the customers standing in front of them.",
   "build": {
     "title": "What we build",
     "items": [
@@ -51,13 +51,13 @@
         ]
       },
       {
-        "name": "Lumoras Sound",
-        "text": "Custom sound orchestration for retail stores. Music, announcements and paging that follow the time of day and sound like your brand in every location.",
+        "name": "Retail order support",
+        "text": "Lumoras Voice for retail and online stores. It answers the calls shoppers make about orders they already placed, using your store's order and shipping systems and your own policies.",
         "points": [
-          "Zoned music for the floor, fitting rooms, entrance and checkout",
-          "Dayparted playlists that follow traffic",
-          "Automated announcements and voice paging",
-          "Every location synchronized from one console"
+          "Order status and delivery dates, after verifying the caller",
+          "Tracking links by text or email",
+          "Cancellations and changes before an order ships",
+          "Returns and exchanges by your return policy"
         ]
       }
     ]
@@ -110,6 +110,6 @@
   },
   "closing": {
     "title": "Hear it on your own business.",
-    "text": "Tell us how you take calls, bookings and payments today, and we will show you how Lumoras fits around it. Start with the POS, add voice when you are ready, and bring your stores into one sound."
+    "text": "Tell us how you take calls, bookings and payments today, and we will show you how Lumoras fits around it. Start with the POS, add voice when you are ready, and bring every location into one system."
   }
 }

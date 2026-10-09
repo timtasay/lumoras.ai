@@ -3,8 +3,8 @@ title: "Set up multi-location access and SSO"
 description: "Add your locations, give each person the right role at the right stores, and connect single sign-on and SCIM so access follows your directory."
 category: "account-and-data"
 order: 1
-updated: "2026-10-08"
-appliesTo: ["Lumoras POS", "Lumoras Voice", "Lumoras Sound"]
+updated: "2026-10-09"
+appliesTo: ["Lumoras POS", "Lumoras Voice"]
 review: true
 ---
 
@@ -12,13 +12,13 @@ Multi-location access lets one account run every store, clinic or shop, with eac
 
 ## What this does
 
-Owners and regional managers see rollups across every location: sales, calls and what is playing in each store. Staff at one location see only that location. With SSO, people sign in with the work account they already use, and when someone leaves, removing them from your directory removes their access to Lumoras too.
+Owners and regional managers see rollups across every location: sales, calls and bookings in each location. Staff at one location see only that location. With SSO, people sign in with the work account they already use, and when someone leaves, removing them from your directory removes their access to Lumoras too.
 
 ## Add locations
 
 1. Open **Settings**, then the locations section.
 2. Add each location with its name, address, time zone and business hours.
-3. Copy services, menus, zones or announcements from an existing location to save time.
+3. Copy services, menus, hours or call settings from an existing location to save time.
 4. Save, then repeat for each location.
 
 ## Assign roles

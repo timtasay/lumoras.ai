@@ -26,7 +26,7 @@ Knowledge base, Help center, FAQ, plus the two latest insights as illustrated ca
 | `/faq` | Grouped answers, FAQPage structured data. |
 | `/demo` | Demo request form (posts to `/api/demo`, which validates and logs until an email provider is configured). |
 
-Nav items Platform, Verticals, Products, Retail Sound and Enterprise link to homepage sections
+Nav items Platform, Verticals, Products, Retail and Enterprise link to homepage sections
 in phase 1. Company opens the dropdown.
 
 ## SEO (built in, not bolted on)
@@ -43,10 +43,9 @@ Keyword research (OpenSEO, US, Oct 2026) sets the targets:
 | ai phone answering service | 2,400 | 18 | Insight `ai-receptionist-vs-answering-service` |
 | ai virtual receptionist | 1,900 | 25 | KB pillar |
 | voice ai for business | 1,600 | 15 | Home voice chapter; KB `how-voice-ai-works` |
-| audio branding / sonic branding | 720 / 590 | 0 / 7 | Insight `audio-branding-for-stores` |
 | appointment reminder texts | 480 | 18 | Insight `appointment-reminder-texts` |
-| music for retail stores / retail store music | 210 | 0 | Insight `music-for-retail-stores` |
-| overhead paging system | 210 | 0 | KB `overhead-paging-and-store-announcements` |
+| where is my order (retail order calls) | n/a | n/a | KB `where-is-my-order-calls`; home `#retail` |
+| order cancellation / returns and exchanges | n/a | n/a | Insights `order-cancellations-and-changes-by-phone`, `returns-and-exchanges-by-phone` |
 | no show policy | 170 | 0 | Insight `no-show-policy` |
 | call forwarding for business | 140 | 0 | KB `call-forwarding-for-business` |
 | ai receptionist cost / pricing | 90 / 90 | 7 / 10 | Insight `ai-receptionist-cost` |
@@ -70,7 +69,7 @@ Technical:
 ## Phase 2 (proposed, not in this build)
 
 Dedicated landing pages for the highest-value terms: `/ai-receptionist`, `/pos`,
-`/retail-sound`, `/enterprise` (AI call center), and `/industries/[slug]` for the 14 verticals
+`/retail` (order support by phone), `/enterprise` (AI call center), and `/industries/[slug]` for the 14 verticals
 (dental, medical, HVAC, plumbing, legal, salons, restaurants...). Then Search Console, rank
 tracking in OpenSEO, and a publishing cadence for insights.
 

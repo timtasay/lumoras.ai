@@ -10,13 +10,13 @@ import { VoiceConsole } from "@/components/home/VoiceConsole";
 import { HelloCycle } from "@/components/home/HelloCycle";
 import { Verticals } from "@/components/home/Verticals";
 import { SwitchDemo } from "@/components/home/SwitchDemo";
-import { RetailSound } from "@/components/home/RetailSound";
+import { RetailOrders } from "@/components/home/RetailOrders";
 import { getGuide, getHelpArticle, getInsight } from "@/lib/content";
 import { DEMO_LINE, DEMO_LINE_TEL, PRODUCTS } from "@/lib/site";
 
 const HOME_TITLE = "Lumoras: AI Receptionist, Voice Agents & POS for Business";
 const HOME_DESC =
-  "An AI receptionist and AI voice agents for every industry, a POS for any service business, and in-store sound for retail. Call the live demo line.";
+  "An AI receptionist and AI voice agents for every industry, from bookings to retail order support, and a POS for any service business. Call the live demo line.";
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },
@@ -66,7 +66,7 @@ const METER = Array.from({ length: 56 }, (_, i) => {
 });
 
 const SPECS: { icon: ReactNode; title: string; text: ReactNode }[] = [
-  { icon: <path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" />, title: "Multi-location", text: "Every store, clinic or kitchen in one console. Roll up revenue, calls and soundscapes by region, brand or location, then drill into a single front desk." },
+  { icon: <path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" />, title: "Multi-location", text: "Every store, clinic or kitchen in one console. Roll up revenue, calls and orders by region, brand or location, then drill into a single front desk." },
   { icon: (<><circle cx="8" cy="15" r="4" /><path d="m10.8 12.2 8.2-8.2M16 7l3 3M14 9l2 2" /></>), title: "SSO & SCIM", text: "SAML and OIDC single sign-on with your identity provider. SCIM provisions staff on their first day and removes access the moment they leave." },
   { icon: (<><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6l-8-3z" /><path d="m9 12 2 2 4-4" /></>), title: "Role-based access", text: "Owners, regional managers, front desk and staff each see exactly what their role needs, scoped down to the location and the report." },
   { icon: (<><path d="M8 3h8l4 4v14H4V3h4z" /><path d="M8 11h8M8 15h8M8 7h4" /></>), title: "Audit logs", text: "Every refund, schedule change, voice-agent setting and permission edit is recorded with who, what and when. Exportable for your reviews." },
@@ -87,18 +87,18 @@ const SPECS: { icon: ReactNode; title: string; text: ReactNode }[] = [
 
 const STEPS = [
   { n: "01", t: "Connect", p: "Bring your POS data, calendar, menu or service list, or start fresh on Lumoras POS.", tags: ["Services", "Menu", "Staff", "Customers"] },
-  { n: "02", t: "Tune", p: "Set the voice, greeting, policies, hours and escalation rules. Compose your store soundscapes.", tags: ["Greeting", "Deposits", "Hand-off", "Dayparts"] },
-  { n: "03", t: "Go live", p: "Forward your number and pair your store speakers. Your existing line keeps ringing, now answered.", tags: ["Call forwarding", "Speaker pairing"] },
-  { n: "04", t: "Orchestrate", p: "Every call, sale and sound in one console, with live analytics across every location.", tags: ["Transcripts", "Revenue", "Zones"] },
+  { n: "02", t: "Tune", p: "Set the voice, greeting, policies, hours and escalation rules, down to what can be canceled, changed or returned.", tags: ["Greeting", "Deposits", "Returns", "Hand-off"] },
+  { n: "03", t: "Go live", p: "Forward your number. Your existing line keeps ringing, now answered, day and night.", tags: ["Call forwarding", "After hours"] },
+  { n: "04", t: "Orchestrate", p: "Every call, sale and order in one console, with live analytics across every location.", tags: ["Transcripts", "Revenue", "Orders"] },
 ];
 
-const SOUND_CAPS = [
-  ["Zoned music", "Different sets and levels for the entrance, the floor, fitting rooms and checkout, each tuned to what happens there."],
-  ["Dayparted playlists", "Sets shift with traffic and the clock: calm at open, lift at the after-work rush, wind-down before close."],
-  ["Branded audio identity", "A sonic logo, voice and tone that sound like your brand in every store, on every hold line."],
-  ["Automated announcements", "Store closing, curbside ready, promotions. Triggered by the clock, the POS or an order, never by someone hunting for a mic."],
-  ["Voice paging", "Page a zone or the whole store from the console or a staff phone. Music ducks, then returns."],
-  ["Every location in sync", "Push a seasonal set or a recall announcement to one store or five hundred, from one console."],
+const RETAIL_CAPS = [
+  ["Where's my order?", "Verifies the caller with an order number plus email, phone or zip, then reads back the status and delivery date in plain language."],
+  ["Tracking by text", "The tracking link lands in a text or email while the shopper is still on the line, so nobody has to dig for a confirmation."],
+  ["Cancellations", "Cancels inside the window you set, before an order is packed, and sends the refund back to the original payment."],
+  ["Order changes", "Size, color, shipping address or shipping speed, changed while the order can still change, with a confirmation sent."],
+  ["Returns and exchanges", "Checks the item against your return policy, sends the prepaid label and starts the exchange or refund."],
+  ["Hands off with context", "Lost parcels, damaged items and anything outside your rules go to your team with the order and the transcript attached."],
 ];
 
 export default function HomePage() {
@@ -114,7 +114,7 @@ export default function HomePage() {
             <h1 className="display" id="h1">
               <span className="eyebrow h1-eyebrow">
                 <span className="live-dot" aria-hidden="true" />
-                AI receptionist · AI voice agents · POS · Sound
+                AI receptionist · AI voice agents · POS
               </span>
               <span className="sr-only">: </span>
               <span className="h1-main">
@@ -123,8 +123,8 @@ export default function HomePage() {
             </h1>
             <div className="hero-sub">
               <p className="lede scrim">
-                Lumoras orchestrates AI voice, point of sale and in-store sound into one system: an AI receptionist and AI voice
-                agents purpose-built for every industry, on a POS that runs any service business.
+                Lumoras orchestrates AI voice and point of sale into one system: an AI receptionist and AI voice agents purpose-built
+                for every industry, from bookings to retail orders, on a POS that runs any service business.
               </p>
               <div className="cta-row">
                 <Link className="btn btn-primary" href="#demo">
@@ -164,14 +164,14 @@ export default function HomePage() {
             <p>Appointments or tickets, payments, staff, inventory.</p>
           </div>
           <div className="inst">
-            <S><path d="M11 5 6 9H3v6h3l5 4V5z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" /></S>
-            <h3>Sound <span>03</span></h3>
-            <p>Zoned in-store audio, dayparts and announcements.</p>
+            <S><path d="M4 5h16v11H9l-5 4V5z" /><path d="M8 9h8M8 12h5" /></S>
+            <h3>Text <span>03</span></h3>
+            <p>Confirmations, reminders and tracking links by text.</p>
           </div>
           <div className="inst">
             <S><circle cx="12" cy="12" r="3" /><circle cx="4.5" cy="6" r="1.6" /><circle cx="19.5" cy="6" r="1.6" /><circle cx="4.5" cy="18" r="1.6" /><circle cx="19.5" cy="18" r="1.6" /><path d="M6 7l3.6 3M18 7l-3.6 3M6 17l3.6-3M18 17l-3.6-3" /></S>
             <h3>Orchestrator <span>04</span></h3>
-            <p>One console conducting every call, sale and sound.</p>
+            <p>One console conducting every call, sale and order.</p>
           </div>
         </div>
       </section>
@@ -184,8 +184,8 @@ export default function HomePage() {
             <h2 id="platform-h">One conductor for every sound your business makes.</h2>
             <div>
               <p className="lede">
-                Phone calls, the front counter, the checkout, the music on the floor and the announcements overhead. Lumoras runs them
-                as one system, so every part knows what the others just did.
+                Phone calls, the front counter, the checkout and the orders on their way to customers. Lumoras runs them as one
+                system, so every part knows what the others just did.
               </p>
               <Deeper
                 links={[
@@ -250,15 +250,16 @@ export default function HomePage() {
               </ul>
             </article>
 
-            <article className="card b-sound rv rv-2">
-              <p className="k mono"><i />Lumoras Sound</p>
-              <h3>Every zone, in tune with the hour.</h3>
-              <div className="zones-mini" aria-hidden="true">
-                <div><span className="lvl" style={{ ["--d" as string]: "2.1s", ["--a" as string]: ".4", ["--b" as string]: ".95" }} /><small>Entrance</small></div>
-                <div><span className="lvl" style={{ ["--d" as string]: "2.7s", ["--dl" as string]: "-.6s", ["--a" as string]: ".3", ["--b" as string]: ".8" }} /><small>Apparel</small></div>
-                <div><span className="lvl" style={{ ["--d" as string]: "3.3s", ["--dl" as string]: "-1.2s", ["--a" as string]: ".2", ["--b" as string]: ".5" }} /><small>Fitting</small></div>
-                <div><span className="lvl" style={{ ["--d" as string]: "2.4s", ["--dl" as string]: "-.3s", ["--a" as string]: ".3", ["--b" as string]: ".7" }} /><small>Checkout</small></div>
-              </div>
+            <article className="card b-orders rv rv-2">
+              <p className="k mono"><i />Retail orders</p>
+              <h3>&ldquo;Where&apos;s my order?&rdquo; Answered.</h3>
+              <ol className="track-mini" role="img" aria-label="Order 20814: ordered, packed and shipped; out for delivery today">
+                <li className="done"><i /><small>Ordered</small></li>
+                <li className="done"><i /><small>Shipped</small></li>
+                <li className="now"><i /><small>Out today</small></li>
+                <li><i /><small>Delivered</small></li>
+              </ol>
+              <p className="cal-note"><i aria-hidden="true" />Tracking link texted while the caller is on the line.</p>
             </article>
 
             <article className="card b-live rv rv-2">
@@ -269,7 +270,7 @@ export default function HomePage() {
                   <path className="base" d="M0 32 H70 l7 -18 l8 36 l8 -28 l6 10 H160 l7 -18 l8 36 l8 -28 l6 10 H300" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
                   <path className="run" d="M0 32 H70 l7 -18 l8 36 l8 -28 l6 10 H160 l7 -18 l8 36 l8 -28 l6 10 H300" strokeWidth="2" vectorEffect="non-scaling-stroke" pathLength={770} />
                 </svg>
-                <div className="pulse-row mono"><span><b>Live</b> · calls, sales, sound</span><span>All locations</span></div>
+                <div className="pulse-row mono"><span><b>Live</b> · calls, sales, orders</span><span>All locations</span></div>
               </div>
             </article>
           </div>
@@ -301,7 +302,7 @@ export default function HomePage() {
             <h2 id="prod-h">Built on one core. Named for the room it serves.</h2>
             <p className="lede">
               Sonorch for salons and spas. SeasonX for restaurants. KitchenSpot for the diners looking for them. Every one runs on
-              Lumoras POS, Voice and Sound.
+              Lumoras POS and Voice.
             </p>
           </div>
 
@@ -416,8 +417,8 @@ export default function HomePage() {
                 <p>The AI receptionist that plugs into Lumoras POS or the system you already run. Same customers, same calendar, same menu.</p>
               </div>
               <div>
-                <h3><S><path d="M11 5 6 9H3v6h3l5 4V5z" /><path d="M15.5 8.5a5 5 0 0 1 0 7" /></S>Lumoras Sound</h3>
-                <p>Custom sound orchestration for retail: zoned music, dayparts, announcements and voice paging across every store.</p>
+                <h3><S><path d="M6 7h12l1 14H5L6 7z" /><path d="M9 7V6a3 3 0 0 1 6 0v1" /></S>Lumoras Voice for retail</h3>
+                <p>Order support for retail and e-commerce: order status, tracking, cancellations, changes, returns and exchanges, answered by phone.</p>
               </div>
             </div>
           </div>
@@ -440,30 +441,31 @@ export default function HomePage() {
         />
       </section>
 
-      {/* ============ RETAIL SOUND ============ */}
-      <section className="sec sec-flush" id="sound" data-form="3" aria-labelledby="sound-h">
+      {/* ============ RETAIL ORDERS ============ */}
+      <section className="sec sec-flush" id="retail" data-form="3" aria-labelledby="retail-h">
         <div className="wrap">
           <div className="sec-head scrim">
-            <p className="eyebrow"><b>05</b> Lumoras Sound · Retail</p>
-            <h2 id="sound-h">Custom sound orchestration for every store.</h2>
+            <p className="eyebrow"><b>05</b> Lumoras Voice · Retail</p>
+            <h2 id="retail-h">Every order question, answered on the first ring.</h2>
             <div>
               <p className="lede">
-                Zoned music that follows traffic and the time of day. Your brand&apos;s own audio identity. Announcements that fire
-                themselves. Every location in sync, from one console.
+                Where is it? Can I cancel? Can I get a large instead? Shoppers call about orders they already placed. The voice agent
+                verifies the caller, checks the order and shipping status in your systems and handles the request by your rules, at
+                any hour.
               </p>
               <Deeper
                 links={[
-                  { kind: "guide", slug: "overhead-paging-and-store-announcements", label: "Overhead paging and store announcements" },
-                  { kind: "insight", slug: "music-for-retail-stores", label: "Music for retail stores" },
+                  { kind: "guide", slug: "where-is-my-order-calls", label: "Handling “Where is my order?” calls" },
+                  { kind: "insight", slug: "returns-and-exchanges-by-phone", label: "Returns and exchanges by phone" },
                 ]}
               />
             </div>
           </div>
 
-          <RetailSound />
+          <RetailOrders />
 
-          <ul className="sound-caps scrim">
-            {SOUND_CAPS.map(([h, p]) => (
+          <ul className="retail-caps scrim">
+            {RETAIL_CAPS.map(([h, p]) => (
               <li key={h}>
                 <h3>{h}</h3>
                 <p>{p}</p>

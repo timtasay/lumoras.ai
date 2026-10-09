@@ -2,7 +2,7 @@
 title: "Missed Calls in a Small Business: Costs and Fixes"
 description: "Missed calls quietly cost a small business bookings and orders. Learn how to measure them, price them with simple math and choose the fix that fits."
 topic: "missed-calls"
-updated: "2026-09-24"
+updated: "2026-10-09"
 readingMinutes: 7
 keyword: "missed calls small business"
 keyPoints:
@@ -88,7 +88,7 @@ Some missed calls are questions your customers could have answered without phoni
 
 - **Hours and holidays.** Keep them current on your website, your map listings and your voicemail greeting. Holiday hours are the classic miss.
 - **Booking.** If people call to book, offer online booking and put the link where they look first.
-- **Order status.** If takeout or repair customers call to ask "is it ready?", send a text when it is.
+- **Order status.** If takeout or repair customers call to ask "is it ready?", send a text when it is. If online shoppers call to ask where their order is, send tracking the moment it ships. Our guide to [where is my order calls](/knowledge-base/where-is-my-order-calls) covers the rest.
 - **Directions and parking.** Add them to confirmation texts.
 - **Prices.** Publish starting prices for your most common services.
 

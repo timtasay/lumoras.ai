@@ -17,7 +17,7 @@ export const INDUSTRY_OPTIONS = [
   "Repair shop",
   "Something else",
 ] as const;
-export const INTEREST_OPTIONS = ["Voice", "POS", "Retail Sound", "Enterprise"] as const;
+export const INTEREST_OPTIONS = ["Voice", "POS", "Retail orders", "Enterprise"] as const;
 
 export type DemoRequest = {
   name: string;

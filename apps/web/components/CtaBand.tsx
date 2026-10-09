@@ -5,7 +5,7 @@ import { CallChip } from "./CallChip";
 /** Closing call to action used at the bottom of inner pages. */
 export function CtaBand({
   title = "Hear it answer your phone.",
-  text = "Call the live demo line and talk to the AI receptionist yourself, or book a walkthrough of voice, POS and sound for your locations.",
+  text = "Call the live demo line and talk to the AI receptionist yourself, or book a walkthrough of voice and POS for your locations.",
 }: {
   title?: string;
   text?: string;

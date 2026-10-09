@@ -41,7 +41,7 @@ export function HelpSearch({ items }: { items: HelpIndexItem[] }) {
         <input
           id={`${id}-q`}
           type="search"
-          placeholder="Search: forwarding, transfers, payments, zones…"
+          placeholder="Search: forwarding, transfers, payments, hours…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           autoComplete="off"

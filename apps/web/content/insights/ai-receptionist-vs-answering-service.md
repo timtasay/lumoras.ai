@@ -76,7 +76,7 @@ Example arithmetic: 300 calls a month at an average of 2.5 minutes is 750 minute
 - **Restaurants.** Reservations and takeout orders during service, when nobody can step away from the floor. SeasonX takes both and sends orders to the same kitchen queue.
 - **Clinics.** Scheduling and forms suit AI. Clinical questions should transfer to staff.
 - **Home services.** AI can triage the call, book the visit, and transfer genuine emergencies to the on-call tech.
-- **Retail.** Hours, stock questions and pickup status are routine; returns disputes go to a person.
+- **Retail.** Order status, tracking, cancellations, changes and returns are routine once the agent can read your store's order and shipping systems; disputes go to a person. See [where is my order calls](/knowledge-base/where-is-my-order-calls).
 
 ## What to do this week
 

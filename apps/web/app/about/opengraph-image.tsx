@@ -5,5 +5,5 @@ export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
 export default function Image() {
-  return ogImage({ eyebrow: "About us", title: "Voice, point of sale and sound, working as one system." });
+  return ogImage({ eyebrow: "About us", title: "Voice and point of sale, working as one system." });
 }

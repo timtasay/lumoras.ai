@@ -2,7 +2,7 @@
 title: "How Voice AI for Business Works, Step by Step"
 description: "Voice AI for business turns a call into text, decisions and actions in a fast loop. Learn each step, where delays come from and what to test before buying."
 topic: "voice-ai"
-updated: "2026-10-06"
+updated: "2026-10-09"
 readingMinutes: 7
 keyword: "voice ai for business"
 keyPoints:
@@ -61,7 +61,7 @@ Rules set the edges. Never quote a price that isn't in the service list. Always 
 
 ## Actions: where the value comes from
 
-A voice agent that only talks is an expensive voicemail. The value comes from tool calls. A caller asks for "a cleaning next week, mornings." The agent queries open slots, offers two, books the one the caller picks and sends a confirmation text. A diner orders two tacos with no onions, and the order lands in the kitchen queue with the modifier attached. A shopper asks whether a store has a jacket in medium, and the agent checks inventory for that location.
+A voice agent that only talks is an expensive voicemail. The value comes from tool calls. A caller asks for "a cleaning next week, mornings." The agent queries open slots, offers two, books the one the caller picks and sends a confirmation text. A diner orders two tacos with no onions, and the order lands in the kitchen queue with the modifier attached. A shopper asks where the jacket they ordered is, and the agent reads the latest tracking status from the store's shipping system.
 
 That is why integration depth is the first thing to evaluate. Lumoras Voice, for example, works from the same customers, calendar and menu as Lumoras POS, so switching it on doesn't mean copying data between systems. The [voice overview](/#voice) and [POS overview](/#pos) show how the two connect.
 

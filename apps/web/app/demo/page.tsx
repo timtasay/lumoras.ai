@@ -11,7 +11,7 @@ import { pageMeta } from "@/lib/seo";
 export const metadata: Metadata = pageMeta({
   title: "Book a demo of the AI receptionist",
   description:
-    "Book a walkthrough of Lumoras voice, POS and in-store sound for your locations, or call the live demo line now and talk to the AI receptionist yourself.",
+    "Book a walkthrough of Lumoras voice and POS for your business, including retail order calls, or call the live demo line now and talk to the AI receptionist yourself.",
   path: "/demo",
 });
 
@@ -25,7 +25,7 @@ export default function DemoPage() {
             <PageHero
               eyebrow="Book a demo"
               title="Hear it answer your phone."
-              lede="Tell us about your business and we'll tailor a walkthrough of voice, POS and sound for your locations. Want to hear it first? Call the live demo line."
+              lede="Tell us about your business and we'll tailor a walkthrough of voice and POS for your locations. Want to hear it first? Call the live demo line."
             >
               <CallChip className="demo-chip" />
             </PageHero>
@@ -41,7 +41,7 @@ export default function DemoPage() {
               </li>
               <li>
                 <Icon name="wave" />
-                <span><strong>Sound for your stores.</strong> For retail, zones, dayparts and announcements across your locations.</span>
+                <span><strong>Order calls for your store.</strong> For retail, how it answers order status, tracking, cancellations, changes and returns by your rules.</span>
               </li>
               <li>
                 <Icon name="layers" />

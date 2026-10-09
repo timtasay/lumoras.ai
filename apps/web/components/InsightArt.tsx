@@ -13,9 +13,7 @@ const TONE: Record<ArtKind, [string, string]> = {
   checklist: ["var(--v-salon)", "var(--v-dental)"],
   ticket: ["var(--v-restaurant)", "var(--v-home)"],
   calendar: ["var(--v-dental)", "var(--v-salon)"],
-  music: ["var(--v-retail)", "var(--v-restaurant)"],
   chart: ["var(--v-salon)", "var(--v-dental)"],
-  zones: ["var(--v-restaurant)", "var(--v-dental)"],
 };
 
 function Bars({ n, seed = 1 }: { n: number; seed?: number }) {
@@ -122,22 +120,6 @@ function Vignette({ kind }: { kind: ArtKind }) {
           </div>
         </div>
       );
-    case "music":
-      return (
-        <div className="ia-ui ia-music">
-          <div className="ia-row">
-            <span className="ia-cover" />
-            <span className="ia-lines">
-              <i style={{ width: "70%" }} />
-              <i style={{ width: "44%" }} />
-            </span>
-          </div>
-          <span className="ia-progress">
-            <i />
-          </span>
-          <Bars n={16} seed={2.1} />
-        </div>
-      );
     case "chart":
       return (
         <div className="ia-ui ia-chart">
@@ -150,20 +132,6 @@ function Vignette({ kind }: { kind: ArtKind }) {
             <path className="ia-line" d="M0 70 L25 58 L50 62 L75 44 L100 48 L125 30 L150 34 L175 18 L200 22" />
             <circle className="ia-dot" cx="175" cy="18" r="4" />
           </svg>
-        </div>
-      );
-    case "zones":
-      return (
-        <div className="ia-ui ia-zones">
-          {["A", "B", "C", "D"].map((z, i) => (
-            <div className={i === 0 ? "ia-zone on" : "ia-zone"} key={z}>
-              <span className="ia-zl">{z}</span>
-              <span className="ia-spk" />
-              <span className="ia-lvl">
-                <i style={{ width: `${[78, 40, 62, 30][i]}%` }} />
-              </span>
-            </div>
-          ))}
         </div>
       );
   }

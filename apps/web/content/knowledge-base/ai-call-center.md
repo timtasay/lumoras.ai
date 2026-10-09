@@ -2,7 +2,7 @@
 title: "AI Call Center: What It Is and When You Need One"
 description: "What an AI call center does, how conversational AI differs from IVR, and when a growing or multi-location business needs one instead of a receptionist."
 topic: "call-centers"
-updated: "2026-10-02"
+updated: "2026-10-09"
 readingMinutes: 7
 keyword: "ai call center"
 keyPoints:
@@ -20,7 +20,7 @@ The term gets used for quite different products. Most fall into five layers, and
 
 ### Inbound voice agents
 
-These answer calls and finish tasks: book, reschedule, take orders, check order status, answer policy questions. It's the same technology as an [AI receptionist](/knowledge-base/what-is-an-ai-receptionist), spread across more lines, more locations and more types of call.
+These answer calls and finish tasks: book, reschedule, take orders, check order status, start returns, answer policy questions. It's the same technology as an [AI receptionist](/knowledge-base/what-is-an-ai-receptionist), spread across more lines, more locations and more types of call.
 
 ### Outbound calling
 

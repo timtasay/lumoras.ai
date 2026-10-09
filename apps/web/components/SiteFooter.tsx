@@ -13,8 +13,8 @@ export function SiteFooter() {
               <span className="brand-t">Lumoras</span>
             </Link>
             <p>
-              Sound orchestration for business. AI receptionists, AI voice agents, point of sale and in-store sound, working as one
-              system.
+              Sound orchestration for business. AI receptionists, AI voice agents and point of sale, working as one system, from
+              the first call to the order on its way.
             </p>
           </div>
           <nav aria-labelledby="ft-platform">
@@ -22,7 +22,7 @@ export function SiteFooter() {
             <ul>
               <li><Link href="/#platform">Lumoras Voice</Link></li>
               <li><Link href="/#switch">Lumoras POS</Link></li>
-              <li><Link href="/#sound">Lumoras Sound</Link></li>
+              <li><Link href="/#retail">Retail order support</Link></li>
               <li><Link href="/#verticals">AI voice verticals</Link></li>
               <li><Link href="/#enterprise">Enterprise</Link></li>
             </ul>
