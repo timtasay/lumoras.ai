@@ -28,7 +28,8 @@ Plan and content format: `docs/site-plan.md`, `docs/content-spec.md`.
 ## Lumoras Growth (apps/seo) and shared packages
 
 [`apps/seo`](apps/seo/README.md) is Lumoras Growth (working name), the multi-client SEO and content
-platform, currently at Phase 0 (foundations; brief in `docs/seo-platform-build-prompt.md`). Both apps
+platform, currently at Phase 1 (tenancy: auth, workspaces, row-level security, onboarding; brief in
+`docs/seo-platform-build-prompt.md`, progress in `apps/seo/docs/phase-1-summary.md`). Both apps
 share `packages/ui-tokens` (Voice Core tokens and the theme control) and `packages/ui-field` (the
 Spectrum particle field).
 
