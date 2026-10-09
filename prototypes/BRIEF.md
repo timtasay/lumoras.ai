@@ -14,13 +14,13 @@ service business, with voice that can be switched on at any time.
 | Product | Domain | What it is |
 | --- | --- | --- |
 | **Sonorch** | sonorch.ai | POS + AI receptionist for salons, barbers, spas, nail and lash studios, med spas. Answers every call, books and reschedules appointments, handles deposits and no-show policies, rebooks regulars, checks out at the chair. |
-| **SeasonX** | seasonx.ai (coming soon) | POS + AI receptionist for restaurants. Not online yet: today the restaurant product lives on sonorch.ai next to salons and is moving to seasonx.ai. Label it "Coming soon to seasonx.ai" and link restaurant CTAs to sonorch.ai for now. Takes phone orders and reservations, answers menu, allergen and hours questions, pushes tickets to the kitchen, takes payment. |
+| **SeasonX** | seasonx.ai (live) | AI receptionist + point of sale for restaurants: full-service dining, quick service, cafés, bars and taprooms, takeout kitchens, pizzerias, family restaurants. Live at seasonx.ai: badge it "Live" like Sonorch and link restaurant and SeasonX CTAs to https://seasonx.ai (salon links stay on sonorch.ai). See "What seasonx.ai says today" below. |
 | **KitchenSpot** | kitchenspot.ai | Restaurant discovery: every restaurant in town, its full menu, dish-by-dish ratings and reviews from verified diners, pickup ordering. Launch cities: Sarasota, Tampa, Orlando, Miami (Florida). Connects to SeasonX. |
 | **Lumoras POS** | (platform) | The same POS core, configured for any service business: clinics, dental, auto service, home services, fitness, pet grooming, tutoring, repair shops. Appointments or tickets, payments, staff, inventory, multi-location. |
 | **Lumoras Voice** | (platform) | AI receptionist / voice agent that plugs into Lumoras POS (or another system). Turn it on anytime: day one, or a year later. Same customers, same calendar, same menu. |
 | **Lumoras Sound** | (platform) | Custom sound orchestration for retail stores: zoned in-store music, dayparted playlists that follow traffic and time of day, branded audio identity, automated announcements (store closing, curbside ready, promos), voice paging, synchronized across locations from one console. |
 
-### What sonorch.ai says today (source of truth for salon + restaurant copy)
+### What sonorch.ai says today (source of truth for salon copy)
 
 - Headline: "Every call answered. Every chair filled. Every table sat."
 - Answers your phone 24/7, picks up on the first ring, recognizes regulars by phone number,
@@ -30,8 +30,6 @@ service business, with voice that can be switched on at any time.
 - Salon: 2 AM online booking, staff schedules, two-way text reminders, walk-in check-in kiosk,
   waitlist that refills cancellations, staff apps with no shared logins, commission and tip
   splits, review responses, social posting.
-- Restaurant: AI reservations, tables, live kitchen tickets with table, course and modifiers
-  ("no peanuts"), split checks, takeout.
 - Reporting: revenue, utilization, no-shows, top sellers by day/week/month/staff; payroll-ready
   commission and tip reports.
 - Pricing: free tier (cash and gift cards); POS plans from $99/month for up to 5 staff, month
@@ -43,6 +41,30 @@ service business, with voice that can be switched on at any time.
   tel: link.
 - Tone: confident, direct, short fragments, second person ("You didn't open a business to run
   software.").
+
+### What seasonx.ai says today (source of truth for restaurant copy)
+
+- Tagline: "AI receptionist + point of sale for restaurants". Headline: "The dinner rush answers
+  its own phone."
+- Venues: full-service dining, quick service, cafés, bars and taprooms, takeout kitchens,
+  pizzerias, family restaurants.
+- AI receptionist: takes reservations and phone orders, capturing party size, time, allergies and
+  notes like birthdays or high chairs; only offers times the restaurant can seat; takeout joins
+  the same kitchen queue.
+- POS: live floor view by section with check totals, tap to seat or reopen a check, modifiers go
+  straight to the kitchen.
+- Kitchen display built into the POS on an existing tablet or screen; tickets show timers, turn
+  red at ten minutes, and move through Start, Ready, Bump. Ticket vignettes with modifiers like
+  "no peanuts" are fine.
+- Payments: split checks by item or evenly, on-screen tip prompts, card payments on a Zettle
+  reader, one-tap voids and refunds with a reason.
+- Offline mode: orders and cash keep working without internet; card payments wait and sync.
+- Staff accounts with role-based permissions; reporting on covers, average check, sales by
+  category, voids and comps, tips by server.
+- CTAs: "Book a walkthrough" (https://seasonx.ai/demo) and "Get started"
+  (https://seasonx.ai/get-started).
+- No published stats and no pricing figures: do not attribute any numbers to SeasonX.
+- Legal line on their site: "SeasonX is a product of Lumoras LLC."
 
 ### Key messages
 

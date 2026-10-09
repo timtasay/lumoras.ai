@@ -312,7 +312,6 @@ section{position:relative}
 .rep-num{color:var(--mute)}
 .rep-name{font-family:var(--f-display);font-weight:640;font-stretch:76%;font-size:clamp(28px,4.2vw,58px);line-height:1;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:clip;transition:font-stretch .7s var(--ease),font-weight .7s var(--ease),color .4s var(--ease)}
 .rep-prod{color:var(--ink-2);text-align:right}
-.rep-prod.soon{color:var(--brass-text)}
 .rep-x{width:28px;height:28px;border:1px solid var(--rule-2);border-radius:50%;display:grid;place-items:center;transition:transform .5s var(--ease),background-color .3s var(--ease),border-color .3s var(--ease)}
 .rep-x svg{width:12px;height:12px}
 .rep-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s var(--ease)}
@@ -352,8 +351,6 @@ section{position:relative}
 .card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--rule)}
 .status{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ok)}
 .status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.status.soon{color:var(--brass-text)}
-.status.soon::before{background:transparent;border:1.5px solid currentColor}
 .card-body{padding:24px 22px 26px;display:flex;flex-direction:column;gap:14px;flex:1}
 .card h3{font-family:var(--f-display);font-weight:760;font-stretch:104%;font-size:clamp(30px,2.6vw,40px);line-height:1;margin:0;letter-spacing:-.02em}
 .card .head{font-family:var(--f-display);font-weight:520;font-stretch:88%;font-size:clamp(20px,1.7vw,24px);line-height:1.15;margin:0;color:var(--ink)}
@@ -577,7 +574,6 @@ fieldset.fld{border:0;padding:0;margin:0}
 .f-grid ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
 .f-grid a{text-decoration:none;color:var(--ink-2);font-size:15px}
 .f-grid a:hover{color:var(--cobalt)}
-.f-grid .soon{font-family:var(--f-mono);font-size:10.5px;color:var(--brass-text);margin-left:6px;letter-spacing:.04em;text-transform:uppercase}
 .f-brand p{color:var(--mute);max-width:300px;margin:14px 0 0;font-size:15px}
 .f-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 24px;margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);color:var(--mute)}
 .f-bottom strong{color:var(--ink);font-weight:500}
@@ -843,11 +839,11 @@ fieldset.fld{border:0;padding:0;margin:0}
         </div></div></div>
       </li>
       <li class="rep-row">
-        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp2" id="rh2"><span class="rep-num mono">02</span><span class="rep-name">Restaurants</span><span class="rep-prod mono soon">SeasonX · Soon</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
+        <button class="rep-head" type="button" aria-expanded="false" aria-controls="rp2" id="rh2"><span class="rep-num mono">02</span><span class="rep-name">Restaurants</span><span class="rep-prod mono">SeasonX</span><span class="rep-x" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v10M1 6h10"/></svg></span></button>
         <div class="rep-panel" id="rp2" role="region" aria-labelledby="rh2"><div class="rep-inner"><div class="rep-body"><span class="rep-sp"></span>
           <p class="rep-quote">Takes a pickup order for two birria tacos and an horchata, ready at 6:40.</p>
-          <div class="rep-meta"><b>Served by</b>SeasonX, coming soon to seasonx.ai. Restaurants run on <a href="https://sonorch.ai">sonorch.ai</a> today.</div>
-          <ul class="rep-tags"><li>Reservations &amp; tables</li><li>Kitchen tickets with modifiers</li><li>Menu &amp; allergen answers</li></ul>
+          <div class="rep-meta"><b>Served by</b>SeasonX, live at <a href="https://seasonx.ai">seasonx.ai</a></div>
+          <ul class="rep-tags"><li>Reservations &amp; phone orders</li><li>Allergies &amp; notes captured</li><li>Kitchen display in the POS</li></ul>
         </div></div></div>
       </li>
       <li class="rep-row">
@@ -997,11 +993,11 @@ fieldset.fld{border:0;padding:0;margin:0}
       </article>
 
       <article class="card">
-        <div class="card-top"><span class="status soon">Coming soon to seasonx.ai</span><span class="mono mute">Restaurants</span></div>
+        <div class="card-top"><span class="status">Live · seasonx.ai</span><span class="mono mute">Restaurants</span></div>
         <div class="card-body">
           <h3>SeasonX</h3>
-          <p class="head">Phone orders, reservations and the kitchen, on one line.</p>
-          <p>POS and AI receptionist for restaurants. Takes orders and reservations, answers menu, allergen and hours questions, sends tickets to the kitchen and takes payment.</p>
+          <p class="head">The dinner rush answers its own phone.</p>
+          <p>AI receptionist and point of sale for restaurants. Takes reservations and phone orders with party size, time, allergies and notes like birthdays or high chairs, and only offers times you can seat.</p>
         </div>
         <div class="vig" aria-label="Kitchen ticket preview">
           <div class="ticket">
@@ -1012,13 +1008,14 @@ fieldset.fld{border:0;padding:0;margin:0}
               <li><span>1</span><span>Pad see ew</span><span class="mod">No peanuts</span></li>
               <li><span>1</span><span>Horchata</span></li>
             </ul>
-            <div class="tk-f"><span>FIRED · LINE 2</span><span>VIA VOICE</span></div>
+            <div class="tk-f"><span>TIMER 08:42 · START</span><span>VIA VOICE</span></div>
           </div>
         </div>
         <div class="card-body">
-          <p>Restaurants run on sonorch.ai today, next to salons. The product is moving to its own home at seasonx.ai.</p>
+          <ul class="cities" aria-label="SeasonX capabilities"><li>Live floor view</li><li>Kitchen display</li><li>Split checks</li><li>Offline mode</li></ul>
+          <p>Tickets move through Start, Ready and Bump, and turn red at ten minutes. Orders and cash keep working without internet.</p>
           <div class="foot">
-            <a class="tlink" href="https://sonorch.ai">Restaurants: start on sonorch.ai <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 10 10 4M5 4h5v5"/></svg></a>
+            <a class="tlink" href="https://seasonx.ai">Visit seasonx.ai <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 10 10 4M5 4h5v5"/></svg></a>
           </div>
         </div>
       </article>
@@ -1241,7 +1238,7 @@ fieldset.fld{border:0;padding:0;margin:0}
         <p>Sound orchestration for business. AI voice, point of sale and in-store audio, working as one system.</p>
       </div>
       <div><h4>Platform</h4><ul><li><a href="#platform">Lumoras Voice</a></li><li><a href="#voice">Lumoras POS</a></li><li><a href="#sound">Lumoras Sound</a></li><li><a href="#how">Orchestrator</a></li></ul></div>
-      <div><h4>Products</h4><ul><li><a href="https://sonorch.ai">Sonorch</a></li><li><a href="https://sonorch.ai">SeasonX</a><span class="soon">Soon</span></li><li><a href="https://kitchenspot.ai">KitchenSpot</a></li></ul></div>
+      <div><h4>Products</h4><ul><li><a href="https://sonorch.ai">Sonorch</a></li><li><a href="https://seasonx.ai">SeasonX</a></li><li><a href="https://kitchenspot.ai">KitchenSpot</a></li></ul></div>
       <div><h4>Company</h4><ul><li><a href="#company">About</a></li><li><a href="#company">Careers</a></li><li><a href="#demo">Contact</a></li><li><a href="#enterprise">Security</a></li></ul></div>
       <div><h4>Resources</h4><ul><li><a href="#verticals">Verticals</a></li><li><a href="#enterprise">API &amp; webhooks</a></li><li><a href="#company">Privacy</a></li><li><a href="#company">Terms</a></li></ul></div>
     </div>
