@@ -110,3 +110,31 @@ Platform · Verticals · Products · Retail Sound · Enterprise · Company. Righ
 - No `alert()`, no `window.open`, no `mailto:` reliance.
 - A small fixed "direction switcher" chip (bottom-left) linking to the other two prototypes
   (`a-voice-core.html`, `b-score.html`, `c-spectrum.html`) and to `index.html`.
+
+## Theme selection (all pages)
+
+Every page offers **Light · Dark · Auto**, with the same behavior everywhere:
+
+- **Control**: a three-option segmented control in the nav's right side, before "Sign in",
+  visible at every width (compact icon-only on mobile). Markup: a container with
+  `role="radiogroup" aria-label="Color theme"` and three `<button type="button" role="radio"
+  aria-checked>` items: Light (sun icon), Dark (moon icon), Auto (half-filled circle icon). Each
+  has a visually hidden text label and a `title`. Arrow keys move between options. The active
+  option has a sliding indicator pill that morphs to the chosen slot.
+- **State**: Auto removes `data-theme` from `<html>` and follows `prefers-color-scheme`
+  (live, including OS changes while the page is open). Light/Dark set
+  `data-theme="light"` / `"dark"`. The choice is saved in `localStorage` under
+  `lumoras-theme` (`light` | `dark` | `auto`), shared across all prototypes, read and written
+  inside try/catch. A tiny inline script in `<head>` applies the saved choice before first paint.
+  Default when nothing is saved: Auto.
+- **Tokens**: every color is a token. Light-first pages define light on bare `:root`; dark-first
+  pages define dark on bare `:root` with `color-scheme: dark`, then light values under
+  `@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {…; color-scheme: light} }`
+  and again under `:root[data-theme="light"]`. Both themes are designed, not inverted.
+- **Switch animation**: when supported and motion is allowed, use the View Transitions API for a
+  circular reveal that grows from the clicked button (`clip-path: circle()` on
+  `::view-transition-new(root)`, about 600 ms, cubic-bezier(.2,.7,.1,1)). Otherwise switch
+  instantly.
+- **Canvas visuals** read their colors from CSS tokens and redraw on change. Each page dispatches
+  `document` event `lumoras:themechange` with `{ detail: { mode, resolved } }` whenever the
+  resolved theme changes (button or OS).
