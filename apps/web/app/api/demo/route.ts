@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { validateDemo } from "@/lib/demo";
+import { sendEmail } from "@/lib/email";
+
+const DEFAULT_DEMO_EMAIL = "info@lumoras.ai";
 
 /**
- * Demo requests. Validates and logs server-side until an email/CRM provider is
- * configured (TODO(launch): forward to the sales inbox). No external calls.
+ * Demo requests. Validated, logged (so none is lost if email fails) and emailed
+ * to DEMO_REQUEST_EMAIL through Resend.
  */
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -36,6 +39,28 @@ export async function POST(req: Request) {
     "[demo-request]",
     JSON.stringify({ at: new Date().toISOString(), ...value }),
   );
+
+  try {
+    await sendEmail({
+      to: process.env.DEMO_REQUEST_EMAIL?.trim() || DEFAULT_DEMO_EMAIL,
+      replyTo: value.email,
+      subject: `Demo request from ${value.company}`,
+      text: [
+        `Name: ${value.name}`,
+        `Email: ${value.email}`,
+        `Company: ${value.company}`,
+        `Locations: ${value.locations}`,
+        `Industry: ${value.industry}`,
+        `Interested in: ${value.interests.length ? value.interests.join(", ") : "Not specified"}`,
+      ].join("\n"),
+    });
+  } catch (err) {
+    console.error("[demo-request] email failed:", err instanceof Error ? err.message : err);
+    return NextResponse.json(
+      { ok: false, error: "We couldn't send your request just now. Please try again in a minute." },
+      { status: 502 },
+    );
+  }
 
   return NextResponse.json({ ok: true, firstName: value.name.split(/\s+/)[0] });
 }
