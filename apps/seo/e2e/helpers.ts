@@ -77,6 +77,7 @@ export async function shot(page: Page, name: string, prefix = "seo-p1") {
     return page.evaluate(() => document.documentElement.scrollHeight);
   });
   const vp = page.viewportSize()!;
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.setViewportSize({ width: vp.width, height: Math.min(Math.max(h, vp.height), 6000) });
   await page.waitForTimeout(250);
   await page.screenshot({ path: path.join(E2E.shots, `${prefix}-${name}.png`) });

@@ -1,3 +1,4 @@
+import { readSeoRules } from "@/lib/validation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -28,6 +29,23 @@ import { listGoogleConnections } from "@/lib/google/service";
 import { googleCards } from "@/lib/google/view";
 import { providerInfo } from "@/lib/providers/registry";
 import type { DomainOverview } from "@/lib/providers/types";
+import { ConnectionsPanel } from "@/components/forms/ConnectionsPanel";
+import { ScheduleForm } from "@/components/content/ScheduleForm";
+import { listConnections } from "@/lib/data/connections";
+import { getSiteSettings } from "@/lib/data/sites";
+import { listCalendar } from "@/lib/data/content";
+import { siteRunway } from "@/lib/content/planner";
+import { describeSchedule, localParts } from "@/lib/content/schedule";
+import { describeConnection, loadPublishConnection } from "@/lib/publishers/registry";
+import { DEFAULT_TEMPLATE, LUMORAS_INSIGHTS_TEMPLATE } from "@/lib/publishers/frontmatter";
+import { createConnectionAction, deleteConnectionAction } from "@/app/(app)/w/[slug]/actions";
+import { saveScheduleAction, setPublishConnectionAction, testPublishConnectionAction } from "@/app/(app)/w/[slug]/publishing-actions";
+import type { CalItem } from "@/components/ui/CalendarMini";
+
+const PRESETS = [
+  { key: "generic", label: "Markdown site (Next.js, Astro, Hugo, Jekyll)", contentDir: "content/posts", filenamePattern: "{{slug}}.md", livePath: "/blog/{{slug}}", template: DEFAULT_TEMPLATE },
+  { key: "lumoras", label: "lumoras.ai insights (content spec)", contentDir: "apps/web/content/insights", filenamePattern: "{{slug}}.md", livePath: "/insights/{{slug}}", template: LUMORAS_INSIGHTS_TEMPLATE },
+];
 
 export const metadata: Metadata = { title: "Set up the workspace" };
 
@@ -55,6 +73,8 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
         crawl: site && step === "done" ? await latestCrawl(tx, site.id) : null,
         google: site && (step === "search" || step === "done") ? await listGoogleConnections(tx, site.id) : {},
         overview: site && step === "scan" ? await latestResult<DomainOverview>(tx, site.id, "domainOverview", site.domain) : null,
+        conns: site && step === "publishing" ? await listConnections(tx, site.id) : [],
+        settings: site && (step === "publishing" || step === "schedule" || step === "done") ? await getSiteSettings(tx, site.id) : null,
       };
     },
     { readOnly: true },
@@ -106,7 +126,7 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
             action={saveBrandAction.bind(null, slug, site!.id, true)}
             readOnly={false}
             submitLabel="Save and continue"
-            values={{ ...data.brand!, prefilled_at: data.brand!.prefilled_at?.toISOString() ?? null, seo_rules: data.brand!.seo_rules as unknown as Record<string, number> }}
+            values={{ ...data.brand!, prefilled_at: data.brand!.prefilled_at?.toISOString() ?? null, seo_rules: readSeoRules(data.brand!.seo_rules) as unknown as Record<string, unknown> }}
           />
         </OnboardingFrame>
       );
@@ -138,46 +158,70 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
         </OnboardingFrame>
       );
     }
-    case "publishing":
+    case "publishing": {
+      const st = data.settings!;
+      const chosen = data.conns.find((c) => c.id === st.publish_connection_id);
       return (
-        <OnboardingFrame {...frame} title="Choose how articles get published" lede="One connector per site, tested before the first article is due.">
-          <LaterStep
-            slug={slug}
-            from="publishing"
-            phase={3}
-            cards={[
-              { icon: "flow", title: "Git, file per post", text: "GitHub or Gitea. Opens a pull request (default) or commits to a branch, with your frontmatter template." },
-              { icon: "doc", title: "WordPress", text: "REST API with an application password: posts, categories, featured image, Yoast or Rank Math fields." },
-              { icon: "send", title: "Webhook and feed", text: "Signed JSON to your endpoint, plus a JSON and RSS feed any custom site can pull." },
-            ]}
-            note={
-              <>
-                You can already store a connector&apos;s credentials (encrypted) under the site&apos;s Connections tab; the live test arrives with the publisher.
-              </>
-            }
+        <OnboardingFrame {...frame} wide title="Choose how articles get published" lede="One connector per site, tested before the first article is due. A Git connection opens a pull request with one file per post; a webhook receives signed JSON.">
+          <ConnectionsPanel
+            connections={data.conns.map((c) => ({ id: c.id, kind: c.kind, label: c.label, config: c.config, has_secret: c.has_secret, key_version: c.key_version, status: c.status, status_detail: c.status_detail, created: "" }))}
+            canEdit={can(a.role, "connection:manage")}
+            create={createConnectionAction.bind(null, slug, site!.id)}
+            remove={deleteConnectionAction.bind(null, slug, site!.id)}
+            publishId={st.publish_connection_id}
+            test={testPublishConnectionAction.bind(null, slug, site!.id)}
+            choosePublish={setPublishConnectionAction.bind(null, slug, site!.id)}
+            presets={site!.domain === "lumoras.ai" ? [PRESETS[1], PRESETS[0]] : PRESETS}
           />
+          <div className="onb-foot">
+            <p className="muted small">
+              {chosen ? `${chosen.label} publishes this site${chosen.status === "ok" ? " and its test passed" : ": run its Test before the first slot"}.` : "Without a publishing connection, approved articles wait. You can choose one later under the site's Connections tab."}
+            </p>
+            <ContinueButton slug={slug} from="publishing" label={chosen ? "Continue" : "Skip for now"} variant={chosen ? "primary" : "secondary"} />
+          </div>
         </OnboardingFrame>
       );
-    case "schedule":
+    }
+    case "schedule": {
+      const st = data.settings!;
       return (
-        <OnboardingFrame {...frame} title="Set a schedule and a budget" lede="Rolling generation: each article is written a few days before its slot, so it reacts to the latest data.">
-          <LaterStep
-            slug={slug}
-            from="schedule"
-            phase={3}
-            preview
-            cards={[
-              { icon: "calendar", title: "Schedule", text: "Tuesday and Friday at 09:00 site time · written 3 days ahead · runway alert below 10 days. No back-dating." },
-              { icon: "db", title: "Budget and reserve", available: true, text: "A monthly ceiling for paid SEO data and a reserve that is never spent. Owners set it under Budget and usage; every paid call is priced first." },
-            ]}
-            note="Approval required is the default review mode. Autopilot stays off until someone turns it on and reads what it means."
+        <OnboardingFrame {...frame} wide title="Set a schedule" lede="Rolling generation: each article is written a few days before its slot, so it reacts to the latest data. Approval is required unless you turn autopilot on.">
+          <ScheduleForm
+            action={saveScheduleAction.bind(null, slug, site!.id, true)}
+            readOnly={false}
+            submitLabel="Save and finish"
+            defaults={{
+              days: st.schedule_days,
+              time: st.schedule_time,
+              active: true,
+              generationMode: st.generation_mode,
+              leadDays: st.lead_days,
+              batchSize: st.batch_size,
+              horizonDays: st.horizon_days,
+              runwayThreshold: st.runway_threshold_days,
+              reviewMode: st.review_mode,
+              allowBackdating: st.allow_backdating,
+              timezone: st.timezone,
+              autopilotSince: null,
+            }}
           />
+          <p className="muted small">
+            <Icon name="db" className="inline-ico" /> Budget: AI writing and paid SEO data draw on the workspace budget, with a reserve that is never spent. Owners set it under{" "}
+            <Link className="tlink" href={`/w/${slug}/settings/budget`}>
+              Budget and usage
+            </Link>
+            .
+          </p>
         </OnboardingFrame>
       );
+    }
     case "done": {
       const t = new Date();
       const today = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()));
       const b = data.brand!;
+      const st = data.settings!;
+      const cal = await withWorkspace(pool(), a.ctx, async (tx) => ({ runway: (await siteRunway(tx, st, t)).runway, items: await listCalendar(tx, { siteId: st.id, from: new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), 1)), to: new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 1)) }), publish: st.publish_connection_id ? await loadPublishConnection(tx, st.publish_connection_id).catch(() => null) : null }), { readOnly: true });
+      const calItems: CalItem[] = cal.items.map((i) => ({ date: localParts(i.slot_at, st.timezone).date, title: i.title || "Planned slot", status: i.status === "published" ? "published" : i.status === "generating" || i.status === "planned" ? "generating" : "scheduled" }));
       const filled = [b.overview, b.positioning, b.audience].filter(Boolean).length + [b.sells, b.does_not_sell, b.voice_rules].filter((x) => x.length).length;
       return (
         <OnboardingFrame {...frame} wide title={`${a.workspace.name} is set up`} lede="Here is what is in place, and what arrives next.">
@@ -200,23 +244,25 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
               </li>
               <li>
                 <StatusLight state={data.authors.length ? "ok" : "warn"}>Authors</StatusLight>
-                <span>{data.authors.length ? `${data.authors.length} real byline${data.authors.length === 1 ? "" : "s"}.` : "None yet: add one before Phase 3 writes anything."}</span>
+                <span>{data.authors.length ? `${data.authors.length} real byline${data.authors.length === 1 ? "" : "s"}.` : "None yet: the pipeline does not write without a real byline."}</span>
               </li>
               <li>
                 <StatusLight state={Object.keys(data.google).length === 2 ? "ok" : Object.keys(data.google).length ? "warn" : "idle"}>Search Console & GA4</StatusLight>
                 <span>{Object.keys(data.google).length ? `${Object.keys(data.google).length} of 2 connected.` : "Not connected yet: connect them under the site's Connections tab."}</span>
               </li>
-              {STEPS.filter((s) => s.later).map((s) => (
-                <li key={s.key}>
-                  <StatusLight state="idle">{s.label}</StatusLight>
-                  <span>Arrives in Phase {s.later}.</span>
-                </li>
-              ))}
+              <li>
+                <StatusLight state={cal.publish ? (cal.publish.status === "ok" ? "ok" : "warn") : "idle"}>Publishing</StatusLight>
+                <span>{cal.publish ? `${cal.publish.label}: ${describeConnection(cal.publish)}.` : "No connection yet: approved articles wait until one is chosen."}</span>
+              </li>
+              <li>
+                <StatusLight state={st.schedule_active ? "ok" : "idle"}>Schedule</StatusLight>
+                <span>{st.schedule_active ? `${describeSchedule({ days: st.schedule_days, time: st.schedule_time, timezone: st.timezone })}, written ${st.lead_days} days ahead. ${st.review_mode === "autopilot" ? "Autopilot is on." : "Approval required."}` : "Off: nothing is written until it is turned on."}</span>
+              </li>
             </ul>
             <div className="done-cal">
               <p className="label">The first calendar</p>
-              <CalendarMini year={today.getUTCFullYear()} month={today.getUTCMonth()} today={today} items={[]} runwayDays={0} threshold={10} />
-              <p className="muted small">Nothing is scheduled yet, so the runway reads empty. It fills once a schedule exists (Phase 3).</p>
+              <CalendarMini year={today.getUTCFullYear()} month={today.getUTCMonth()} today={today} items={calItems} runwayDays={cal.runway.days} threshold={st.runway_threshold_days} />
+              <p className="muted small">{cal.runway.reason}</p>
             </div>
           </div>
           <div className="form-acts">

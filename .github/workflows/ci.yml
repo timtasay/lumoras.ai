@@ -24,8 +24,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
-      # throwaway PostgreSQL 16: migrations runner, RLS isolation (incl. the Phase 2 tables), Better Auth,
-      # seed and audit tests, the metered call path (cache, budget and reserve, concurrency), Google connections
+      # throwaway PostgreSQL 16: migrations runner, RLS isolation (incl. the Phase 2 and Phase 3 tables), Better Auth,
+      # seed and audit tests, the metered call path (cache, budget and reserve, concurrency), Google connections,
+      # Phase 3: the content pipeline (FakeLlm, fake GitHub, signed webhooks), the pg-boss worker process end to end
       postgres:
         image: postgres:16
         env:
@@ -52,7 +53,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       # unit + integration (the integration suites fail loudly here rather than skip: TEST_DATABASE_URL is set).
-      # Providers and Google are always local fakes: no test reaches DataForSEO, OpenSEO or Google.
+      # Providers, Google, the model (FakeLlm), GitHub/Gitea and webhook receivers are always local fakes:
+      # no test reaches DataForSEO, OpenSEO, Google, Anthropic or GitHub, and no secret is needed.
       - run: pnpm test
       - run: pnpm build
 
@@ -93,6 +95,8 @@ jobs:
       # viewer limits, impersonation in the audit log, every screen in both themes at 375 and 1440,
       # reduced motion, /design; Phase 2: research with the cost confirm (fake provider), budget
       # refusal, Budget and usage + CSV, Search Console / GA4 OAuth against a fake Google;
+      # Phase 3 (the worker runs too): review gate by role, editor lint/diff, calendar drag + keyboard,
+      # live run view, runway banner, publishing connector Test, onboarding steps 7-8;
       # apps/web: homepage smoke
       - run: pnpm test:e2e
       - if: always()

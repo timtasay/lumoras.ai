@@ -9,8 +9,8 @@
  * the whole crawl. Only URLs on the site's own host (with or without www.)
  * are kept.
  *
- * TODO(Phase 3): a pg-boss cron job refreshes every active site's inventory
- * daily; for now a crawl runs on demand (onboarding and site settings).
+ * Runs on demand (onboarding, "Scan again") and daily for every active site
+ * from the worker (lib/jobs/handlers.ts handleSitemaps → handleCrawl).
  */
 import { gunzipSync } from "node:zlib";
 import { parseSitemap, sitemapsFromRobots, extractPageMeta, type PageMeta } from "./parse.ts";

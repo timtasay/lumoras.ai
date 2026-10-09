@@ -26,6 +26,7 @@ import { notify, platformWorkspaces, platformAudit } from "../../lib/data/worksp
 import { addSeeds, saveKeywords, setBudget } from "../../lib/data/research.ts";
 import { meteredCall } from "../../lib/metering/metered.ts";
 import { FakeProvider } from "../../lib/providers/fake.ts";
+import { addComment, addReview, createPlanned, createRun, saveVersion } from "../../lib/data/content.ts";
 import { createTestDatabase, dropAll, skipReason, adminQuery, type TestDb } from "../helpers/db.ts";
 
 /** Every tenant table and the column that holds its workspace. */
@@ -46,15 +47,25 @@ const EXPECTED_TENANT_TABLES: Record<string, string> = {
   provider_cache: "workspace_id",
   seed_backlog: "workspace_id",
   keywords: "workspace_id",
+  // Phase 3
+  content_items: "workspace_id",
+  content_versions: "workspace_id",
+  content_comments: "workspace_id",
+  content_reviews: "workspace_id",
+  pipeline_runs: "workspace_id",
+  pipeline_steps: "workspace_id",
+  publications: "workspace_id",
+  rank_tracking_queue: "workspace_id",
+  link_checks: "workspace_id",
 };
 
 /** Tables the app role may not UPDATE or DELETE at all (append-only): a write attempt must be refused outright. */
-const NO_UPDATE = new Set(["audit_log", "research_log"]);
-const NO_DELETE = new Set(["audit_log", "research_log", "usage_ledger"]);
+const NO_UPDATE = new Set(["audit_log", "research_log", "content_versions", "content_reviews"]);
+const NO_DELETE = new Set(["audit_log", "research_log", "usage_ledger", "content_versions", "content_reviews"]);
 
 const RING = readKeyring({ ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64") });
 
-type Seeded = { ws: string; user: string; site: string };
+type Seeded = { ws: string; user: string; site: string; item: string; run: string };
 
 describe("row-level security isolates workspaces", { skip: skipReason ?? false }, () => {
   let db: TestDb;
@@ -102,7 +113,20 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
     await withWorkspace(pool, { workspaceId: ws, actorId: u.id }, (tx) =>
       saveKeywords(tx, ws, site.id, [{ ...r.data[0], keyword: `${slug} private keyword`, market: "United States", fit: "unknown", variantKey: "", cluster: "", sourceLogId: r.logId, metricsAt: new Date() }]),
     );
-    return { ws, user: u.id, site: site.id };
+    // Phase 3: an article with a version, a comment and a review, a run with its steps, a publication, a rank-tracking entry, a link check
+    const content = await withWorkspace(pool, { workspaceId: ws, actorId: u.id }, async (tx) => {
+      const item = (await createPlanned(tx, ws, site.id, new Date("2030-01-01T09:00:00Z"), null, u.id))!;
+      await tx.exec("UPDATE content_items SET primary_keyword = $2, title = $3, slug = $4, status = 'awaiting_review' WHERE id = $1", [item, `${slug} secret keyword`, `${slug} secret title`, `${slug}-secret`]);
+      await saveVersion(tx, ws, item, { title: `${slug} secret title`, description: "", bodyMd: `${slug} private body text`, cover: {} }, "draft", u.id);
+      await addComment(tx, ws, item, u.id, `${slug} private comment`, 1);
+      await addReview(tx, ws, item, 1, "changes_requested", `${slug} private review note`, u.id, "owner");
+      const run = await createRun(tx, ws, site.id, item, "manual", u.id);
+      await tx.exec("INSERT INTO publications (workspace_id, site_id, item_id, publisher, mode, status, path) VALUES ($1, $2, $3, 'github', 'pr', 'open', $4)", [ws, site.id, item, `content/${slug}-secret.md`]);
+      await tx.exec("INSERT INTO rank_tracking_queue (workspace_id, site_id, item_id, keyword) VALUES ($1, $2, $3, $4)", [ws, site.id, item, `${slug} secret keyword`]);
+      await tx.exec("INSERT INTO link_checks (workspace_id, site_id, url, status_code, ok) VALUES ($1, $2, $3, 200, true)", [ws, site.id, `https://${slug}.example/private-source`]);
+      return { item, run };
+    });
+    return { ws, user: u.id, site: site.id, ...content };
   }
 
   before(async () => {
@@ -201,6 +225,15 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
       ["provider_cache", "INSERT INTO provider_cache (workspace_id, cache_key, operation, provider, params, result, expires_at) VALUES ($1, repeat('b', 64), 'serp', 'fake', '{}', '[]', now() + interval '1 day')", [B.ws]],
       ["seed_backlog", "INSERT INTO seed_backlog (workspace_id, site_id, seed, added_by) VALUES ($1, $2, 'planted', 'system:test')", [B.ws, B.site]],
       ["keywords", "INSERT INTO keywords (workspace_id, site_id, keyword) VALUES ($1, $2, 'planted')", [B.ws, B.site]],
+      ["content_items", "INSERT INTO content_items (workspace_id, site_id, slot_at, created_by) VALUES ($1, $2, now() + interval '9 days', 'system:test')", [B.ws, B.site]],
+      ["content_versions", "INSERT INTO content_versions (workspace_id, item_id, version, source, actor_id) VALUES ($1, $2, 99, 'editor', 'system:test')", [B.ws, B.item]],
+      ["content_comments", "INSERT INTO content_comments (workspace_id, item_id, user_id, body) VALUES ($1, $2, $3, 'planted')", [B.ws, B.item, B.user]],
+      ["content_reviews", "INSERT INTO content_reviews (workspace_id, item_id, version, decision, reviewer_id) VALUES ($1, $2, 1, 'approved', 'system:test')", [B.ws, B.item]],
+      ["pipeline_runs", "INSERT INTO pipeline_runs (workspace_id, site_id, item_id, trigger, created_by) VALUES ($1, $2, $3, 'manual', 'system:test')", [B.ws, B.site, B.item]],
+      ["pipeline_steps", "INSERT INTO pipeline_steps (workspace_id, run_id, step, position) VALUES ($1, gen_random_uuid(), 'context', 1)", [B.ws]],
+      ["publications", "INSERT INTO publications (workspace_id, site_id, item_id, publisher, mode) VALUES ($1, $2, $3, 'webhook', 'webhook')", [B.ws, B.site, B.item]],
+      ["rank_tracking_queue", "INSERT INTO rank_tracking_queue (workspace_id, site_id, keyword) VALUES ($1, $2, 'planted')", [B.ws, B.site]],
+      ["link_checks", "INSERT INTO link_checks (workspace_id, site_id, url, ok) VALUES ($1, $2, 'https://planted.example/', true)", [B.ws, B.site]],
     ];
     for (const [table, sql, params] of attempts) {
       await assert.rejects(asA((tx) => tx.exec(sql, params)), /row-level security|violates/, `${table}: workspace A inserted a row with workspace_id ${B.ws}`);
@@ -262,6 +295,34 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
     for (const sql of ["INSERT INTO audit_log (action, entity_type) VALUES ('forged', 'x')", "UPDATE audit_log SET action = 'x'", "DELETE FROM audit_log"]) {
       await assert.rejects(asA((tx) => tx.exec(sql)), /permission denied/, `the app role could run: ${sql}`);
     }
+  });
+
+  it("article versions and review decisions are append-only for the app; article text is fingerprinted in the audit log", async () => {
+    for (const sql of ["UPDATE content_versions SET note = 'rewritten history'", "DELETE FROM content_versions", "UPDATE content_reviews SET decision = 'approved'", "DELETE FROM content_reviews"]) {
+      await assert.rejects(asA((tx) => tx.exec(sql)), /permission denied/, `the app role could run: ${sql}`);
+    }
+    const rows = await adminQuery<{ entity_type: string; after: Record<string, unknown> }>(
+      "SELECT entity_type, after FROM audit_log WHERE entity_type IN ('content_items', 'content_versions') AND after IS NOT NULL AND after->>'body_md' IS NOT NULL",
+      [],
+      db.name,
+    );
+    assert.ok(rows.length >= 2);
+    for (const r of rows) assert.ok(!JSON.stringify(r.after).includes("private body text"), `${r.entity_type}: article text copied into the audit log`);
+  });
+
+  it("the worker's cross-workspace site list is refused to everyone but the worker; a feed token reveals one enabled site only", async () => {
+    await assert.rejects(withActor(pool, { actorId: A.user }, (tx) => tx.many("SELECT * FROM job_sites()")), /only the worker/);
+    const all = await withActor(pool, { actorId: "system:worker" }, (tx) => tx.many<{ workspace_id: string }>("SELECT * FROM job_sites()"));
+    assert.deepEqual(new Set(all.map((r) => r.workspace_id)), new Set([A.ws, B.ws]));
+    const [tok] = await adminQuery<{ t: string }>("SELECT feed_token AS t FROM sites WHERE id = $1", [B.site], db.name);
+    const off = await withActor(pool, { actorId: "system:feed" }, (tx) => tx.many("SELECT * FROM feed_site($1)", [tok.t]));
+    assert.equal(off.length, 0, "a disabled feed answered");
+    const asB = <T>(fn: (tx: Tx) => Promise<T>) => withWorkspace(pool, { workspaceId: B.ws, actorId: B.user }, fn);
+    await asB((tx) => tx.exec("UPDATE sites SET feed_enabled = true WHERE id = $1", [B.site]));
+    const on = await withActor(pool, { actorId: "system:feed" }, (tx) => tx.many<{ site_id: string }>("SELECT * FROM feed_site($1)", [tok.t]));
+    assert.deepEqual(on.map((r) => r.site_id), [B.site]);
+    assert.equal((await withActor(pool, { actorId: "system:feed" }, (tx) => tx.many("SELECT * FROM feed_site($1)", ["0".repeat(64)]))).length, 0);
+    await asB((tx) => tx.exec("UPDATE sites SET feed_enabled = false WHERE id = $1", [B.site]));
   });
 
   it("research results are fingerprinted in the audit log, not copied (research_log and provider_cache)", async () => {

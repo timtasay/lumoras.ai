@@ -4,6 +4,8 @@
  * problem before failing, so a misconfigured container says everything at once.
  */
 import { isLogLevel, type LogLevel } from "./log.ts";
+import { parsePriceTable, type PriceTable } from "./llm/prices.ts";
+import { DEFAULT_MODELS, type LlmModels } from "./llm/types.ts";
 
 export class EnvError extends Error {
   constructor(public readonly problems: string[]) {
@@ -66,10 +68,120 @@ export function readMigrateEnv(env: Env = process.env): MigrateEnv {
   return { ownerUrl, logLevel: level };
 }
 
-export type WorkerEnv = { databaseUrl: string; logLevel: LogLevel; heartbeatMs: number };
+// ---------------------------------------------------------------------------
+// Phase 3: the model provider, outbound fetching, email (shared by web and worker)
+// ---------------------------------------------------------------------------
+export type LlmEnv = { provider: "none" | "fake" | "anthropic"; apiKey: string | null; baseURL: string | null; models: LlmModels; prices: PriceTable };
+
+/**
+ * LLM_PROVIDER: "fake" (recorded fixtures) by default in development and
+ * tests, "none" in production until ANTHROPIC_API_KEY is set and the owner
+ * switches to "anthropic". "fake" is refused next to an https base URL.
+ */
+export function readLlmEnv(env: Env, problems: string[], opts: { production: boolean; secure: boolean }): LlmEnv {
+  const raw = env.LLM_PROVIDER?.trim() || (opts.production ? "none" : "fake");
+  const model = (name: string, d: string) => {
+    const v = env[name]?.trim() || d;
+    if (!/^claude-[a-z0-9.-]{1,60}$/.test(v)) problems.push(`${name} must be a Claude model id like ${d}`);
+    return v;
+  };
+  const models = { draft: model("LLM_MODEL_DRAFT", DEFAULT_MODELS.draft), review: model("LLM_MODEL_REVIEW", DEFAULT_MODELS.review) };
+  const prices = parsePriceTable(env.LLM_PRICES_JSON, problems);
+  const apiKey = env.ANTHROPIC_API_KEY?.trim() || null;
+  const baseURL = env.ANTHROPIC_BASE_URL?.trim() || null;
+  if (baseURL && !/^https:\/\//.test(baseURL)) problems.push("ANTHROPIC_BASE_URL must be https");
+  switch (raw) {
+    case "none":
+      return { provider: "none", apiKey: null, baseURL: null, models, prices };
+    case "fake":
+      if (opts.secure) problems.push("LLM_PROVIDER=fake writes demo articles and cannot be used with an https BETTER_AUTH_URL");
+      return { provider: "fake", apiKey: null, baseURL: null, models, prices };
+    case "anthropic":
+      if (!apiKey) problems.push("ANTHROPIC_API_KEY is required when LLM_PROVIDER=anthropic");
+      return { provider: "anthropic", apiKey, baseURL, models, prices };
+    default:
+      problems.push(`LLM_PROVIDER must be one of none, fake, anthropic (got "${raw}")`);
+      return { provider: "none", apiKey: null, baseURL: null, models, prices };
+  }
+}
+
+export type OutboundEnv = {
+  /** Tests only: *.test host names the SSRF guard resolves to 127.0.0.1 (fake GitHub, Gitea, webhook receivers). */
+  testHosts: string[];
+  /** live: pages are fetched through the SSRF guard; recorded: answers from recorded pages only (tests, development). */
+  fetchMode: "live" | "recorded";
+};
+
+export function readOutboundEnv(env: Env, problems: string[], opts: { production: boolean; secure: boolean }): OutboundEnv {
+  const testHosts: string[] = [];
+  const raw = env.OUTBOUND_TEST_HOSTS?.trim();
+  if (raw) {
+    if (opts.secure) problems.push("OUTBOUND_TEST_HOSTS is for tests only and cannot be used with an https BETTER_AUTH_URL");
+    for (const h of raw.split(",").map((x) => x.trim()).filter(Boolean)) {
+      if (!/^[a-z0-9-]+(\.[a-z0-9-]+)*\.test$/.test(h)) problems.push(`OUTBOUND_TEST_HOSTS entry "${h}" must be a host name ending in .test`);
+      else testHosts.push(h);
+    }
+  }
+  const mode = env.OUTBOUND_FETCH?.trim() || (opts.production ? "live" : "recorded");
+  if (mode !== "live" && mode !== "recorded") problems.push(`OUTBOUND_FETCH must be live or recorded (got "${mode}")`);
+  if (mode === "recorded" && opts.secure) problems.push("OUTBOUND_FETCH=recorded serves recorded pages and cannot be used with an https BETTER_AUTH_URL");
+  return { testHosts, fetchMode: mode === "live" ? "live" : "recorded" };
+}
+
+export type EmailEnv = { email: { resendKey: string; from: string; fromName: string } | null; emailOutboxDir: string | null };
+
+export function readEmailEnv(env: Env, problems: string[], opts: { secure: boolean }): EmailEnv {
+  const resendKey = env.RESEND_API_KEY?.trim(), from = env.EMAIL_FROM?.trim();
+  if (resendKey && !from) problems.push("EMAIL_FROM is required when RESEND_API_KEY is set");
+  const email = resendKey && from ? { resendKey, from, fromName: env.EMAIL_FROM_NAME?.trim() || "Lumoras Growth" } : null;
+  const emailOutboxDir = env.EMAIL_OUTBOX_DIR?.trim() || null;
+  if (emailOutboxDir && opts.secure) problems.push("EMAIL_OUTBOX_DIR is for tests only and cannot be used with an https BETTER_AUTH_URL");
+  return { email, emailOutboxDir };
+}
+
+function baseUrlOf(env: Env, problems: string[], production: boolean): { baseUrl: string; secure: boolean } {
+  let baseUrl = env.BETTER_AUTH_URL?.trim() || "";
+  if (!baseUrl) {
+    if (production) problems.push("BETTER_AUTH_URL is required (the public origin, e.g. https://growth.lumoras.ai)");
+    else baseUrl = `http://localhost:${env.PORT?.trim() || "3007"}`;
+  }
+  let secure = false;
+  if (baseUrl) {
+    try {
+      const u = new URL(baseUrl);
+      if (u.pathname !== "/" || u.search || u.hash) problems.push("BETTER_AUTH_URL must be an origin only (no path)");
+      secure = u.protocol === "https:";
+      if (!secure && (u.protocol !== "http:" || (production && !isLoopbackHost(u.hostname)))) {
+        problems.push("BETTER_AUTH_URL must use https (plain http is allowed only for localhost)");
+      }
+      baseUrl = u.origin;
+    } catch {
+      problems.push("BETTER_AUTH_URL is not a valid URL");
+    }
+  }
+  return { baseUrl, secure };
+}
+
+export type WorkerEnv = {
+  databaseUrl: string;
+  logLevel: LogLevel;
+  heartbeatMs: number;
+  baseUrl: string;
+  secure: boolean;
+  seoProvider: SeoProviderEnv;
+  llm: LlmEnv;
+  outbound: OutboundEnv;
+  email: EmailEnv;
+  googleOAuth: { clientId: string; clientSecret: string } | null;
+  googleApiTestOrigin: string | null;
+  crawlerTestOrigins: TestOrigins;
+  /** Pipeline runs worked on at once (default 2). */
+  concurrency: number;
+};
 
 export function readWorkerEnv(env: Env = process.env): WorkerEnv {
   const problems: string[] = [];
+  const production = env.NODE_ENV === "production";
   const databaseUrl = postgresUrl(env, "DATABASE_URL", problems, true);
   const level = logLevel(env, problems);
   let heartbeatMs = 300_000;
@@ -79,8 +191,54 @@ export function readWorkerEnv(env: Env = process.env): WorkerEnv {
     if (!Number.isInteger(n) || n < 1000) problems.push("WORKER_HEARTBEAT_MS must be an integer ≥ 1000");
     else heartbeatMs = n;
   }
+  let concurrency = 2;
+  const cc = env.WORKER_CONCURRENCY?.trim();
+  if (cc) {
+    const n = Number(cc);
+    if (!Number.isInteger(n) || n < 1 || n > 16) problems.push("WORKER_CONCURRENCY must be an integer from 1 to 16");
+    else concurrency = n;
+  }
+  const { baseUrl, secure } = baseUrlOf(env, problems, production);
+  const seoProvider = readSeoProviderEnv(env, problems, { production, secure });
+  const llm = readLlmEnv(env, problems, { production, secure });
+  const outbound = readOutboundEnv(env, problems, { production, secure });
+  const email = readEmailEnv(env, problems, { secure });
+  if (production && !email.email && !email.emailOutboxDir) problems.push("RESEND_API_KEY and EMAIL_FROM are required in production (runway alerts are sent by email)");
+  const goid = env.GOOGLE_OAUTH_CLIENT_ID?.trim(), gosecret = env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
+  if (!!goid !== !!gosecret) problems.push("GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET must be set together");
+  const gto = env.GOOGLE_API_TEST_ORIGIN?.trim() || null;
+  if (gto && (secure || !LOOPBACK_ORIGIN.test(gto))) problems.push("GOOGLE_API_TEST_ORIGIN is for tests only (http://127.0.0.1:PORT, never with https)");
+  const crawlerTestOrigins = parseTestOrigins(env, problems, secure);
   if (problems.length || !databaseUrl) throw new EnvError(problems);
-  return { databaseUrl, logLevel: level, heartbeatMs };
+  return {
+    databaseUrl,
+    logLevel: level,
+    heartbeatMs,
+    baseUrl,
+    secure,
+    seoProvider,
+    llm,
+    outbound,
+    email,
+    googleOAuth: goid && gosecret ? { clientId: goid, clientSecret: gosecret } : null,
+    googleApiTestOrigin: gto,
+    crawlerTestOrigins,
+    concurrency,
+  };
+}
+
+function parseTestOrigins(env: Env, problems: string[], secure: boolean): TestOrigins {
+  const crawlerTestOrigins: TestOrigins = new Map();
+  const cto = env.CRAWLER_TEST_ORIGINS?.trim();
+  if (cto) {
+    if (secure) problems.push("CRAWLER_TEST_ORIGINS is for tests only and cannot be used with an https BETTER_AUTH_URL");
+    for (const pair of cto.split(",")) {
+      const m = /^([a-z0-9.-]+\.test)=http:\/\/127\.0\.0\.1:(\d{2,5})$/.exec(pair.trim());
+      if (!m) problems.push(`CRAWLER_TEST_ORIGINS entry "${pair}" must look like fake-site.test=http://127.0.0.1:4555`);
+      else crawlerTestOrigins.set(m[1], { address: "127.0.0.1", origin: `http://${m[1]}:${m[2]}` });
+    }
+  }
+  return crawlerTestOrigins;
 }
 
 /**
@@ -118,6 +276,9 @@ export type WebEnv = {
   googleOAuth: { clientId: string; clientSecret: string } | null;
   /** Tests only: every Google endpoint (OAuth and APIs) lives at this loopback origin. */
   googleApiTestOrigin: string | null;
+  /** Phase 3: the model provider (the web shows it; the worker uses it). */
+  llm: LlmEnv;
+  outbound: OutboundEnv;
 };
 
 export type SeoProviderEnv =
@@ -252,6 +413,8 @@ export function readWebEnv(env: Env = process.env): WebEnv {
   if (gto && secure) problems.push("GOOGLE_API_TEST_ORIGIN is for tests only and cannot be used with an https BETTER_AUTH_URL");
   else if (gto && !LOOPBACK_ORIGIN.test(gto)) problems.push("GOOGLE_API_TEST_ORIGIN must look like http://127.0.0.1:4566");
 
+  const llm = readLlmEnv(env, problems, { production, secure });
+  const outbound = readOutboundEnv(env, problems, { production, secure });
   if (problems.length || !databaseUrl) throw new EnvError(problems);
-  return { databaseUrl, logLevel: level, baseUrl, secure, authSecret, google, email, emailOutboxDir, rateLimitScale, crawlerTestOrigins, seoProvider, googleOAuth, googleApiTestOrigin: gto };
+  return { databaseUrl, logLevel: level, baseUrl, secure, authSecret, google, email, emailOutboxDir, rateLimitScale, crawlerTestOrigins, seoProvider, googleOAuth, googleApiTestOrigin: gto, llm, outbound };
 }

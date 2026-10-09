@@ -11,6 +11,16 @@ import { provider, providerInfo } from "@/lib/providers/registry";
 import { loadSite } from "@/lib/site-page";
 import { dateLabel } from "@/lib/ui/time";
 import { createConnectionAction, deleteConnectionAction } from "../../../actions";
+import { setPublishConnectionAction, testPublishConnectionAction } from "../../../publishing-actions";
+import { getSiteSettings } from "@/lib/data/sites";
+import { DEFAULT_TEMPLATE, LUMORAS_INSIGHTS_TEMPLATE } from "@/lib/publishers/frontmatter";
+import type { TemplatePreset } from "@/components/forms/ConnectionsPanel";
+
+/** Site formats offered when adding a Git connection. */
+const PRESETS: TemplatePreset[] = [
+  { key: "generic", label: "Markdown site (Next.js, Astro, Hugo, Jekyll)", contentDir: "content/posts", filenamePattern: "{{slug}}.md", livePath: "/blog/{{slug}}", template: DEFAULT_TEMPLATE },
+  { key: "lumoras", label: "lumoras.ai insights (content spec)", contentDir: "apps/web/content/insights", filenamePattern: "{{slug}}.md", livePath: "/insights/{{slug}}", template: LUMORAS_INSIGHTS_TEMPLATE },
+];
 import { googleCards } from "@/lib/google/view";
 
 export const metadata: Metadata = { title: "Connections" };
@@ -18,7 +28,7 @@ export const metadata: Metadata = { title: "Connections" };
 export default async function ConnectionsPage({ params, searchParams }: { params: Promise<{ slug: string; siteId: string }>; searchParams: Promise<{ google?: string; reason?: string; kind?: string }> }) {
   const { slug, siteId } = await params;
   const sp = await searchParams;
-  const { site, a, conns, google } = await loadSite(slug, siteId, async (tx, s) => ({ conns: await listConnections(tx, s.id), google: await listGoogleConnections(tx, s.id) }));
+  const { site, a, conns, google, settings } = await loadSite(slug, siteId, async (tx, s) => ({ conns: await listConnections(tx, s.id), google: await listGoogleConnections(tx, s.id), settings: await getSiteSettings(tx, s.id) }));
   const flash = sp.google === "connected" ? { ok: true, text: `${sp.kind === "ga4" ? "Google Analytics 4" : "Search Console"} is connected.` } : sp.google === "error" ? { ok: false, text: CONNECT_RESULT_TEXT[sp.reason ?? ""] ?? CONNECT_RESULT_TEXT.failed } : null;
   let balance: number | null = null, note: string | null = null;
   if (a.viewer.isPlatformAdmin) {
@@ -41,6 +51,7 @@ export default async function ConnectionsPage({ params, searchParams }: { params
       <section aria-labelledby="pub-h">
         <div className="sec-head">
           <h2 id="pub-h">Publishing and other connections</h2>
+          <p className="muted small">Articles publish through one Git or webhook connection: a file per post in the client&apos;s repository (as a pull request by default), or a signed JSON delivery.</p>
         </div>
         <ConnectionsPanel
           // only the safe view crosses to the browser: no ciphertext, no secret
@@ -48,6 +59,10 @@ export default async function ConnectionsPage({ params, searchParams }: { params
           canEdit={can(a.role, "connection:manage")}
           create={createConnectionAction.bind(null, slug, site.id)}
           remove={deleteConnectionAction.bind(null, slug, site.id)}
+          publishId={settings.publish_connection_id}
+          test={testPublishConnectionAction.bind(null, slug, site.id)}
+          choosePublish={setPublishConnectionAction.bind(null, slug, site.id)}
+          presets={site.domain === "lumoras.ai" ? [PRESETS[1], PRESETS[0]] : PRESETS}
         />
       </section>
       {a.viewer.isPlatformAdmin ? <ProviderStatus info={providerInfo()} balance={balance} note={note} /> : null}

@@ -14,6 +14,10 @@
  * Redirects are followed by hand, up to maxRedirects. The response body is
  * capped (after decompression) and the whole fetch, redirects included, has
  * one deadline. No connection reuse (agent: false).
+ *
+ * Phase 3 adds other methods (webhooks POST, Git hosts PUT/DELETE) with a
+ * body and headers. Only GET and HEAD follow redirects: a write that is
+ * redirected comes back as the 3xx response, never replayed elsewhere.
  */
 import { lookup as dnsLookup } from "node:dns/promises";
 import http from "node:http";
@@ -52,6 +56,10 @@ export type SafeFetchPolicy = {
 };
 
 export type SafeFetchOptions = {
+  method?: "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE";
+  body?: string | Buffer;
+  /** Extra request headers (user-agent and accept have their own options). */
+  headers?: Record<string, string>;
   maxBytes?: number;
   timeoutMs?: number;
   maxRedirects?: number;
@@ -130,7 +138,9 @@ function decoded(res: http.IncomingMessage): Readable {
   return res;
 }
 
-function requestOnce(t: Target, o: Required<Pick<SafeFetchOptions, "maxBytes" | "accept" | "userAgent">>, deadline: number, signal?: AbortSignal) {
+type ReqOpts = Required<Pick<SafeFetchOptions, "maxBytes" | "accept" | "userAgent" | "method">> & { body?: string | Buffer; headers?: Record<string, string> };
+
+function requestOnce(t: Target, o: ReqOpts, deadline: number, signal?: AbortSignal) {
   return new Promise<{ status: number; headers: http.IncomingHttpHeaders; body: Buffer | null }>((resolveP, rejectP) => {
     const mod = t.url.protocol === "https:" ? https : http;
     const remaining = deadline - Date.now();
@@ -148,16 +158,22 @@ function requestOnce(t: Target, o: Required<Pick<SafeFetchOptions, "maxBytes" | 
         host: t.host,
         port: t.port,
         path: t.url.pathname + t.url.search,
-        method: "GET",
+        method: o.method,
         lookup: pinnedLookup(t.address, t.family),
         autoSelectFamily: false,
         agent: false,
         servername: isIP(t.host) ? undefined : t.host,
-        headers: { "user-agent": o.userAgent, accept: o.accept, "accept-encoding": "gzip, deflate, br" },
+        headers: {
+          ...o.headers,
+          "user-agent": o.userAgent,
+          accept: o.accept,
+          "accept-encoding": "gzip, deflate, br",
+          ...(o.body !== undefined ? { "content-length": String(Buffer.byteLength(o.body)) } : {}),
+        },
       } as https.RequestOptions,
       (res) => {
         const status = res.statusCode ?? 0;
-        if (status >= 300 && status < 400 && res.headers.location) {
+        if (status >= 300 && status < 400 && res.headers.location && (o.method === "GET" || o.method === "HEAD")) {
           res.resume();
           settled = true;
           clearTimeout(timer);
@@ -190,15 +206,18 @@ function requestOnce(t: Target, o: Required<Pick<SafeFetchOptions, "maxBytes" | 
     const timer = setTimeout(() => fail(new SsrfError("timeout", `no complete response within the time limit`, t.url.href)), remaining);
     req.on("error", (e) => fail(new SsrfError("network", `request failed: ${e.message}`, t.url.href)));
     signal?.addEventListener("abort", () => fail(new SsrfError("timeout", "aborted", t.url.href)), { once: true });
-    req.end();
+    req.end(o.body);
   });
 }
 
 export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Promise<SafeResponse> {
-  const o = {
+  const o: ReqOpts = {
     maxBytes: opts.maxBytes ?? 5 * 1024 * 1024,
     accept: opts.accept ?? "*/*",
     userAgent: opts.userAgent ?? USER_AGENT,
+    method: opts.method ?? "GET",
+    body: opts.body,
+    headers: opts.headers,
   };
   const maxRedirects = opts.maxRedirects ?? 5;
   const deadline = Date.now() + (opts.timeoutMs ?? 15_000);

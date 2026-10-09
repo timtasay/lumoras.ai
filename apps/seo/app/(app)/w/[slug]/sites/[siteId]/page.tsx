@@ -51,7 +51,7 @@ export default async function SiteOverview({ params, searchParams }: { params: P
             ) : (
               "Not scanned yet."
             )}{" "}
-            Daily refresh arrives with scheduling (Phase 3).
+            The worker refreshes the sitemaps daily.
           </p>
         </div>
         <ScanVisual slug={slug} siteId={site.id} domain={site.domain} canRun={canRun} autoStart={sp.crawl === "1" && !crawl} />

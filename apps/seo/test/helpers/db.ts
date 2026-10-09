@@ -13,6 +13,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import pg from "pg";
 import { DEFAULT_MIGRATIONS_DIR, runMigrations } from "../../lib/db/migrate.ts";
+import { installJobSchema } from "../../lib/jobs/install.ts";
 
 const run = promisify(execFile);
 export const ADMIN_URL = process.env.TEST_DATABASE_URL;
@@ -52,7 +53,7 @@ export async function adminQuery<T extends pg.QueryResultRow = pg.QueryResultRow
 
 export type TestDb = { name: string; owner: string; app: string; ownerUrl: string; appUrl: string; adminUrl: string };
 
-export async function createTestDatabase(opts: { migrate?: boolean } = {}): Promise<TestDb> {
+export async function createTestDatabase(opts: { migrate?: boolean; jobs?: boolean } = {}): Promise<TestDb> {
   const id = randomBytes(4).toString("hex");
   const name = `seo_t_${id}`, owner = `seo_owner_${id}`, app = `seo_app_${id}`;
   const pw = randomBytes(12).toString("hex");
@@ -87,6 +88,8 @@ export async function createTestDatabase(opts: { migrate?: boolean } = {}): Prom
   })();
   const t = { name, owner, app, ownerUrl: at(owner), appUrl: at(app), adminUrl };
   if (opts.migrate !== false) await runMigrations({ connectionString: t.ownerUrl, dir: DEFAULT_MIGRATIONS_DIR });
+  // the job queue schema, as the owner (scripts/migrate.ts does the same at deploy)
+  if (opts.migrate !== false && opts.jobs !== false) await installJobSchema(t.ownerUrl);
   return t;
 }
 

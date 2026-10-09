@@ -32,6 +32,10 @@ export const LIMITS = {
   googleConnectPerSite: { name: "google-connect:site", max: 10, windowSec: 60 * 60 },
   /** Google live tests and property listings per site */
   googleTestPerSite: { name: "google-test:site", max: 60, windowSec: 60 * 60 },
+  /** pipeline runs started or retried by hand, per member (each one spends model budget) */
+  pipelinePerUser: { name: "pipeline:user", max: 30, windowSec: 60 * 60 },
+  /** publishing-connection tests per site (each one calls the client's Git host or webhook) */
+  publishTestPerSite: { name: "publish-test:site", max: 30, windowSec: 60 * 60 },
 } as const satisfies Record<string, Limit>;
 
 export class RateLimitedError extends Error {

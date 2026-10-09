@@ -58,8 +58,8 @@ describe("seed and data layer (PostgreSQL)", { skip: skipReason ?? false }, () =
       db.name,
     );
     assert.deepEqual(roles, [
-      { slug: "lumoras", roles: ["editor", "owner", "viewer"] },
-      { slug: "northwind-dental", roles: ["editor", "owner", "viewer"] },
+      { slug: "lumoras", roles: ["editor", "owner", "reviewer", "viewer"] },
+      { slug: "northwind-dental", roles: ["editor", "owner", "reviewer", "viewer"] },
     ]);
     const demo = await adminQuery<{ n: string }>("SELECT count(*) n FROM authors WHERE NOT is_demo", [], db.name);
     assert.equal(Number(demo[0].n), 0, "every seeded author is marked as demo");

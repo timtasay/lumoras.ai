@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { FAKE_PAGES } from "../test/helpers/fake-site";
 import { E2E } from "./config";
+import { readFile } from "node:fs/promises";
 import { db, overflow, shot, signIn, uniqueEmail, watchConsole } from "./helpers";
 
 const step = async (page: Page, name: string, width: number, theme: string) => {
@@ -9,7 +10,7 @@ const step = async (page: Page, name: string, width: number, theme: string) => {
 };
 
 for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
-  test(`onboarding end to end (${theme}, ${width}px): workspace → site → scan of a fake site → brand pre-filled → authors → coming-next steps → done`, async ({ page }) => {
+  test(`onboarding end to end (${theme}, ${width}px): workspace → site → scan of a fake site → brand pre-filled → authors → search → publishing (tested) → schedule → done`, async ({ page }) => {
     test.setTimeout(150_000);
     const errors = watchConsole(page);
     await page.addInitScript((t) => localStorage.setItem("lumoras-theme", t), theme);
@@ -83,19 +84,50 @@ for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
     await expect(page.getByRole("button", { name: "Connect Search Console" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Connect GA4" })).toBeVisible();
     await shot(page, `onboarding-search-${theme}-${width}`, "seo-p2");
-    for (const [path, heading] of [
-      ["search", "Connect Search Console and GA4"],
-      ["publishing", "Choose how articles get published"],
-      ["schedule", "Set a schedule and a budget"],
-    ]) {
-      await expect(page).toHaveURL(new RegExp(`/w/${slug}/onboarding/${path}$`));
-      await expect(page.getByRole("heading", { name: heading })).toBeVisible();
-      await step(page, path, width, theme);
-      await page.getByRole("button", { name: "Skip for now" }).click();
-    }
+    await expect(page.getByRole("heading", { name: "Connect Search Console and GA4" })).toBeVisible();
+    await step(page, "search", width, theme);
+    await page.getByRole("button", { name: "Skip for now" }).click();
+
+    // step 7, real: a signed webhook to the local receiver, tested live, chosen for publishing
+    await expect(page).toHaveURL(new RegExp(`/w/${slug}/onboarding/publishing$`));
+    await expect(page.getByRole("heading", { name: "Choose how articles get published" })).toBeVisible();
+    const state = JSON.parse(await readFile(E2E.stateFile, "utf8")) as { webhook: string; webhookSecret: string };
+    await page.getByRole("radio", { name: "Webhook" }).click();
+    await page.getByLabel("Endpoint").fill(`${state.webhook}/hook`);
+    await page.getByLabel("Signing secret").fill(state.webhookSecret);
+    await page.getByRole("button", { name: "Save connection" }).click();
+    const conn = page.locator(".conn").filter({ hasText: "Publishing webhook" });
+    await expect(conn).toBeVisible();
+    await conn.getByRole("button", { name: "Test" }).click();
+    await expect(conn.locator(".conn-test")).toContainText("The endpoint accepted a signed ping (200).");
+    await conn.getByRole("button", { name: "Use for publishing" }).click();
+    await expect(conn.getByText("Publishes this site")).toBeVisible();
+    await step(page, "publishing", width, theme);
+    await shot(page, `onboarding-publishing-${theme}-${width}`, "seo-p3");
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+    // step 8, real: the schedule (defaults: Tue/Fri 09:00, rolling 3 days, approval required, no back-dating)
+    await expect(page).toHaveURL(new RegExp(`/w/${slug}/onboarding/schedule$`));
+    await expect(page.getByRole("heading", { name: "Set a schedule" })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: "Tuesday" })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Friday" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: /Approval required/ })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: /Allow back-dating/ })).not.toBeChecked();
+    // autopilot shows its warning and is refused without the acknowledgement
+    await page.getByRole("radio", { name: /Autopilot/ }).check();
+    await expect(page.getByText(/Autopilot publishes an article as soon as its lint and fact-check pass/)).toBeVisible();
+    await page.getByRole("checkbox", { name: /I understand: articles will publish/ }).uncheck();
+    await page.getByRole("button", { name: "Save and finish" }).click();
+    await expect(page.getByText("Tick the box to confirm you understand what autopilot does")).toBeVisible();
+    await page.getByRole("radio", { name: /Approval required/ }).check();
+    await step(page, "schedule", width, theme);
+    await shot(page, `onboarding-schedule-${theme}-${width}`, "seo-p3");
+    await page.getByRole("button", { name: "Save and finish" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/w/${slug}/onboarding/done$`));
     await expect(page.getByText("7 routes on northwind-dental.test")).toBeVisible();
+    await expect(page.locator(".done-list")).toContainText("Publishing webhook");
+    await expect(page.locator(".done-list")).toContainText("Tuesday and Friday at 09:00 (America/Los Angeles)");
     await expect(page.locator(".done-cal .cal")).toBeVisible();
     await step(page, "done", width, theme);
     await page.getByRole("link", { name: "Open the workspace" }).click();
@@ -115,7 +147,10 @@ for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
     const brand = (await pool.query<{ competitors: string[]; sells: string[] }>("SELECT competitors, sells FROM brand_profiles WHERE workspace_id = $1", [ws.id])).rows[0];
     expect(brand).toEqual({ competitors: ["rival-dental.example"], sells: ["Cleanings", "Invisalign", "Crowns"] });
     const actions = (await pool.query<{ action: string }>("SELECT DISTINCT action FROM audit_log WHERE workspace_id = $1", [ws.id])).rows.map((r) => r.action);
-    expect(actions).toEqual(expect.arrayContaining(["workspace.create", "site.create", "crawl.start", "crawl.finish", "brand_profile.update", "author.create", "workspace.onboarding"]));
+    expect(actions).toEqual(expect.arrayContaining(["workspace.create", "site.create", "crawl.start", "crawl.finish", "brand_profile.update", "author.create", "workspace.onboarding", "connection.create", "connection.test", "site.publish_connection", "site.schedule"]));
+    const site = (await pool.query<{ review_mode: string; allow_backdating: boolean; schedule_active: boolean; publish_connection_id: string | null }>("SELECT review_mode, allow_backdating, schedule_active, publish_connection_id FROM sites WHERE workspace_id = $1", [ws.id])).rows[0];
+    expect(site).toMatchObject({ review_mode: "approval", allow_backdating: false, schedule_active: true });
+    expect(site.publish_connection_id).not.toBeNull();
     const spent = (await pool.query("SELECT 1 FROM usage_ledger WHERE workspace_id = $1", [ws.id])).rows;
     expect(spent, "the refused domain overview was charged").toEqual([]);
     expect(errors).toEqual([]);

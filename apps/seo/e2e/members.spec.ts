@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { db, signIn, uniqueEmail, waitForMail, watchConsole } from "./helpers";
 
-test("invite and accept: the owner invites a viewer by email; the invitee signs in, accepts and lands in the workspace", async ({ browser }) => {
+test("invite and accept: the owner invites a client reviewer by email; the invitee signs in, accepts and lands in the workspace", async ({ browser }) => {
   const errors: string[] = [];
   const ownerCtx = await browser.newContext();
   const owner = await ownerCtx.newPage();
@@ -12,7 +12,7 @@ test("invite and accept: the owner invites a viewer by email; the invitee signs 
   const since = Date.now() - 1;
   const form = owner.locator(".invite-form");
   await form.getByLabel("Email", { exact: true }).fill(email);
-  await form.getByLabel("Role").selectOption("viewer");
+  await form.getByLabel("Role").selectOption("reviewer");
   await owner.getByRole("button", { name: "Send invitation" }).click();
   await expect(owner.getByText(`Invitation sent to ${email}.`)).toBeVisible();
   await expect(owner.locator(".pending-row").filter({ hasText: email })).toBeVisible();
@@ -24,7 +24,8 @@ test("invite and accept: the owner invites a viewer by email; the invitee signs 
   errors.push(...watchConsole(invitee));
   await invitee.goto(mail.link);
   await expect(invitee.getByRole("heading", { name: "Join Northwind Dental (demo)" })).toBeVisible();
-  await expect(invitee.getByText("Viewer · client reviewer")).toBeVisible();
+  await expect(invitee.locator(".badge").filter({ hasText: /^Reviewer$/ })).toBeVisible();
+  await expect(invitee.getByText(/approves, rejects or requests changes on articles awaiting review\. Cannot edit or spend\./)).toBeVisible();
   await invitee.getByRole("link", { name: `Sign in as ${email} to accept` }).click();
   await expect(invitee.getByLabel("Work email")).toHaveValue(email);
   const since2 = Date.now() - 1;
@@ -34,14 +35,14 @@ test("invite and accept: the owner invites a viewer by email; the invitee signs 
   await expect(invitee).toHaveURL(/\/accept-invitation\//);
   await invitee.getByRole("button", { name: /Accept and open/ }).click();
   await expect(invitee).toHaveURL(/\/w\/northwind-dental$/);
-  await expect(invitee.getByText("Viewer · client reviewer", { exact: false }).first()).toBeVisible();
+  await expect(invitee.getByText("Workspace · Reviewer")).toBeVisible();
 
   // the owner sees the new member; the acceptance is in the audit log with the invitee as actor
   await owner.reload();
   await expect(owner.getByRole("rowheader").filter({ hasText: email })).toBeVisible();
   const pool = await db();
   const rows = (await pool.query<{ action: string; email: string }>(
-    "SELECT a.action, u.email FROM audit_log a JOIN auth_user u ON u.id::text = a.actor_id WHERE a.entity_type = 'auth_member' AND a.after->>'role' = 'viewer' ORDER BY a.id DESC LIMIT 1",
+    "SELECT a.action, u.email FROM audit_log a JOIN auth_user u ON u.id::text = a.actor_id WHERE a.entity_type = 'auth_member' AND a.after->>'role' = 'reviewer' ORDER BY a.id DESC LIMIT 1",
   )).rows;
   expect(rows[0]).toEqual({ action: "invitation.accept", email });
   expect(errors).toEqual([]);

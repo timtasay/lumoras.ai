@@ -8,7 +8,9 @@
 import { randomUUID } from "node:crypto";
 import type { Tx } from "../db/tenant.ts";
 import { connectionAad, decryptSecret, encryptSecret, reencrypt, type Keyring } from "../crypto/secrets.ts";
-import type { ConnectionInput } from "../validation.ts";
+import type * as z from "zod";
+import { connectionInput, type ConnectionInput } from "../validation.ts";
+import { DEFAULT_TEMPLATE } from "../publishers/frontmatter.ts";
 
 export type ConnectionKind = "git" | "wordpress" | "webflow" | "ghost" | "webhook" | "search_console" | "ga4" | "social";
 
@@ -36,23 +38,40 @@ export function listConnections(tx: Tx, siteId: string): Promise<ConnectionView[
 function split(input: ConnectionInput): { config: Record<string, string>; secret: string } {
   switch (input.kind) {
     case "git":
-      return { config: { repository: input.repository, branch: input.branch }, secret: input.secret };
+      return {
+        config: {
+          provider: input.provider,
+          repository: input.repository,
+          apiBaseUrl: input.apiBaseUrl,
+          branch: input.branch,
+          contentDir: input.contentDir,
+          filenamePattern: input.filenamePattern,
+          frontmatterTemplate: input.frontmatterTemplate || DEFAULT_TEMPLATE,
+          mode: input.mode,
+          livePath: input.livePath,
+        },
+        secret: input.secret,
+      };
     case "wordpress":
       return { config: { siteUrl: input.siteUrl, username: input.username }, secret: input.secret };
     case "webhook":
-      return { config: { endpoint: input.endpoint }, secret: input.secret };
+      return { config: { endpoint: input.endpoint, livePath: input.livePath }, secret: input.secret };
   }
 }
 
-export async function createConnection(tx: Tx, ring: Keyring, workspaceId: string, siteId: string, input: ConnectionInput): Promise<ConnectionView> {
+/** What createConnection accepts: the form's input, defaults not yet applied (they are, here). */
+export type ConnectionCreate = z.input<typeof connectionInput>;
+
+export async function createConnection(tx: Tx, ring: Keyring, workspaceId: string, siteId: string, raw: ConnectionCreate): Promise<ConnectionView> {
+  const input = connectionInput.parse(raw);
   const id = randomUUID();
   const { config, secret } = split(input);
   const sealed = encryptSecret(secret, connectionAad(workspaceId, id), ring);
   return tx.one<ConnectionView>(
     `INSERT INTO connections (id, workspace_id, site_id, kind, label, config, credentials_ciphertext, key_version, status_detail)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, 'Saved. Live tests arrive with this connector''s phase.')
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
      RETURNING ${VIEW_COLS}`,
-    [id, workspaceId, siteId, input.kind, input.label, JSON.stringify(config), sealed.ciphertext, sealed.keyVersion],
+    [id, workspaceId, siteId, input.kind, input.label, JSON.stringify(config), sealed.ciphertext, sealed.keyVersion, input.kind === "wordpress" ? "Saved. The WordPress publisher arrives in Phase 5." : "Saved. Run the test to check it."],
   );
 }
 
@@ -77,4 +96,8 @@ export async function rotateConnectionKeys(tx: Tx, ring: Keyring, workspaceId: s
     n++;
   }
   return n;
+}
+
+export async function setConnectionStatus(tx: Tx, id: string, status: ConnectionView["status"], detail: string, at = new Date()): Promise<void> {
+  await tx.exec("UPDATE connections SET status = $2, status_detail = $3, last_tested_at = $4 WHERE id = $1", [id, status, detail.slice(0, 500), at]);
 }

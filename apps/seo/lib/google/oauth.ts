@@ -33,12 +33,12 @@ export const OAUTH_COOKIE_PATH = "/api/google";
 export const OAUTH_TTL_MS = 10 * 60 * 1000;
 const AAD = "google-oauth-state";
 
-export type GoogleEndpoints = { auth: string; token: string; revoke: string; gsc: string; admin: string; data: string };
+export type GoogleEndpoints = { auth: string; token: string; revoke: string; gsc: string; admin: string; data: string; inspect: string };
 
 /** Google's endpoints, or every one of them on a local fake (tests only). */
 export function googleEndpoints(testOrigin: string | null): GoogleEndpoints {
   if (testOrigin) {
-    return { auth: `${testOrigin}/o/oauth2/v2/auth`, token: `${testOrigin}/token`, revoke: `${testOrigin}/revoke`, gsc: `${testOrigin}/webmasters/v3`, admin: `${testOrigin}/admin/v1beta`, data: `${testOrigin}/data/v1beta` };
+    return { auth: `${testOrigin}/o/oauth2/v2/auth`, token: `${testOrigin}/token`, revoke: `${testOrigin}/revoke`, gsc: `${testOrigin}/webmasters/v3`, admin: `${testOrigin}/admin/v1beta`, data: `${testOrigin}/data/v1beta`, inspect: `${testOrigin}/v1/urlInspection/index:inspect` };
   }
   return {
     auth: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -47,6 +47,7 @@ export function googleEndpoints(testOrigin: string | null): GoogleEndpoints {
     gsc: "https://www.googleapis.com/webmasters/v3",
     admin: "https://analyticsadmin.googleapis.com/v1beta",
     data: "https://analyticsdata.googleapis.com/v1beta",
+    inspect: "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect",
   };
 }
 

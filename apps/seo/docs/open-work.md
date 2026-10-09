@@ -1,7 +1,7 @@
 # Open work (Lumoras Growth)
 
 Things deferred, worked around, or waiting on someone. Each item says what it stands in for.
-Phases 0, 1 and 2, 9 October 2026.
+Phases 0 to 3, 9 October 2026.
 
 ## Waiting on the owner
 
@@ -33,17 +33,51 @@ Phases 0, 1 and 2, 9 October 2026.
   `GOOGLE_OAUTH_CLIENT_ID/SECRET`. Until then the Connect buttons show "not configured". While the
   consent screen is in "Testing" status Google expires refresh tokens after 7 days.
 - **Phase 1 decisions** listed under "Questions for the owner" in `docs/phase-1-summary.md`
-  (self-serve sign-up and workspace creation, client-reviewer approval rights, invitation and
-  session lifetimes).
+  (self-serve sign-up and workspace creation, invitation and session lifetimes). The client-reviewer
+  question was decided in October 2026 and is built in Phase 3 (the `reviewer` role).
+- **Decision #2: sonorch.ai / seasonx.ai publishing.** Not built, by instruction: no adapter for either
+  repository, and neither repository was touched. Both sites have schedules in the seed but no publishing
+  connection, so seasonx.ai's runway reads red ("No publishing connection is set") and sonorch.ai's
+  articles stop at the review gate. When the owner decides, each gets a Git (file per post) or webhook
+  connection like lumoras.ai.
+- **The real lumoras.ai repository and token.** The seeded Git connection points at a local fake GitHub
+  with `https://github.com/lumoras/lumoras.ai` as a placeholder owner/name. Production needs the real
+  repository address and a fine-grained token (Contents read/write and Pull requests read/write on that
+  repository only), entered on the site's Connections tab and checked with Test. Pull requests are the
+  default; merging stays with lumoras.ai's own review and CI.
+- **Bylines (rule 10) vs. lumoras.ai's content spec.** The seed uses a demo author placeholder ("Demo
+  author for lumoras.ai", flagged in the editor and as a non-blocking lint warning). The content spec's
+  articles are signed "Lumoras team"; rule 10 asks for real people. The owner decides whether a team
+  byline is acceptable or names the people who sign.
+- **Writing model and its budget.** Production runs with `LLM_PROVIDER=none` until the owner sets
+  `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`, and gives each workspace an `llm_tokens` budget
+  (Budget and usage). Without a budget, runs stop at the topic step with "No monthly budget is set".
+- **Autopilot.** Off for every site; turning it on records who acknowledged the warning and when. Whether
+  any client may use it at all (and with what written agreement) is an owner/commercial question (#5).
 
 ## Deferred to a later phase
 
-- **Daily sitemap refresh.** The crawler runs on demand (onboarding, "Scan again" on the site
-  page). A pg-boss cron job that refreshes every active site daily arrives with the worker's queues
-  in Phase 3 (`TODO(Phase 3)` in `lib/crawl/crawler.ts`).
-- **Connection tests.** Search Console and GA4 have live tests (Phase 2). Git and webhook tests arrive
-  in Phase 3, WordPress and social in Phase 5; those buttons stay disabled.
-- **Agency health metrics.** Budget is live (Phase 2); runway and articles Phase 3, clicks Phase 4.
+- **Connection tests.** Search Console and GA4 (Phase 2), Git and webhook (Phase 3) have live tests.
+  WordPress and social arrive in Phase 5; those buttons stay disabled.
+- **Agency health metrics.** Budget (Phase 2) and runway per site (Phase 3, on the workspace overview)
+  are live; the agency home does not show runway across workspaces yet; clicks are Phase 4.
+- **After publishing, Phase 4 and 5 hooks.** The keyword is queued in `rank_tracking_queue` (Phase 4
+  consumes it), the live URL is checked for a 200 and inspected once with Search Console's URL
+  Inspection API when connected; the social hook (`AFTER_PUBLISH_HOOKS` in `lib/pipeline/run-steps.ts`)
+  records "social: Phase 5" and does nothing else.
+- **Live run view transport.** `/api/w/:slug/runs/:id/events` is a server-sent-events stream that polls the
+  persisted run every 750 ms (one small indexed query) rather than LISTEN/NOTIFY. Simple and correct for
+  a handful of viewers; switch to NOTIFY if many people watch runs at once.
+- **Touch devices and drag and drop.** HTML5 drag and drop does not start from a touch. On phones the
+  calendar's list view has a "Move to" date field per article, and the keyboard path (M, arrows, Enter)
+  works everywhere; long-press dragging is not built.
+- **External link checks.** Run by the worker daily and before lint; a link nobody has checked yet holds
+  the article (blocking warning). In development and tests pages come from recorded fixtures
+  (`OUTBOUND_FETCH=recorded`), so real links are only checked in production.
+- **Feed token rotation.** Each site's public feed has an unguessable token and can be switched off; there
+  is no "new address" button yet (rotate with SQL if a token leaks).
+- **Review-request email.** Reviewers get an in-app notification when an article waits for them; the
+  email (kind `review-request`) is sent only when Resend is configured, like every other email.
 - **Rank tracking and site audits in the product.** The `SeoDataProvider` has `rankTracker.*` and
   `siteAudit.*` (implemented for all three providers, tested against fakes), but no screen or job uses
   them yet: `rank_trackers`/`rank_snapshots` and `audits`/`audit_issues` tables and their screens are
@@ -53,13 +87,13 @@ Phases 0, 1 and 2, 9 October 2026.
   their screens are Phase 3–5. Full topic selection (rule 5, head-term collisions against published
   and scheduled items) is Phase 3; Phase 2 ships the normalisation, variant collapse (rule 6) and
   sells/does-not-sell filter (rule 7) it builds on.
-- **Stale holds and settle failures.** A hold whose settle never ran (a crash between the provider call
-  and the settle transaction) is settled at its estimate after an hour, the next time that workspace
-  reserves (conservative: money is counted as spent). A worker job that reconciles holds against
-  DataForSEO's `id_list` (actual billed cost per task) belongs with the Phase 3 worker.
+- **Stale holds and settle failures.** A hold whose settle never ran (a crash between the provider or
+  model call and the settle transaction) is settled at its estimate after an hour, the next time that
+  workspace reserves (conservative: money is counted as spent). A worker job that reconciles holds against
+  DataForSEO's `id_list` (actual billed cost per task) is not built yet (the worker exists since Phase 3).
 - **Price table refresh.** Estimates use DataForSEO's published list prices (`DFS_PRICES`). Reading the
-  account's own `price` object from `appendix/user_data` once a day would keep them exact; add with the
-  Phase 3 worker. Settlements always use the cost DataForSEO reports, so this only affects how early a
+  account's own `price` object from `appendix/user_data` once a day would keep them exact; a worker job
+  for it is not built yet. Model prices come from `lib/llm/prices.ts` / `LLM_PRICES_JSON`. Settlements always use the cost DataForSEO reports, so this only affects how early a
   call near the reserve is refused.
 - **OpenSEO actual costs.** Self-hosted OpenSEO reports neither per-call cost nor balance, so with
   `SEO_PROVIDER=openseo` the ledger charges the estimate (`detail` says so). See provider-decision.md.
@@ -79,18 +113,14 @@ Phases 0, 1 and 2, 9 October 2026.
 - **Key rotation runner.** `rotateConnectionKeys()` re-seals a workspace's secrets under the
   current key (tested); there is no CLI for it yet. Add `scripts/rotate-keys.ts` before the first
   real rotation.
-- **Notifications** are minimal: in-app only (crawl finished, member joined). Email alerts arrive
-  with the runway monitor in Phase 3.
-- **pg-boss.** Not installed. `worker/index.ts` has a `TODO(Phase 3)` where the boss starts and
-  stops; the worker currently only validates env, logs a heartbeat and exits cleanly on SIGTERM.
+- **Notifications:** in-app (crawl finished, member joined, article waiting for review, runway) and, with
+  Resend configured, email for runway alerts and review requests. No per-person notification settings yet.
 - **Non-transactional migrations.** Every file runs inside a transaction, so
   `CREATE INDEX CONCURRENTLY` cannot be used yet. Add a header marker (for example
   `-- migrate:no-transaction`) when the first such migration is needed.
-- **Interfaces for publishers** (`Publisher`, `SocialPublisher`): Phases 3 and 5. (`SeoDataProvider`
-  exists since Phase 2.)
-- **Pipeline run view data.** `/design` simulates the run with timers and sample data
-  (`components/pipeline/steps.ts`). Phase 3 replaces the timers with server-sent events from
-  persisted `pipeline_steps`.
+- **`SocialPublisher`** (Phase 5). `Publisher` exists since Phase 3 (Git and webhook); WordPress is Phase 5.
+- **`/design`'s pipeline** is a recorded replay built on the same graph component as the live run view
+  (`components/pipeline/PipelineGraph.tsx`); the product's run view reads persisted steps over SSE.
 - **Icons.** `apps/seo/components/Icons.tsx` repeats the apps/web sprite pattern and the brand
   mark with a larger icon set. If both apps keep growing icons, move the sprite into a shared
   package.
@@ -106,17 +136,29 @@ Phases 0, 1 and 2, 9 October 2026.
   nonce-only; style *elements* need the nonce. Moving those properties into classes would let us
   drop it.
 - **Test-only settings.** `EMAIL_OUTBOX_DIR`, `CRAWLER_TEST_ORIGINS`, `RATE_LIMIT_SCALE`,
-  `GOOGLE_API_TEST_ORIGIN` and `SEO_PROVIDER=fake` (in a production build) exist so e2e can run the
-  production build without a mail provider, the internet, real Google, a paid data provider or many
-  IPs. Each one is refused at start-up next to an https `BETTER_AUTH_URL`, and logs a warning when set.
+  `GOOGLE_API_TEST_ORIGIN`, `SEO_PROVIDER=fake`, `LLM_PROVIDER=fake`, `OUTBOUND_FETCH=recorded` and
+  `OUTBOUND_TEST_HOSTS` (in a production build) exist so e2e can run the production build without a mail
+  provider, the internet, real Google, a paid data provider, a model, GitHub or many IPs. Each one is refused at start-up next to an https `BETTER_AUTH_URL`, and logs a warning when set.
 - **FakeProvider fixtures are synthetic.** No provider key existed to record real responses, so the
   fixtures (`lib/providers/fixtures.ts`) are invented but shaped like DataForSEO's; competitor domains are
   reserved `.example` names so no real company gets invented rankings. Screens say "Demo data". Replace
   with scrubbed recorded responses after the first real calls. The dev/e2e seed buys demo research for
   sonorch.ai through the metered path with this provider.
-- **A Phase 1 e2e flake.** `⌘K jumps between workspaces and sites` (e2e/screens.spec.ts) failed once in
-  about ten full Playwright runs during Phase 2 (the Audit log heading did not appear within 15 s under
-  three parallel workers) and passed on every other run. Not investigated further; watch it in CI.
+- **FakeLlm fixtures are synthetic.** No model key existed, so `lib/llm/fixtures.ts` writes plausible,
+  rule-following articles from the brief's own data (topic, outline, product facts), and the recorded
+  source pages (`RECORDED_PAGES`) are invented on reserved `.example` hosts plus the brand's own facts.
+  Every generated screen says "Demo model". Prompt quality is unproven until the first supervised real
+  runs; the prompts are in `lib/pipeline/prompts.ts`.
+- **The pg-boss schema on an existing database.** `deploy/postgres/10-seo-database.sh` creates schema
+  `pgboss` with the grants the app role needs. It runs on a fresh volume; on a database created before
+  Phase 3, run its `pgboss` section once by hand (or re-run the script: it is idempotent) before the
+  worker starts, then `migrate` installs pg-boss's tables as the owner role.
+- **Chromium cannot start a drag from a `<button>`.** Calendar articles are `div role="button"` with
+  `tabIndex=0` (Enter/Space select, M moves) so a pointer drag starts; found by the e2e drag test.
+- **The Phase 1 ⌘K e2e flake** (`⌘K jumps between workspaces and sites`) failed again once in Phase 3: the
+  second Control+K landed while the previous client-side navigation was still settling. The test now
+  retries the shortcut until the palette's input has focus (passed 4/4 repeated and in the full runs);
+  the shortcut itself was never broken.
 - **Metering test hook.** `MeterDeps.afterBudgetRead` lets the concurrency test widen the race window
   inside the reservation; production never sets it. `CACHE_TEST_SABOTAGE` (metering test) and
   `RLS_TEST_SABOTAGE` (RLS test) break guards on purpose for red runs and are read only by tests.

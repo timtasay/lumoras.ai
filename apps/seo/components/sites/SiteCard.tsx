@@ -14,6 +14,8 @@ export type SiteCardData = {
   lastCrawl: string | null;
   crawlStatus: "ok" | "partial" | "failed" | null;
   failingConnections: number;
+  /** Null when the site has no active schedule. */
+  runway?: { days: number; level: "ok" | "low" | "empty"; threshold: number } | null;
 };
 
 const CRAWL: Record<string, [LightState, string]> = {
@@ -70,6 +72,18 @@ export function SiteCard({ site, href }: { site: SiteCardData; href?: string }) 
           <dd className="small">{site.lastCrawl ?? "Never"}</dd>
         </div>
       </dl>
+      {site.runway ? (
+        <div className="site-runway" data-level={site.runway.level}>
+          <span className="label">Runway</span>
+          <span className="sr-track" aria-hidden="true">
+            <span style={{ ["--w" as string]: `${Math.min(100, Math.round((site.runway.days / Math.max(site.runway.threshold * 2, 1)) * 100))}%` }} />
+          </span>
+          <span className="small">
+            {site.runway.days} day{site.runway.days === 1 ? "" : "s"}
+            <span className="sr-only">{site.runway.level === "ok" ? ", healthy" : site.runway.level === "low" ? `, below the ${site.runway.threshold}-day threshold` : ", nothing ready"}</span>
+          </span>
+        </div>
+      ) : null}
       <StatusLight state={light}>{text}</StatusLight>
     </>
   );

@@ -2,5 +2,5 @@
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  return Response.json({ ok: true, service: "lumoras-seo", phase: 1 }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ ok: true, service: "lumoras-seo", phase: 3 }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -109,6 +109,14 @@ export const siteInput = z.object({
 });
 export type SiteInput = z.infer<typeof siteInput>;
 
+/** Form checkboxes post "on"; stored JSON holds booleans. */
+const flag = z.preprocess((v) => (v === "on" || v === "true" || v === true ? true : v === "" || v === "off" || v === "false" || v === false || v == null ? false : v), z.boolean());
+
+/**
+ * SEO and structure rules (rule 13: data, not code). The lint step
+ * (lib/content/lint.ts) enforces every one of them. Fields added in Phase 3
+ * have defaults, so profiles saved before then keep validating.
+ */
 export const seoRules = z
   .object({
     titleMax: z.coerce.number().int().min(30).max(120),
@@ -118,10 +126,25 @@ export const seoRules = z
     bodyMaxWords: z.coerce.number().int().min(100).max(20_000),
     internalLinksMin: z.coerce.number().int().min(0).max(30),
     internalLinksMax: z.coerce.number().int().min(0).max(50),
+    // Phase 3
+    /** A direct answer of this many sentences before the first heading (0 turns the rule off). */
+    introMinSentences: z.coerce.number().int().min(0).max(10).default(0),
+    introMaxSentences: z.coerce.number().int().min(0).max(20).default(0),
+    /** At least this many "##" sections. */
+    minSections: z.coerce.number().int().min(0).max(30).default(2),
+    /** The page's H1 is the title: no "#" heading in the body. */
+    noH1InBody: flag.default(true),
+    noEmDash: flag.default(false),
+    noEmoji: flag.default(false),
+    /** Allowed cover-art kinds (empty: any), how many chips, and their maximum length. */
+    coverKinds: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
+    coverChips: z.coerce.number().int().min(0).max(6).default(0),
+    coverChipMax: z.coerce.number().int().min(4).max(80).default(22),
   })
   .refine((r) => r.descriptionMin <= r.descriptionMax, { message: "Description minimum is above the maximum", path: ["descriptionMin"] })
   .refine((r) => r.bodyMinWords <= r.bodyMaxWords, { message: "Body minimum is above the maximum", path: ["bodyMinWords"] })
-  .refine((r) => r.internalLinksMin <= r.internalLinksMax, { message: "Internal-link minimum is above the maximum", path: ["internalLinksMin"] });
+  .refine((r) => r.internalLinksMin <= r.internalLinksMax, { message: "Internal-link minimum is above the maximum", path: ["internalLinksMin"] })
+  .refine((r) => r.introMinSentences <= r.introMaxSentences || r.introMaxSentences === 0, { message: "Direct-answer minimum is above the maximum", path: ["introMinSentences"] });
 export type SeoRules = z.infer<typeof seoRules>;
 
 export const DEFAULT_SEO_RULES: SeoRules = {
@@ -132,7 +155,22 @@ export const DEFAULT_SEO_RULES: SeoRules = {
   bodyMaxWords: 1100,
   internalLinksMin: 3,
   internalLinksMax: 6,
+  introMinSentences: 0,
+  introMaxSentences: 0,
+  minSections: 2,
+  noH1InBody: true,
+  noEmDash: false,
+  noEmoji: false,
+  coverKinds: [],
+  coverChips: 0,
+  coverChipMax: 22,
 };
+
+/** Reads a stored seo_rules object (any age) into the current shape, defaults filled in. */
+export function readSeoRules(stored: unknown): SeoRules {
+  const r = seoRules.safeParse({ ...DEFAULT_SEO_RULES, ...(stored && typeof stored === "object" ? stored : {}) });
+  return r.success ? r.data : DEFAULT_SEO_RULES;
+}
 
 export const keyPage = z.object({
   url: httpsUrl.or(z.string().trim().regex(/^https?:\/\//, "Use a full address").max(2048)),
@@ -179,13 +217,42 @@ export const authorInput = z.object({
 });
 export type AuthorInput = z.infer<typeof authorInput>;
 
+/** https, or http to a *.test host (local fakes in tests; the SSRF guard refuses .test outside tests). */
+const endpointUrl = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine((s) => {
+    try {
+      const u = new URL(s);
+      return u.protocol === "https:" || (u.protocol === "http:" && u.hostname.endsWith(".test"));
+    } catch {
+      return false;
+    }
+  }, "Use a full https:// address");
+
+const livePath = z
+  .string()
+  .trim()
+  .max(200)
+  .regex(/^\/[\w./{}-]*\{\{\s*slug\s*\}\}[\w./-]*$/, "A path with {{slug}} in it, like /blog/{{slug}}")
+  .default("/blog/{{slug}}");
+
 export const CONNECTION_KINDS = ["git", "wordpress", "webhook", "search_console", "ga4"] as const;
 export const connectionInput = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("git"),
     label: trimmed(80, "Label").min(1),
-    repository: z.string().trim().regex(/^https:\/\/[^\s]+$/, "Use the repository's https:// address").max(500),
+    provider: z.enum(["github", "gitea"]).default("github"),
+    repository: z.string().trim().regex(/^https:\/\/[^\s]+\/[^\s/]+\/[^\s/]+$/, "Use the repository's https:// address, like https://github.com/owner/site").max(500),
+    /** Empty: derived (api.github.com, or <gitea>/api/v1). */
+    apiBaseUrl: z.union([z.literal(""), endpointUrl]).default(""),
     branch: z.string().trim().regex(/^[\w./-]{1,100}$/, "Enter a branch name").default("main"),
+    contentDir: z.string().trim().regex(/^[\w./-]{0,200}$/, "A folder path inside the repository, like content/posts").refine((s) => !s.split("/").includes(".."), "No .. in the path").default("content/posts"),
+    filenamePattern: z.string().trim().regex(/^[\w.{}\s-]{1,100}$/, "Like {{slug}}.md").refine((s) => /\{\{\s*slug\s*\}\}/.test(s), "Must contain {{slug}}").default("{{slug}}.md"),
+    frontmatterTemplate: z.string().max(4000).default(""),
+    mode: z.enum(["pr", "commit"]).default("pr"),
+    livePath,
     secret: z.string().trim().min(8, "Paste an access token").max(4000),
   }),
   z.object({
@@ -198,7 +265,8 @@ export const connectionInput = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("webhook"),
     label: trimmed(80, "Label").min(1),
-    endpoint: httpsUrl,
+    endpoint: endpointUrl,
+    livePath,
     secret: z.string().trim().min(16, "Use a signing secret of at least 16 characters").max(4000),
   }),
 ]);
@@ -220,3 +288,35 @@ export function fieldErrors(e: z.ZodError): Record<string, string> {
   }
   return out;
 }
+
+/** Schedule and publishing rules (site settings, onboarding step 8). */
+export const scheduleInput = z
+  .object({
+    days: z.preprocess((v) => ([] as unknown[]).concat(v ?? []), z.array(z.coerce.number().int().min(1).max(7)).min(1, "Pick at least one weekday").max(7)),
+    time: z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use a time like 09:00"),
+    active: flag.default(false),
+    generationMode: z.enum(["rolling", "batch"]).default("rolling"),
+    leadDays: z.coerce.number().int().min(0, "0 to 30 days").max(30, "0 to 30 days").default(3),
+    batchSize: z.coerce.number().int().min(1).max(20).default(4),
+    horizonDays: z.coerce.number().int().min(7).max(120).default(42),
+    runwayThreshold: z.coerce.number().int().min(1, "1 to 120 days").max(120, "1 to 120 days").default(10),
+    reviewMode: z.enum(["approval", "autopilot"]).default("approval"),
+    autopilotAck: flag.default(false),
+    allowBackdating: flag.default(false),
+    backdatingAck: flag.default(false),
+  })
+  .refine((s) => s.reviewMode !== "autopilot" || s.autopilotAck, { message: "Tick the box to confirm you understand what autopilot does", path: ["autopilotAck"] })
+  .refine((s) => !s.allowBackdating || s.backdatingAck, { message: "Tick the box to confirm you understand back-dating", path: ["backdatingAck"] });
+export type ScheduleInput = z.infer<typeof scheduleInput>;
+
+/** Browsers submit textarea line breaks as CRLF; articles are stored with LF (diffs, lint and Git stay clean). */
+const lf = (s: string) => s.replace(/\r\n?/g, "\n");
+
+export const editInput = z.object({
+  title: z.string().trim().min(1, "A title is required").max(300),
+  description: z.string().max(600).transform((s) => lf(s).trim()),
+  bodyMd: z.string().max(100_000).transform(lf),
+  coverKind: z.string().trim().max(40).default(""),
+  coverChips: z.string().max(400).default(""),
+  note: z.string().trim().max(500).default(""),
+});

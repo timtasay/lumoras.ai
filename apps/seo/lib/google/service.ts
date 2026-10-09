@@ -12,7 +12,7 @@ import type pg from "pg";
 import { connectionAad, decryptSecret, encryptSecret, type Keyring } from "../crypto/secrets.ts";
 import { withWorkspace, type TenantContext, type Tx } from "../db/tenant.ts";
 import { measurementHealth, strikingDistance, suggestGa4Property, suggestGscProperty, zeroClickPages, type Ga4Property, type GscSite, type Health, type StrikingQuery, type ZeroClickPage } from "./analysis.ts";
-import { ga4RunReport, GoogleApiError, gscSearchAnalytics, listGa4Properties, listGscSites } from "./api.ts";
+import { ga4RunReport, GoogleApiError, gscInspectUrl, gscSearchAnalytics, listGa4Properties, listGscSites, type UrlInspection } from "./api.ts";
 import { GoogleAuthError, refreshAccessToken, revokeToken, SCOPES, type GoogleEndpoints, type GoogleKind, type TokenSet } from "./oauth.ts";
 
 export type GoogleDeps = {
@@ -257,4 +257,11 @@ export async function ga4Insights(deps: GoogleDeps, ctx: TenantContext, siteId: 
       };
     }),
   );
+}
+
+/** URL inspection after publishing (null when Search Console is not connected or has no property). */
+export async function inspectUrl(deps: GoogleDeps, ctx: TenantContext, siteId: string, url: string): Promise<UrlInspection | null> {
+  const conn = await getConn(deps, ctx, siteId, "search_console");
+  if (!conn?.property || conn.status === "error") return null;
+  return withAccessToken(deps, ctx, conn, (token) => gscInspectUrl(deps.endpoints, token, conn.property, url, deps.fetch));
 }

@@ -2,7 +2,8 @@
  * Development seed (two demo workspaces): pnpm --filter seo seed
  *
  * Env: DATABASE_URL (the app role), optional ENCRYPTION_KEY(S) for the demo
- * webhook's sealed secret. Refuses next to a real deployment (an https
+ * connections' sealed secrets, optional OUTBOUND_TEST_HOSTS=github.test,webhook.test
+ * when the dev fakes (scripts/fakes.ts) run. Refuses next to a real deployment (an https
  * BETTER_AUTH_URL) because it creates a platform admin (staff@lumoras.example).
  * Sign in as any seeded user with a magic link: in development the link is
  * printed in the web server's log.
@@ -11,6 +12,7 @@ import pg from "pg";
 import { readKeyring } from "../lib/crypto/secrets.ts";
 import { createLogger, redactUrl } from "../lib/log.ts";
 import { seed, SEED_USERS } from "../lib/seed.ts";
+import { DEV_FAKE_GITHUB, DEV_FAKE_WEBHOOK } from "../lib/seed-content.ts";
 
 const log = createLogger("seed");
 
@@ -32,7 +34,14 @@ async function main(): Promise<number> {
   }
   const db = new pg.Pool({ connectionString: url, max: 2 });
   try {
-    const r = await seed(db, { keyring });
+    // with the dev fakes running (pnpm --filter seo fakes), the demo article is published as a PR on the fake GitHub
+    const hosts = (process.env.OUTBOUND_TEST_HOSTS ?? "").split(",").map((h) => h.trim()).filter(Boolean);
+    const policy = hosts.length ? { testResolve: new Map(hosts.map((h) => [h, "127.0.0.1"] as [string, string])) } : {};
+    const reachable = hosts.includes("github.test") && (await fetch(`http://127.0.0.1:${new URL(DEV_FAKE_GITHUB.apiBase).port}/`).then(() => true, () => false));
+    const r = await seed(db, {
+      keyring,
+      content: { github: { ...DEV_FAKE_GITHUB, reachable }, webhook: hosts.includes("webhook.test") ? DEV_FAKE_WEBHOOK : undefined, policy },
+    });
     log.info("seeded", { db: redactUrl(url), workspaces: Object.keys(r.workspaces), users: SEED_USERS.map((u) => `${u.email}${u.admin ? " (platform admin)" : ""}`) });
     return 0;
   } catch (e) {

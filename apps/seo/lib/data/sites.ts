@@ -25,6 +25,43 @@ export type Site = {
   created_at: Date;
 };
 
+/** Phase 3: schedule, rolling generation, review mode, back-dating, runway and publishing. */
+export type SiteSettings = Site & {
+  schedule_days: number[];
+  schedule_time: string;
+  schedule_active: boolean;
+  generation_mode: "rolling" | "batch";
+  lead_days: number;
+  batch_size: number;
+  horizon_days: number;
+  review_mode: "approval" | "autopilot";
+  autopilot_acknowledged_by: string | null;
+  autopilot_acknowledged_at: Date | null;
+  allow_backdating: boolean;
+  runway_threshold_days: number;
+  runway_days: number | null;
+  runway_level: "ok" | "low" | "empty" | null;
+  runway_reason: string | null;
+  runway_checked_at: Date | null;
+  runway_alerted_level: "low" | "empty" | null;
+  runway_alerted_at: Date | null;
+  publish_connection_id: string | null;
+  feed_enabled: boolean;
+  feed_token: string;
+};
+
+const SETTINGS_COLS = `schedule_days, to_char(schedule_time, 'HH24:MI') AS schedule_time, schedule_active, generation_mode, lead_days, batch_size, horizon_days,
+  review_mode, autopilot_acknowledged_by, autopilot_acknowledged_at, allow_backdating, runway_threshold_days, runway_days, runway_level, runway_reason,
+  runway_checked_at, runway_alerted_level, runway_alerted_at, publish_connection_id, feed_enabled, feed_token`;
+
+export function getSiteSettings(tx: Tx, id: string): Promise<SiteSettings> {
+  return tx.one<SiteSettings>(`SELECT ${SITE_COLS}, ${SETTINGS_COLS} FROM sites WHERE id = $1`, [id], "site");
+}
+
+export function listSiteSettings(tx: Tx): Promise<SiteSettings[]> {
+  return tx.many<SiteSettings>(`SELECT ${SITE_COLS}, ${SETTINGS_COLS} FROM sites ORDER BY created_at, domain`);
+}
+
 export type SiteSummary = Site & { routes: number; authors: number; connections: number; failing_connections: number; brand_filled: number };
 
 const SITE_COLS = "id, workspace_id, domain, name, industry, locale, country, serp_location, timezone, status, last_crawl_at, last_crawl_status, research_max_age_days, created_at";

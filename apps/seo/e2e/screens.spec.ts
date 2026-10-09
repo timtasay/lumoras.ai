@@ -76,13 +76,19 @@ test("⌘K jumps between workspaces and sites", async ({ page }) => {
   // staff is not a member of any workspace: sign in as a member of Lumoras instead
   await page.context().clearCookies();
   await signIn(page, "owner@lumoras.example");
-  await page.keyboard.press("Control+K");
   const input = page.getByRole("combobox", { name: "Search sites, pages and actions" });
-  await expect(input).toBeFocused();
+  // the shortcut works once the page is interactive: a press that lands before hydration (or while the
+  // previous navigation settles) is retried, which is what made this test flaky
+  const open = () =>
+    expect(async () => {
+      if (!(await input.isVisible())) await page.keyboard.press("Control+K");
+      await expect(input).toBeFocused({ timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+  await open();
   await input.fill("seasonx");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1, name: "seasonx.ai" })).toBeVisible();
-  await page.keyboard.press("Control+K");
+  await open();
   await input.fill("audit log");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1, name: "Audit log" })).toBeVisible();

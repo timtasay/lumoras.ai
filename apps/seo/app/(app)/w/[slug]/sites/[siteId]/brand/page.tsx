@@ -1,3 +1,4 @@
+import { readSeoRules } from "@/lib/validation";
 import type { Metadata } from "next";
 import { BrandForm } from "@/components/forms/BrandForm";
 import { can } from "@/lib/auth/permissions";
@@ -14,7 +15,7 @@ export default async function BrandPage({ params }: { params: Promise<{ slug: st
     <BrandForm
       action={saveBrandAction.bind(null, slug, site.id, false)}
       readOnly={!can(a.role, "brand:update")}
-      values={{ ...brand, prefilled_at: brand.prefilled_at?.toISOString() ?? null, seo_rules: brand.seo_rules as unknown as Record<string, number> }}
+      values={{ ...brand, prefilled_at: brand.prefilled_at?.toISOString() ?? null, seo_rules: readSeoRules(brand.seo_rules) as unknown as Record<string, unknown> }}
     />
   );
 }

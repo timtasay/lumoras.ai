@@ -17,17 +17,25 @@
     "test:integration": "node --import tsx --test \"test/integration/**/*.test.ts\"",
     "test:e2e": "playwright test",
     "seed": "node --import tsx scripts/seed.ts",
+    "fakes": "node --import tsx scripts/fakes.ts",
     "admin:grant": "node --import tsx scripts/grant-admin.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.133.0",
     "@lumoras/ui-field": "workspace:*",
     "@lumoras/ui-tokens": "workspace:*",
     "better-auth": "1.7.7",
     "next": "16.4.0",
     "pg": "8.23.0",
+    "pg-boss": "12.37.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "rehype-stringify": "10.0.1",
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "remark-rehype": "11.1.2",
     "tsx": "4.23.15",
+    "unified": "11.0.5",
     "zod": "4.6.5"
   },
   "devDependencies": {
@@ -38,6 +46,7 @@
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.0",
+    "gray-matter": "4.0.3",
     "typescript": "5.9.3"
   }
 }

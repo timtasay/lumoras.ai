@@ -18,6 +18,7 @@ import { CommandPaletteProvider, useCommandPalette, type Command } from "@/compo
 import { Popover } from "@/components/ui/Popover";
 import { useToast } from "@/components/ui/Toast";
 import { buildNav, PRODUCT_NAME, type NavItem, type ShellWorkspace } from "./nav";
+import { can } from "@/lib/auth/permissions";
 
 export type ShellNotification = { id: string; title: string; body: string; href: string | null; read: boolean; at: string; workspace: string };
 
@@ -323,7 +324,7 @@ function Shell({ children, data, actions }: { children: ReactNode; data: ShellDa
         </nav>
         <div className="side-foot">
           <span className="side-env">
-            <span className="light-dot" aria-hidden="true" /> Phase 2 · research
+            <span className="light-dot" aria-hidden="true" /> Phase 3 · content
           </span>
         </div>
       </aside>
@@ -356,7 +357,7 @@ function CommandsAndShell({ children, data, actions }: { children: ReactNode; da
     for (const w of data.workspaces) {
       cmds.push({ id: `members-${w.id}`, label: `Members and roles · ${w.name}`, group: "Pages", icon: "users", run: go(`/w/${w.slug}/settings`) });
       cmds.push({ id: `audit-${w.id}`, label: `Audit log · ${w.name}`, group: "Pages", icon: "history", run: go(`/w/${w.slug}/audit`) });
-      if (w.role !== "viewer") cmds.push({ id: `add-${w.id}`, label: `Add a site to ${w.name}`, group: "Actions", icon: "plus", run: go(`/w/${w.slug}/sites/new`) });
+      if (can(w.role, "site:create")) cmds.push({ id: `add-${w.id}`, label: `Add a site to ${w.name}`, group: "Actions", icon: "plus", run: go(`/w/${w.slug}/sites/new`) });
     }
     if (data.platformAdmin) {
       cmds.push({ id: "agency", label: "Agency home", group: "Pages", icon: "building", keywords: "staff all workspaces", run: go("/agency") });

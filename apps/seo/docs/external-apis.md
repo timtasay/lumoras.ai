@@ -3,6 +3,80 @@
 Build prompt section 17: read the documentation of every external API before integrating it,
 and record the version and the date. Newest first.
 
+## Anthropic Messages API, `@anthropic-ai/sdk` 0.133.0 (Phase 3, `lib/llm/anthropic.ts`)
+
+- **Version:** `@anthropic-ai/sdk` **0.133.0**, pinned exactly. Models from env: `LLM_MODEL_DRAFT`
+  (default `claude-sonnet-5-5`, briefs and drafts) and `LLM_MODEL_REVIEW` (default `claude-opus-5-5`,
+  topic selection and fact-checking).
+- **Docs read:** 9 October 2026, the claude-api reference (cached 2026-10-06) loaded before writing the
+  integration: `beta.messages.create` with the `server-side-fallback-2026-07-01` beta and
+  `fallbacks: "default"` (a declined turn re-runs on a fallback model in the same call;
+  `usage.iterations` bills each model separately), adaptive thinking (`thinking: {type: "adaptive"}`,
+  the only mode on these models), `output_config.effort` (explicit; Opus 5.5 defaults to medium) and
+  `output_config.format` (JSON schema for the final answer), prompt caching (`cache_control` on the system
+  block; usage `cache_read_input_tokens` / `cache_creation_input_tokens`), strict tool schemas,
+  `tool_choice` auto only (forced tool choice is refused by these models), replaying the assistant turn
+  verbatim including thinking blocks, stop reasons (`refusal`, `pause_turn`, `max_tokens`), error classes
+  and retries (408/409/429/5xx retried twice by the SDK), non-streaming limit (we keep `max_tokens` ≤ 16,000).
+  List prices the same day: Opus 5.5 $4 / $20 per million input/output tokens, Sonnet 5.5 $2 / $10,
+  cache reads $0.20, five-minute cache writes 1.25× input (`lib/llm/prices.ts`; override with `LLM_PRICES_JSON`).
+- **Never called** in tests, development or this build session (no key exists here): `LLM_PROVIDER`
+  defaults to `fake` outside production and `none` in production. `FakeLlm` (`lib/llm/fake.ts`) answers
+  from recorded-shape fixtures with realistic token usage. **Before go-live:** one supervised real run
+  per step on a test workspace with a small `llm_tokens` budget; compare the ledger with the Anthropic
+  console's usage; re-read the price page.
+
+## pg-boss 12.37.1 (Phase 3, `lib/jobs/`)
+
+- **Version:** `pg-boss` **12.37.1**, pinned exactly. Docs read 9 October 2026 at pgboss.io (constructor
+  options, queues and policies, `send` with `singletonKey`/`startAfter`, `work` with
+  `localConcurrency`/`pollingIntervalSeconds`, `schedule` (cron with `tz`), maintenance/supervision,
+  migrations).
+- **How we use it:** schema `pgboss` in the `seo` database, created by `deploy/postgres/10-seo-database.sh`
+  (owned by `seo_owner`, usage and DML granted to `seo_app` with default privileges) and installed or
+  migrated by `scripts/migrate.ts` as the owner role. The web process only sends (`supervise`/`schedule`
+  off); the worker works the queues and owns the cron clock; neither runs DDL (`migrate: false`,
+  `createSchema: false`, `reindex: false`). Verified as the app role against PostgreSQL 16:
+  send/work/schedule, `short` policy de-duplication, retries (`test/integration/jobs.pg.test.ts`).
+
+## GitHub REST API 2026-03-10 and Gitea API v1 (Phase 3, `lib/publishers/git.ts`)
+
+- **GitHub:** REST API with `X-GitHub-Api-Version: 2026-03-10` (docs read 9 October 2026): repositories
+  (`GET /repos/{o}/{r}`, `permissions.push`), git refs (`GET /git/ref/heads/{b}`, `POST /git/refs`),
+  contents (`GET|PUT|DELETE /contents/{path}`, base64 bodies, `sha` for updates), pulls
+  (`POST /pulls`, `GET /pulls/{n}`, `GET /pulls?head=owner:branch&state=open`). Auth: a fine-grained
+  personal access token or GitHub App token with Contents read/write and Pull requests read/write on the
+  one repository, sent as `Authorization: Bearer`.
+- **Gitea:** API v1 as of Gitea 28.1 (docs read 9 October 2026 at docs.gitea.com/api): repositories,
+  branches, contents (`POST/PUT/DELETE /contents/{path}` with `new_branch` to branch off), pulls. Auth
+  `Authorization: token <token>`.
+- **Not called by any test:** `test/helpers/fake-git.ts` implements both APIs (including the API-version
+  header check) for unit, integration and e2e tests; the seeded lumoras.ai connection points at the
+  local fake (`http://github.test:4571`). **Before go-live:** one supervised PR against a scratch
+  repository with the production token.
+
+## Search Console URL Inspection API v1 (Phase 3, after publishing)
+
+- `POST https://searchconsole.googleapis.com/v1/urlInspection/index:inspect` with `inspectionUrl` and
+  `siteUrl` (docs page updated 2024-07-23, read 9 October 2026), scope `webmasters.readonly` (the same
+  connection as Phase 2). Used once after an article is live to record Google's index status; it does
+  not request indexing. **The Indexing API is never used.** Not called by any test (the fake Google
+  answers it).
+
+## Webhook signing, JSON Feed 1.1, RSS 2.0 (Phase 3, `lib/publishers/webhook.ts`, `feed.ts`)
+
+- Our own scheme (no external API): `X-Lumoras-Signature: v1=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>`
+  with `X-Lumoras-Timestamp` and a five-minute replay window, the same construction as Stripe's and
+  Slack's signatures. Receivers' instructions are in the README.
+- Feeds follow JSON Feed 1.1 (jsonfeed.org/version/1.1, read 9 October 2026) and RSS 2.0
+  (rssboard.org/rss-specification).
+
+## Markdown: unified 11.0.5, remark-parse 11.0.0, remark-gfm 4.0.1, remark-rehype 11.1.2, rehype-stringify 10.0.1 (Phase 3)
+
+- Parse articles for the lint (headings, links, words, sentences) and render the editor preview, the
+  webhook HTML and the feeds. Raw HTML in Markdown is dropped (not passed through). `gray-matter` 4.0.3
+  (dev only) parses frontmatter in tests, as lumoras.ai's own content loader does.
+
 ## DataForSEO API v3 (Phase 2, `lib/providers/dataforseo.ts`)
 
 - **Version:** REST API v3 (`https://api.dataforseo.com/v3/…`; free sandbox `https://sandbox.dataforseo.com`). No SDK.
@@ -77,8 +151,8 @@ and record the version and the date. Newest first.
     uses Kysely's `PostgresDialect`). The object is our audited wrapper (`lib/auth/audited-pool.ts`).
   - Every model and field mapped to snake_case `auth_*` tables (migration `0002_auth.sql`); ids
     are database-generated uuids (`advanced.database.generateId: "uuid"`).
-  - Plugins: `organization` (roles owner/editor/viewer built with `createAccessControl` from our
-    permission map), `magicLink` (15 minutes, token stored hashed), `admin` (platform admins,
+  - Plugins: `organization` (roles owner/editor/reviewer/viewer built with `createAccessControl` from our
+    permission map; reviewer added in Phase 3), `magicLink` (15 minutes, token stored hashed), `admin` (platform admins,
     impersonation for 30 minutes), `nextCookies` last.
   - Google sign-in only when `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are both set; OAuth tokens
     encrypted at rest (`account.encryptOAuthTokens`).

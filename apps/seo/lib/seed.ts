@@ -17,7 +17,12 @@ import { createSite, createAuthor } from "./data/sites.ts";
 import { createConnection } from "./data/connections.ts";
 import { advanceOnboarding } from "./data/workspaces.ts";
 import type { Keyring } from "./crypto/secrets.ts";
-import type { BrandInput, SiteInput } from "./validation.ts";
+import type { BrandInput, SeoRules, SiteInput } from "./validation.ts";
+import type { WorkspaceRole } from "./auth/permissions.ts";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { parseSitemap } from "./crawl/parse.ts";
+import { seedContent, type SeedContentOptions } from "./seed-content.ts";
 import { DEFAULT_SEO_RULES } from "./validation.ts";
 import { addSeeds, saveKeywords, setBudget, setKeywordCluster, setKeywordStatus } from "./data/research.ts";
 import { meteredCall } from "./metering/metered.ts";
@@ -29,11 +34,19 @@ const SEED: Actor = { actorId: "system:seed" };
 const HYPE = ["revolutionary", "seamless", "cutting-edge", "game-changer"];
 
 type SeedUser = { email: string; name: string; admin?: boolean };
-type SeedSite = { input: Omit<SiteInput, "researchMaxAgeDays">; brand: Partial<BrandInput>; authors: { name: string; role: string; bio: string }[]; routes?: string[]; seeds?: string[] };
+type SeedSite = {
+  input: Omit<SiteInput, "researchMaxAgeDays">;
+  brand: Partial<BrandInput>;
+  seoRules?: Partial<SeoRules>;
+  authors: { name: string; role: string; bio: string }[];
+  routes?: { path: string; lastmod: Date | null }[];
+  routesSource?: string;
+  seeds?: string[];
+};
 type SeedWorkspace = {
   name: string;
   slug: string;
-  members: { email: string; role: "owner" | "editor" | "viewer" }[];
+  members: { email: string; role: WorkspaceRole }[];
   sites: SeedSite[];
   webhook?: boolean;
   /** Monthly budgets in micro-USD (seo, llm) and posts (social): [ceiling, reserve]. */
@@ -44,10 +57,12 @@ export const SEED_USERS: SeedUser[] = [
   { email: "staff@lumoras.example", name: "Lumoras staff (demo)", admin: true },
   { email: "owner@lumoras.example", name: "Demo owner, Lumoras" },
   { email: "editor@lumoras.example", name: "Demo editor, Lumoras" },
+  { email: "reviewer@lumoras.example", name: "Demo reviewer, Lumoras" },
   { email: "viewer@lumoras.example", name: "Demo viewer, Lumoras" },
   { email: "owner@northwind-dental.example", name: "Demo owner, Northwind" },
   { email: "editor@northwind-dental.example", name: "Demo editor, Northwind" },
-  { email: "viewer@northwind-dental.example", name: "Demo client reviewer, Northwind" },
+  { email: "reviewer@northwind-dental.example", name: "Demo client reviewer, Northwind" },
+  { email: "viewer@northwind-dental.example", name: "Demo viewer, Northwind" },
 ];
 
 const DEMO_AUTHOR = (site: string) => ({
@@ -56,11 +71,16 @@ const DEMO_AUTHOR = (site: string) => ({
   bio: "Seed data. Bylines are published as Person structured data, so this must be replaced with a real person, their real role and a bio they confirmed before anything is written.",
 });
 
-const LUMORAS_ROUTES = ["/", "/about", "/insights", "/knowledge-base", "/help-center", "/faq", "/demo",
-  "/insights/ai-receptionist-vs-answering-service", "/insights/ai-receptionist-cost", "/insights/appointment-reminder-texts", "/insights/no-show-policy",
-  "/insights/order-cancellations-and-changes-by-phone", "/insights/returns-and-exchanges-by-phone",
-  "/knowledge-base/what-is-an-ai-receptionist", "/knowledge-base/how-voice-ai-works", "/knowledge-base/ai-call-center",
-  "/knowledge-base/call-forwarding-for-business", "/knowledge-base/missed-calls", "/knowledge-base/where-is-my-order-calls"];
+/**
+ * lumoras.ai's real route inventory: the sitemap apps/web/app/sitemap.ts renders, kept as a local
+ * fixture (fixtures/lumoras.ai/sitemap.xml) and read with the real parser, so the seed never fetches
+ * the live site.
+ */
+export const LUMORAS_SITEMAP = path.resolve(import.meta.dirname, "../fixtures/lumoras.ai/sitemap.xml");
+function lumorasRoutes(): { path: string; lastmod: Date | null }[] {
+  const parsed = parseSitemap(readFileSync(LUMORAS_SITEMAP, "utf8"));
+  return parsed.kind === "urlset" ? parsed.urls.map((u) => ({ path: new URL(u.loc).pathname, lastmod: u.lastmod })) : [];
+}
 
 export const SEED_WORKSPACES: SeedWorkspace[] = [
   {
@@ -70,6 +90,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
     members: [
       { email: "owner@lumoras.example", role: "owner" },
       { email: "editor@lumoras.example", role: "editor" },
+      { email: "reviewer@lumoras.example", role: "reviewer" },
       { email: "viewer@lumoras.example", role: "viewer" },
     ],
     sites: [
@@ -119,7 +140,12 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
           audience: "Service businesses: salons, restaurants, clinics, trades and retail.",
           sells: ["Lumoras POS for any service business", "Lumoras Voice, an AI receptionist that plugs into the POS", "Sonorch (salons), SeasonX (restaurants), KitchenSpot (restaurant discovery)"],
           doesNotSell: ["In-store audio (retail is a voice vertical only)"],
-          productFacts: ["Company legal name: Lumoras LLC"],
+          productFacts: [
+            "Company legal name: Lumoras LLC",
+            "Lumoras Voice is an AI receptionist that plugs into Lumoras POS or another system",
+            "Voice can be switched on at any time, on day one or a year later, with the same customers, calendar and menu",
+            "Lumoras POS handles appointments or tickets, payments, staff, inventory and multiple locations",
+          ],
           forbiddenClaims: ["Email addresses, phone numbers, office addresses, founding dates, team names or customer names", "Statistics we cannot source"],
           voiceRules: ["Plain, direct, specific, second person, short sentences", "Show the arithmetic rather than asserting numbers", "No em-dash asides", "No \"not X, but Y\" framing", "No emoji", "Start with a 2 to 3 sentence direct answer, then ## sections; never # in the body"],
           bannedWords: HYPE,
@@ -129,8 +155,11 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
             { url: "https://lumoras.ai/demo", title: "Book a demo", description: "" },
           ],
         },
+        // docs/content-spec.md, as data (rule 13)
+        seoRules: { introMinSentences: 2, introMaxSentences: 3, minSections: 3, noH1InBody: true, noEmDash: true, noEmoji: true, coverKinds: ["call", "people", "checklist", "ticket", "calendar", "chart"], coverChips: 2, coverChipMax: 22 },
         authors: [DEMO_AUTHOR("lumoras.ai")],
-        routes: LUMORAS_ROUTES,
+        routes: lumorasRoutes(),
+        routesSource: "seed: fixtures/lumoras.ai/sitemap.xml",
         seeds: ["ai receptionist", "missed calls", "call forwarding for business"],
       },
     ],
@@ -143,6 +172,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
     members: [
       { email: "owner@northwind-dental.example", role: "owner" },
       { email: "editor@northwind-dental.example", role: "editor" },
+      { email: "reviewer@northwind-dental.example", role: "reviewer" },
       { email: "viewer@northwind-dental.example", role: "viewer" },
     ],
     sites: [
@@ -170,7 +200,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
 
 export type SeedResult = { users: Record<string, string>; workspaces: Record<string, { id: string; sites: Record<string, string> }> };
 
-export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; research?: boolean } = {}): Promise<SeedResult> {
+export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; research?: boolean; content?: false | SeedContentOptions } = {}): Promise<SeedResult> {
   const users: Record<string, string> = {};
   // auth tables are not tenant tables; the audit trigger records them with the seed as actor
   const c = await db.connect();
@@ -218,7 +248,7 @@ export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; resear
              product_facts = $8, forbidden_claims = $9, voice_rules = $10, banned_words = $11, key_pages = $12::jsonb, seo_rules = $13::jsonb
            WHERE site_id = $1`,
           [siteId, b.overview ?? "", b.positioning ?? "", b.audience ?? "", b.currentGoal ?? "", b.sells ?? [], b.doesNotSell ?? [], b.productFacts ?? [],
-            b.forbiddenClaims ?? [], b.voiceRules ?? [], b.bannedWords ?? [], JSON.stringify(b.keyPages ?? []), JSON.stringify(DEFAULT_SEO_RULES)],
+            b.forbiddenClaims ?? [], b.voiceRules ?? [], b.bannedWords ?? [], JSON.stringify(b.keyPages ?? []), JSON.stringify({ ...DEFAULT_SEO_RULES, ...s.seoRules })],
         );
         for (const a of s.authors) {
           if (!(await tx.maybe("SELECT 1 FROM authors WHERE site_id = $1 AND name = $2", [siteId, a.name]))) {
@@ -228,11 +258,12 @@ export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; resear
         }
         if (s.routes?.length) {
           await tx.exec(
-            `INSERT INTO site_routes (workspace_id, site_id, url, path, source)
-             SELECT $1, $2, 'https://' || $3 || p, p, 'seed: docs/content-spec.md' FROM unnest($4::text[]) AS p
+            `INSERT INTO site_routes (workspace_id, site_id, url, path, lastmod, source)
+             SELECT $1, $2, 'https://' || $3 || r.p, r.p, r.m, $6 FROM unnest($4::text[], $5::timestamptz[]) AS r(p, m)
              ON CONFLICT (site_id, url) DO NOTHING`,
-            [wsId, siteId, s.input.domain, s.routes],
+            [wsId, siteId, s.input.domain, s.routes.map((r) => r.path), s.routes.map((r) => r.lastmod), s.routesSource ?? "seed"],
           );
+          await tx.exec("UPDATE sites SET last_crawl_at = now(), last_crawl_status = 'ok' WHERE id = $1 AND last_crawl_at IS NULL", [siteId]);
         }
         if (s.seeds?.length) await addSeeds(tx, wsId, siteId, s.seeds, 0, SEED.actorId);
         if (w.webhook && opts.keyring && !(await tx.maybe("SELECT 1 FROM connections WHERE site_id = $1", [siteId]))) {
@@ -247,6 +278,7 @@ export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; resear
     out.workspaces[w.slug] = { id: wsId, sites };
     if (opts.research !== false && w.slug === "lumoras") await seedResearch(db, wsId, sites["sonorch.ai"], w.sites[0]);
   }
+  if (opts.content !== false) await seedContent(db, out, { keyring: opts.keyring ?? null, ...(opts.content ?? {}) });
   return out;
 }
 

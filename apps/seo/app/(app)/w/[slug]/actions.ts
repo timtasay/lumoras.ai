@@ -73,6 +73,9 @@ function brandFromForm(fd: FormData) {
   const urls = arr("keyPageUrl"), titles = arr("keyPageTitle"), descs = arr("keyPageDescription");
   const keyPages = urls.map((url, i) => ({ url: url.trim(), title: titles[i] ?? "", description: descs[i] ?? "" })).filter((k) => k.url);
   const n = (k: keyof typeof DEFAULT_SEO_RULES) => o[`seo.${k}`] ?? DEFAULT_SEO_RULES[k];
+  // checkboxes post "on" when ticked and nothing otherwise
+  const f = (k: keyof typeof DEFAULT_SEO_RULES) => o[`seo.${k}`] === "on";
+  const kinds = String(o["seo.coverKinds"] ?? "").split(",").map((x) => x.trim()).filter(Boolean);
   return {
     ...o,
     keyPages,
@@ -84,6 +87,15 @@ function brandFromForm(fd: FormData) {
       bodyMaxWords: n("bodyMaxWords"),
       internalLinksMin: n("internalLinksMin"),
       internalLinksMax: n("internalLinksMax"),
+      minSections: n("minSections"),
+      introMinSentences: n("introMinSentences"),
+      introMaxSentences: n("introMaxSentences"),
+      coverChips: n("coverChips"),
+      coverChipMax: n("coverChipMax"),
+      coverKinds: kinds,
+      noH1InBody: f("noH1InBody"),
+      noEmDash: f("noEmDash"),
+      noEmoji: f("noEmoji"),
     },
   };
 }
@@ -133,7 +145,7 @@ export async function createConnectionAction(slug: string, siteId: string, _prev
     const input = connectionInput.parse(formObject(fd));
     const ring = keyring();
     await inWorkspace(slug, "connection:manage", "connection.create", (tx, a) => createConnection(tx, ring, a.workspace.id, siteId, input));
-    revalidatePath(`/w/${slug}/sites/${siteId}`, "layout");
+    revalidatePath(`/w/${slug}`, "layout");
     return { ok: true, message: "Connection saved. Its credentials are encrypted and never shown again.", at: Date.now() };
   } catch (e) {
     return toActionError(e);
@@ -143,7 +155,7 @@ export async function createConnectionAction(slug: string, siteId: string, _prev
 export async function deleteConnectionAction(slug: string, siteId: string, connectionId: string): Promise<ActionState> {
   try {
     await inWorkspace(slug, "connection:manage", "connection.delete", (tx) => deleteConnection(tx, connectionId));
-    revalidatePath(`/w/${slug}/sites/${siteId}`, "layout");
+    revalidatePath(`/w/${slug}`, "layout");
     return { ok: true, message: "Connection removed.", at: Date.now() };
   } catch (e) {
     return toActionError(e);
@@ -222,7 +234,7 @@ export async function changeRoleAction(slug: string, memberId: string, role: str
       auth().api.updateMemberRole({ body: { memberId, role, organizationId: a.workspace.id }, headers: await headers() }),
     );
     revalidatePath(`/w/${slug}/settings`);
-    return { ok: true, message: `${target.email} is now ${role === "viewer" ? "a viewer" : `an ${role}`}.`, at: Date.now() };
+    return { ok: true, message: `${target.email} is now ${/^[aeiou]/.test(role) ? "an" : "a"} ${role}.`, at: Date.now() };
   } catch (e) {
     return toActionError(e);
   }

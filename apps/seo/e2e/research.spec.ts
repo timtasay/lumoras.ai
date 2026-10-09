@@ -18,8 +18,12 @@ async function siteIds() {
   return Object.fromEntries(r.rows.map((x) => [x.domain, x])) as Record<string, { id: string; workspace_id: string }>;
 }
 
+/** Ledger rows of one workspace; in the Lumoras workspace, only sonorch.ai's SEO-data rows (the Phase 3 pipeline writes rows for its other sites in parallel). */
 async function ledgerCount(workspaceId: string) {
-  return Number((await (await db()).query<{ n: string }>("SELECT count(*) AS n FROM usage_ledger WHERE workspace_id = $1", [workspaceId])).rows[0].n);
+  return Number((await (await db()).query<{ n: string }>(
+    "SELECT count(*) AS n FROM usage_ledger WHERE workspace_id = $1 AND (workspace_id <> (SELECT workspace_id FROM sites WHERE domain = 'sonorch.ai') OR (category = 'seo_credits' AND site_id = (SELECT id FROM sites WHERE domain = 'sonorch.ai')))",
+    [workspaceId],
+  )).rows[0].n);
 }
 
 test.describe.configure({ mode: "serial" });
@@ -52,7 +56,7 @@ test("keyword research: price first, confirm, results, rule 4, a free cache hit,
   await expect(results.getByText("Bought · $0.0132")).toBeVisible();
   await expect(results.getByRole("rowheader", { name: /^salon booking software/ })).toBeVisible();
   const pool = await db();
-  const led = (await pool.query<{ status: string; cost_micros: string; estimate_micros: string; cached: boolean }>("SELECT status, cost_micros, estimate_micros, cached FROM usage_ledger WHERE workspace_id = $1 ORDER BY id DESC LIMIT 1", [sonorch.workspace_id])).rows[0];
+  const led = (await pool.query<{ status: string; cost_micros: string; estimate_micros: string; cached: boolean }>("SELECT status, cost_micros, estimate_micros, cached FROM usage_ledger WHERE workspace_id = $1 AND category = 'seo_credits' AND site_id = $2 ORDER BY id DESC LIMIT 1", [sonorch.workspace_id, sonorch.id])).rows[0];
   expect(led).toEqual({ status: "settled", cost_micros: "13200", estimate_micros: "30000", cached: false });
   await results.getByRole("checkbox", { name: "Select salon booking software" }).check();
   await results.getByRole("checkbox", { name: "Select salon scheduling software" }).check();
@@ -85,7 +89,7 @@ test("keyword research: price first, confirm, results, rule 4, a free cache hit,
   await expect(page.getByText("from the cache", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Show the saved result" }).click();
   await expect(results.getByText("Cache hit · free")).toBeVisible();
-  const hit = (await pool.query<{ cached: boolean; cost_micros: string; operation: string }>("SELECT cached, cost_micros, operation FROM usage_ledger WHERE workspace_id = $1 ORDER BY id DESC LIMIT 1", [sonorch.workspace_id])).rows[0];
+  const hit = (await pool.query<{ cached: boolean; cost_micros: string; operation: string }>("SELECT cached, cost_micros, operation FROM usage_ledger WHERE workspace_id = $1 AND category = 'seo_credits' AND site_id = $2 ORDER BY id DESC LIMIT 1", [sonorch.workspace_id, sonorch.id])).rows[0];
   expect(hit).toEqual({ cached: true, cost_micros: "0", operation: "serp" });
 
   // 5. the research log: costs, cache hits

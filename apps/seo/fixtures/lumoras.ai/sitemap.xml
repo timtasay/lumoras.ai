@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- lumoras.ai sitemap as apps/web/app/sitemap.ts renders it (routes and lastmod from apps/web/content, 9 October 2026). A local fixture: the seed reads it with the real sitemap parser instead of fetching https://lumoras.ai/sitemap.xml. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://lumoras.ai/</loc><lastmod>2026-10-09</lastmod><priority>1</priority></url>
+<url><loc>https://lumoras.ai/about</loc><lastmod>2026-10-09</lastmod><priority>0.6</priority></url>
+<url><loc>https://lumoras.ai/insights</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/help-center</loc><lastmod>2026-10-09</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/faq</loc><lastmod>2026-10-09</lastmod><priority>0.6</priority></url>
+<url><loc>https://lumoras.ai/demo</loc><lastmod>2026-10-09</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/insights/ai-receptionist-cost</loc><lastmod>2026-09-24</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/insights/ai-receptionist-vs-answering-service</loc><lastmod>2026-10-08</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/insights/appointment-reminder-texts</loc><lastmod>2026-09-15</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/insights/no-show-policy</loc><lastmod>2026-10-01</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/insights/order-cancellations-and-changes-by-phone</loc><lastmod>2026-10-09</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/insights/returns-and-exchanges-by-phone</loc><lastmod>2026-10-09</lastmod><priority>0.7</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base/ai-call-center</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base/call-forwarding-for-business</loc><lastmod>2026-09-29</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base/how-voice-ai-works</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base/missed-calls</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base/what-is-an-ai-receptionist</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/knowledge-base/where-is-my-order-calls</loc><lastmod>2026-10-09</lastmod><priority>0.8</priority></url>
+<url><loc>https://lumoras.ai/help-center/add-services-and-staff</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/answering-hours</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/calls-and-transcripts</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/connect-your-phone-number</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/delete-customer-data</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/getting-started-with-lumoras</loc><lastmod>2026-10-09</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/live-call-transfer</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/multi-location-access-and-sso</loc><lastmod>2026-10-09</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/plans-and-billing</loc><lastmod>2026-10-09</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/take-card-payments</loc><lastmod>2026-10-08</lastmod><priority>0.5</priority></url>
+<url><loc>https://lumoras.ai/help-center/which-product-is-right</loc><lastmod>2026-10-09</lastmod><priority>0.5</priority></url>
+</urlset>

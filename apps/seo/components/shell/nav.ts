@@ -1,4 +1,5 @@
 import type { IconName } from "@/components/Icons";
+import { can, type WorkspaceRole } from "@/lib/auth/permissions";
 
 export type NavItem = {
   key: string;
@@ -18,8 +19,6 @@ export const PRODUCT_NAME_PENDING = true;
 
 /** Screens that arrive with later phases, listed so the shape of the product is visible. */
 export const LATER: NavItem[] = [
-  { key: "calendar", label: "Content calendar", icon: "calendar", phase: 3 },
-  { key: "pipeline", label: "Pipeline runs", icon: "flow", phase: 3 },
   { key: "rankings", label: "Rankings", icon: "trend", phase: 4 },
   { key: "audit-site", label: "Site audit", icon: "audit", phase: 4 },
   { key: "backlinks", label: "Backlinks", icon: "link", phase: 5 },
@@ -27,7 +26,7 @@ export const LATER: NavItem[] = [
 ];
 
 export type ShellSite = { id: string; name: string; domain: string };
-export type ShellWorkspace = { id: string; name: string; slug: string; role: "owner" | "editor" | "viewer"; sites: ShellSite[] };
+export type ShellWorkspace = { id: string; name: string; slug: string; role: WorkspaceRole; sites: ShellSite[] };
 
 export function buildNav(ws: ShellWorkspace | null, opts: { platformAdmin: boolean; designEnabled: boolean }): NavGroup[] {
   const groups: NavGroup[] = [];
@@ -39,7 +38,15 @@ export function buildNav(ws: ShellWorkspace | null, opts: { platformAdmin: boole
         { key: "home", label: "Overview", icon: "home", href: base },
         ...ws.sites.slice(0, 8).map((s) => ({ key: `site-${s.id}`, label: s.domain, icon: "globe" as const, href: `${base}/sites/${s.id}`, prefix: true })),
         { key: "keywords", label: "Keywords", icon: "key" as const, href: `${base}/keywords` },
-        ...(ws.role !== "viewer" ? [{ key: "add-site", label: "Add a site", icon: "plus" as const, href: `${base}/sites/new` }] : []),
+        ...(can(ws.role, "site:create") ? [{ key: "add-site", label: "Add a site", icon: "plus" as const, href: `${base}/sites/new` }] : []),
+      ],
+    });
+    groups.push({
+      group: "Content",
+      items: [
+        { key: "calendar", label: "Content calendar", icon: "calendar", href: `${base}/content`, prefix: true },
+        { key: "review", label: "Review queue", icon: "gate", href: `${base}/review` },
+        { key: "runs", label: "Pipeline runs", icon: "flow", href: `${base}/runs`, prefix: true },
       ],
     });
     groups.push({ group: "Coming next", items: LATER });

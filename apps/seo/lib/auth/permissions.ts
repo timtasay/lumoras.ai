@@ -14,28 +14,31 @@
  *                   and approves content, manages sites, brand profiles,
  *                   authors, keywords, the seed backlog and connections
  *                   (including Search Console and GA4)
- *   viewer          the client reviewer: sees everything, comments; no writes
- *
- * Section 5 of the build prompt also lets a client reviewer approve or reject
- * content when a site requires approval. Phase 1 has no content yet; whether
- * that becomes a viewer permission or a separate "reviewer" role is an open
- * question for the owner (docs/phase-1-summary.md). Until then viewers cannot
- * approve.
+ *   reviewer        the client reviewer (owner decision, October 2026): sees
+ *                   everything, comments, and approves, rejects or requests
+ *                   changes on content awaiting review. Cannot edit content,
+ *                   run research or anything else that spends, manage
+ *                   connections, members, the budget or settings.
+ *   viewer          read-only: sees everything and comments; no writes, no
+ *                   approvals
  */
 
-export const WORKSPACE_ROLES = ["owner", "editor", "viewer"] as const;
+/** Most powerful first. */
+export const WORKSPACE_ROLES = ["owner", "editor", "reviewer", "viewer"] as const;
 export type WorkspaceRole = (typeof WORKSPACE_ROLES)[number];
 
 export const ROLE_LABEL: Record<WorkspaceRole, string> = {
   owner: "Owner",
   editor: "Editor",
-  viewer: "Viewer · client reviewer",
+  reviewer: "Reviewer",
+  viewer: "Viewer",
 };
 
 export const ROLE_SUMMARY: Record<WorkspaceRole, string> = {
   owner: "Everything, including members, roles, billing and the budget.",
   editor: "Sites, brand profiles, authors, connections, crawls, research within the budget; edits and approves content.",
-  viewer: "Sees dashboards and settings, comments. Cannot change anything.",
+  reviewer: "Sees everything, comments, and approves, rejects or requests changes on articles awaiting review. Cannot edit or spend.",
+  viewer: "Sees dashboards and settings, comments. Cannot change or approve anything.",
 };
 
 /** Every action the app checks, as resource:verb. */
@@ -59,6 +62,8 @@ export const PERMISSIONS = [
   "content:read",
   "content:edit",
   "content:approve",
+  "content:schedule",
+  "pipeline:run",
   "comment:create",
   "audit:read",
   "research:run",
@@ -83,12 +88,15 @@ const EDITOR: Permission[] = [
   "keyword:manage",
   "content:edit",
   "content:approve",
+  "content:schedule",
+  "pipeline:run",
   "comment:create",
 ];
 
 export const PERMISSION_MAP: Record<WorkspaceRole, ReadonlySet<Permission>> = {
   owner: new Set<Permission>([...EDITOR, "workspace:update", "workspace:delete", "member:manage", "invitation:manage", "billing:manage", "budget:manage"]),
   editor: new Set<Permission>(EDITOR),
+  reviewer: new Set<Permission>([...READ, "comment:create", "content:approve"]),
   viewer: new Set<Permission>([...READ, "comment:create"]),
 };
 
