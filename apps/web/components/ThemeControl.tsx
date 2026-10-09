@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "./Icons";
 
 type Mode = "light" | "dark" | "auto";
@@ -32,42 +32,53 @@ function writeAttr(m: Mode) {
   else root.setAttribute("data-theme", m);
 }
 
+/* Tiny external store for the chosen mode (localStorage-backed). */
+let current: Mode | null = null;
+const listeners = new Set<() => void>();
+const getMode = (): Mode => (current ??= readMode());
+const subscribe = (cb: () => void) => {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+};
+function setStoredMode(m: Mode) {
+  current = m;
+  listeners.forEach((l) => l());
+}
+
 type VTDocument = Document & {
   startViewTransition?: (cb: () => void) => { ready: Promise<void> };
 };
 
 export function ThemeControl() {
-  const [mode, setMode] = useState<Mode>("auto");
+  const mode = useSyncExternalStore(subscribe, getMode, () => "auto" as Mode);
   const [ready, setReady] = useState(false);
   const segRef = useRef<HTMLDivElement>(null);
-  const modeRef = useRef<Mode>("auto");
-  const resolvedRef = useRef<"light" | "dark">("dark");
+  const resolvedRef = useRef<"light" | "dark" | null>(null);
 
   const announce = useCallback(() => {
-    const r = resolve(modeRef.current);
+    const r = resolve(getMode());
     if (r === resolvedRef.current) return;
     resolvedRef.current = r;
-    document.dispatchEvent(new CustomEvent("lumoras:themechange", { detail: { mode: modeRef.current, resolved: r } }));
+    document.dispatchEvent(new CustomEvent("lumoras:themechange", { detail: { mode: getMode(), resolved: r } }));
   }, []);
 
   useEffect(() => {
-    const m = readMode();
-    modeRef.current = m;
+    const m = getMode();
     resolvedRef.current = resolve(m);
-    setMode(m);
     writeAttr(m);
     const id = requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)));
     const mq = mqDark();
     const onScheme = () => {
-      if (modeRef.current === "auto") announce();
+      if (getMode() === "auto") announce();
     };
     mq.addEventListener("change", onScheme);
     const onStorage = (e: StorageEvent) => {
       if (e.key !== KEY) return;
       const v: Mode = e.newValue === "light" || e.newValue === "dark" ? e.newValue : "auto";
-      if (v === modeRef.current) return;
-      modeRef.current = v;
-      setMode(v);
+      if (v === getMode()) return;
+      setStoredMode(v);
       writeAttr(v);
       announce();
     };
@@ -81,7 +92,7 @@ export function ThemeControl() {
 
   const choose = useCallback(
     (next: Mode, origin: HTMLElement | null) => {
-      const prev = modeRef.current;
+      const prev = getMode();
       if (next === prev) return;
       const seg = segRef.current;
       if (seg) {
@@ -90,8 +101,7 @@ export function ThemeControl() {
         seg.style.setProperty("--dl", b > a ? ".07s" : "0s");
         seg.style.setProperty("--dr", b > a ? "0s" : ".07s");
       }
-      modeRef.current = next;
-      setMode(next);
+      setStoredMode(next);
       try {
         localStorage.setItem(KEY, next);
       } catch {}
@@ -123,7 +133,7 @@ export function ThemeControl() {
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const i = ORDER.indexOf(modeRef.current);
+    const i = ORDER.indexOf(getMode());
     let j = -1;
     if (e.key === "ArrowRight" || e.key === "ArrowDown") j = (i + 1) % 3;
     else if (e.key === "ArrowLeft" || e.key === "ArrowUp") j = (i + 2) % 3;

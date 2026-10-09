@@ -7,6 +7,21 @@ orchestration for retail stores.
 Product family: [Sonorch](https://sonorch.ai) (salons),
 [SeasonX](https://seasonx.ai) (restaurants) and [KitchenSpot](https://kitchenspot.ai).
 
+## Website (apps/web)
+
+The production site lives in [`apps/web`](apps/web/README.md): Next.js 16, React 19,
+TypeScript, plain CSS, built from the approved Spectrum direction. Content (insights, knowledge
+base, help center, FAQ, About) is Markdown/JSON under `apps/web/content/`.
+
+```bash
+pnpm install
+pnpm dev      # local development
+pnpm build    # production build (static pages + articles)
+pnpm start    # serve the build
+```
+
+Plan and content format: `docs/site-plan.md`, `docs/content-spec.md`.
+
 ## Homepage prototypes
 
 Open `prototypes/index.html` in a browser to compare three design directions:

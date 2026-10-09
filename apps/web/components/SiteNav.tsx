@@ -21,6 +21,7 @@ function CompanyMenu({ latest }: { latest: ReactNode }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusFirst = useRef(false);
+  const hoverOpenedAt = useRef(0);
   const pathname = usePathname();
   const panelId = useId();
 
@@ -76,7 +77,11 @@ function CompanyMenu({ latest }: { latest: ReactNode }) {
       onPointerEnter={(e) => {
         if (!finePointer(e)) return;
         clear();
-        if (!open) timer.current = setTimeout(() => setOpen(true), OPEN_DELAY);
+        if (!open)
+          timer.current = setTimeout(() => {
+            hoverOpenedAt.current = Date.now();
+            setOpen(true);
+          }, OPEN_DELAY);
       }}
       onPointerLeave={(e) => {
         if (!finePointer(e)) return;
@@ -95,6 +100,8 @@ function CompanyMenu({ latest }: { latest: ReactNode }) {
         aria-controls={panelId}
         onClick={(e) => {
           clear();
+          // a click that lands just after hover-intent opened the panel keeps it open
+          if (open && e.detail > 0 && Date.now() - hoverOpenedAt.current < 700) return;
           // keyboard activation (detail === 0) moves focus into the panel
           if (!open && e.detail === 0) focusFirst.current = true;
           setOpen((o) => !o);
