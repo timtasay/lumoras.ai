@@ -66,7 +66,7 @@ Put it on your booking page, in the confirmation text, and read it out when some
 
 ## Make it easy to cancel in time
 
-Most no-shows are forgetful people. A few habits keep them from becoming lost revenue:
+Many no-shows come from people who simply forgot. A few habits keep them from becoming lost revenue:
 
 - **Two-way reminders.** A text 24 to 48 hours ahead with a reply option. See our [appointment reminder text templates](/insights/appointment-reminder-texts).
 - **An answered phone.** If clients call to cancel at 9 PM and reach voicemail, you find out too late. Our guide to [missed calls](/knowledge-base/missed-calls) shows how often this happens.

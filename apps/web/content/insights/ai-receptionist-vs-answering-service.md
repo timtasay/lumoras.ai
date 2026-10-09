@@ -73,7 +73,7 @@ Example arithmetic: 300 calls a month at an average of 2.5 minutes is 750 minute
 ## Which fits your kind of business
 
 - **Salons, barbers and spas.** Calls are mostly bookings, reschedules and price questions, which AI handles end to end. This is what [Sonorch](https://sonorch.ai) was built for.
-- **Restaurants.** Reservations and takeout orders during service, when nobody can step away from the floor. [SeasonX](https://seasonx.ai) takes both and sends orders to the same kitchen queue.
+- **Restaurants.** Reservations and takeout orders during service, when nobody can step away from the floor. SeasonX takes both and sends orders to the same kitchen queue.
 - **Clinics.** Scheduling and forms suit AI. Clinical questions should transfer to staff.
 - **Home services.** AI can triage the call, book the visit, and transfer genuine emergencies to the on-call tech.
 - **Retail.** Hours, stock questions and pickup status are routine; returns disputes go to a person.
