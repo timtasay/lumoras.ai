@@ -4,8 +4,8 @@ Website for **Lumoras**: sound orchestration for business. AI voice verticals fo
 a POS for any service business with voice you can switch on anytime, and custom sound
 orchestration for retail stores.
 
-Product family: [Sonorch](https://sonorch.ai) (salons, and restaurants for now),
-SeasonX (restaurants, coming soon to seasonx.ai) and [KitchenSpot](https://kitchenspot.ai).
+Product family: [Sonorch](https://sonorch.ai) (salons),
+[SeasonX](https://seasonx.ai) (restaurants) and [KitchenSpot](https://kitchenspot.ai).
 
 ## Homepage prototypes
 
