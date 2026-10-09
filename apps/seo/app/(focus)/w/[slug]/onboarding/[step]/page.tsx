@@ -20,11 +20,20 @@ import { getWorkspaceRow, ONBOARDING_STEPS, type OnboardingStep } from "@/lib/da
 import { STEPS, stepIndex } from "@/lib/onboarding";
 import { timezones } from "@/lib/ui/timezones";
 import { createSiteAction, deleteAuthorAction, saveAuthorAction, saveBrandAction } from "@/app/(app)/w/[slug]/actions";
+import { GoogleConnections } from "@/components/google/GoogleConnections";
+import { latestResult } from "@/lib/data/research";
+import { googleConfigured } from "@/lib/google/app";
+import { CONNECT_RESULT_TEXT } from "@/lib/google/oauth";
+import { listGoogleConnections } from "@/lib/google/service";
+import { googleCards } from "@/lib/google/view";
+import { providerInfo } from "@/lib/providers/registry";
+import type { DomainOverview } from "@/lib/providers/types";
 
 export const metadata: Metadata = { title: "Set up the workspace" };
 
-export default async function OnboardingStepPage({ params }: { params: Promise<{ slug: string; step: string }> }) {
+export default async function OnboardingStepPage({ params, searchParams }: { params: Promise<{ slug: string; step: string }>; searchParams: Promise<{ google?: string; reason?: string; kind?: string }> }) {
   const { slug, step: raw } = await params;
+  const sp = await searchParams;
   if (!(ONBOARDING_STEPS as readonly string[]).includes(raw)) notFound();
   const step = raw as OnboardingStep;
   const a = await requireWorkspace(slug);
@@ -44,6 +53,8 @@ export default async function OnboardingStepPage({ params }: { params: Promise<{
         authors: site && (step === "authors" || step === "done") ? await listAuthors(tx, site.id) : [],
         routes: site && step === "done" ? await countRoutes(tx, site.id) : 0,
         crawl: site && step === "done" ? await latestCrawl(tx, site.id) : null,
+        google: site && (step === "search" || step === "done") ? await listGoogleConnections(tx, site.id) : {},
+        overview: site && step === "scan" ? await latestResult<DomainOverview>(tx, site.id, "domainOverview", site.domain) : null,
       };
     },
     { readOnly: true },
@@ -75,7 +86,17 @@ export default async function OnboardingStepPage({ params }: { params: Promise<{
     case "scan":
       return (
         <OnboardingFrame {...frame} wide title={`Scanning ${site!.domain}`} lede="We read robots.txt, every sitemap it lists and a handful of key pages. The routes become the site's inventory, used later to check every internal link.">
-          <ScanStep slug={slug} siteId={site!.id} domain={site!.domain} alreadyScanned={!!site!.last_crawl_at} />
+          <ScanStep
+            slug={slug}
+            siteId={site!.id}
+            domain={site!.domain}
+            alreadyScanned={!!site!.last_crawl_at}
+            overview={{
+              available: providerInfo().name !== "none" && can(a.role, "research:run"),
+              demo: providerInfo().demo,
+              last: data.overview ? { data: data.overview.result, at: data.overview.created_at.toISOString(), costMicros: data.overview.cost_micros } : null,
+            }}
+          />
         </OnboardingFrame>
       );
     case "brand":
@@ -104,21 +125,19 @@ export default async function OnboardingStepPage({ params }: { params: Promise<{
           </div>
         </OnboardingFrame>
       );
-    case "search":
+    case "search": {
+      const connected = Object.keys(data.google).length;
+      const flash = sp.google === "connected" ? { ok: true, text: `${sp.kind === "ga4" ? "Google Analytics 4" : "Search Console"} is connected.` } : sp.google === "error" ? { ok: false, text: CONNECT_RESULT_TEXT[sp.reason ?? ""] ?? CONNECT_RESULT_TEXT.failed } : null;
       return (
-        <OnboardingFrame {...frame} title="Connect Search Console and GA4" lede="Free, first-party data from Google, read with the client's own account.">
-          <LaterStep
-            slug={slug}
-            from="search"
-            phase={2}
-            cards={[
-              { icon: "search", title: "Google Search Console", text: "Clicks, impressions and position by page and query; which new URLs are indexed; striking-distance queries (positions 4 to 20)." },
-              { icon: "trend", title: "Google Analytics 4", text: "Organic landing pages and key events, plus measurement health: a broken tag reads exactly like zero traffic." },
-            ]}
-            note="Read-only scopes, connected per site with the client's Google account. Never the Indexing API."
-          />
+        <OnboardingFrame {...frame} wide title="Connect Search Console and GA4" lede="Free, first-party data from Google, read with the client's own account. Read-only scopes; never the Indexing API.">
+          <GoogleConnections slug={slug} siteId={site!.id} cards={googleCards(data.google)} canEdit={can(a.role, "connection:manage")} configured={googleConfigured()} next="onboarding" flash={flash} />
+          <div className="onb-foot">
+            <p className="muted small">{connected ? `${connected} of 2 connected. You can change them later under the site's Connections tab.` : "You can connect them later under the site's Connections tab."}</p>
+            <ContinueButton slug={slug} from="search" label={connected ? "Continue" : "Skip for now"} variant={connected ? "primary" : "secondary"} />
+          </div>
         </OnboardingFrame>
       );
+    }
     case "publishing":
       return (
         <OnboardingFrame {...frame} title="Choose how articles get published" lede="One connector per site, tested before the first article is due.">
@@ -149,7 +168,7 @@ export default async function OnboardingStepPage({ params }: { params: Promise<{
             preview
             cards={[
               { icon: "calendar", title: "Schedule", text: "Tuesday and Friday at 09:00 site time · written 3 days ahead · runway alert below 10 days. No back-dating." },
-              { icon: "db", title: "Budget and reserve", phase: 2, text: "A monthly ceiling for paid SEO data and a reserve that is never spent. Every paid call is priced first." },
+              { icon: "db", title: "Budget and reserve", available: true, text: "A monthly ceiling for paid SEO data and a reserve that is never spent. Owners set it under Budget and usage; every paid call is priced first." },
             ]}
             note="Approval required is the default review mode. Autopilot stays off until someone turns it on and reads what it means."
           />
@@ -182,6 +201,10 @@ export default async function OnboardingStepPage({ params }: { params: Promise<{
               <li>
                 <StatusLight state={data.authors.length ? "ok" : "warn"}>Authors</StatusLight>
                 <span>{data.authors.length ? `${data.authors.length} real byline${data.authors.length === 1 ? "" : "s"}.` : "None yet: add one before Phase 3 writes anything."}</span>
+              </li>
+              <li>
+                <StatusLight state={Object.keys(data.google).length === 2 ? "ok" : Object.keys(data.google).length ? "warn" : "idle"}>Search Console & GA4</StatusLight>
+                <span>{Object.keys(data.google).length ? `${Object.keys(data.google).length} of 2 connected.` : "Not connected yet: connect them under the site's Connections tab."}</span>
               </li>
               {STEPS.filter((s) => s.later).map((s) => (
                 <li key={s.key}>

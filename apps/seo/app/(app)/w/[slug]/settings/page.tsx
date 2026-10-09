@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MembersPanel } from "@/components/forms/MembersPanel";
 import { RenameWorkspace } from "@/components/forms/RenameWorkspace";
 import { Icon } from "@/components/Icons";
@@ -60,12 +61,12 @@ export default async function WorkspaceSettings({ params }: { params: Promise<{ 
           <div className="panel pad">
             <RenameWorkspace name={a.workspace.name} canEdit={can(a.role, "workspace:update")} action={renameWorkspaceAction.bind(null, slug)} />
           </div>
-          <div className="panel pad later-box">
+          <Link href={`/w/${slug}/settings/budget`} className="panel pad later-box site-link">
             <p className="later-title">
-              <Icon name="db" /> Budget and reserve <Badge tone="info">Phase 2</Badge>
+              <Icon name="db" /> Budget and usage <Icon name="arrow" />
             </p>
-            <p className="muted small">A monthly ceiling for paid SEO data and a reserve that is never spent. Every paid call is priced first and refused below the reserve.</p>
-          </div>
+            <p className="muted small">A monthly ceiling for paid SEO data and a reserve that is never spent. Every paid call is priced first and refused below the reserve. The ledger and its CSV export live there too.</p>
+          </Link>
           <div className="panel pad later-box">
             <p className="later-title">
               <Icon name="lock" /> Billing and plan <Badge tone="info">Phase 6</Badge>

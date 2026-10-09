@@ -5,6 +5,8 @@
  *   EMAIL_OUTBOX_DIR       magic links and invitations land as JSON files (no email leaves)
  *   CRAWLER_TEST_ORIGINS   northwind-dental.test → the fake site on 127.0.0.1
  *   RATE_LIMIT_SCALE       the suite signs in many times from one IP
+ *   SEO_PROVIDER=fake      research answers from fixtures (no network, no real money)
+ *   GOOGLE_API_TEST_ORIGIN Search Console / GA4 OAuth and APIs point at a local fake Google
  * Everything is torn down on exit. Needs TEST_DATABASE_URL (throwaway server).
  */
 import { spawn } from "node:child_process";
@@ -16,6 +18,7 @@ import { readKeyring } from "../lib/crypto/secrets.ts";
 import { seed } from "../lib/seed.ts";
 import { createTestDatabase, dropAll, skipReason } from "../test/helpers/db.ts";
 import { startFakeSite } from "../test/helpers/fake-site.ts";
+import { FAKE_GOOGLE_CLIENT, startFakeGoogle } from "../test/helpers/fake-google.ts";
 import { E2E } from "./config.ts";
 
 async function main() {
@@ -31,7 +34,8 @@ async function main() {
   await seed(pool, { keyring: readKeyring({ ENCRYPTION_KEY: encryptionKey }) });
   await pool.end();
   const site = await startFakeSite(E2E.fakeDomain);
-  await writeFile(E2E.stateFile, JSON.stringify({ adminUrl: db.adminUrl, appUrl: db.appUrl, fakeSitePort: site.port }, null, 2));
+  const google = await startFakeGoogle();
+  await writeFile(E2E.stateFile, JSON.stringify({ adminUrl: db.adminUrl, appUrl: db.appUrl, fakeSitePort: site.port, fakeGoogle: google.origin }, null, 2));
 
   const next = spawn(path.resolve("node_modules/.bin/next"), ["start", "-p", String(E2E.port), "-H", "127.0.0.1"], {
     stdio: "inherit",
@@ -51,6 +55,15 @@ async function main() {
       GOOGLE_CLIENT_ID: "",
       GOOGLE_CLIENT_SECRET: "",
       RESEND_API_KEY: "",
+      DATAFORSEO_LOGIN: "",
+      DATAFORSEO_PASSWORD: "",
+      OPENSEO_MCP_URL: "",
+      OPENSEO_MCP_TOKEN: "",
+      // research from fixtures; Google OAuth and APIs at the local fake
+      SEO_PROVIDER: "fake",
+      GOOGLE_OAUTH_CLIENT_ID: FAKE_GOOGLE_CLIENT.clientId,
+      GOOGLE_OAUTH_CLIENT_SECRET: FAKE_GOOGLE_CLIENT.clientSecret,
+      GOOGLE_API_TEST_ORIGIN: google.origin,
     },
   });
   let stopping = false;
@@ -59,6 +72,7 @@ async function main() {
     stopping = true;
     next.kill("SIGTERM");
     await site.close().catch(() => {});
+    await google.close().catch(() => {});
     await dropAll().catch(() => {});
     await rm(E2E.stateFile, { force: true });
     process.exit(code);

@@ -24,7 +24,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
-      # throwaway PostgreSQL 16: migrations runner, RLS isolation, Better Auth, seed and audit tests
+      # throwaway PostgreSQL 16: migrations runner, RLS isolation (incl. the Phase 2 tables), Better Auth,
+      # seed and audit tests, the metered call path (cache, budget and reserve, concurrency), Google connections
       postgres:
         image: postgres:16
         env:
@@ -50,7 +51,8 @@ jobs:
       - run: psql --version
       - run: pnpm typecheck
       - run: pnpm lint
-      # unit + integration (the integration suites fail loudly here rather than skip: TEST_DATABASE_URL is set)
+      # unit + integration (the integration suites fail loudly here rather than skip: TEST_DATABASE_URL is set).
+      # Providers and Google are always local fakes: no test reaches DataForSEO, OpenSEO or Google.
       - run: pnpm test
       - run: pnpm build
 
@@ -89,7 +91,9 @@ jobs:
       - run: mkdir -p "$SCREENSHOT_DIR"
       # apps/seo: sign-in via captured magic link, onboarding against a fake site, invitations,
       # viewer limits, impersonation in the audit log, every screen in both themes at 375 and 1440,
-      # reduced motion, /design; apps/web: homepage smoke
+      # reduced motion, /design; Phase 2: research with the cost confirm (fake provider), budget
+      # refusal, Budget and usage + CSV, Search Console / GA4 OAuth against a fake Google;
+      # apps/web: homepage smoke
       - run: pnpm test:e2e
       - if: always()
         uses: actions/upload-artifact@v4

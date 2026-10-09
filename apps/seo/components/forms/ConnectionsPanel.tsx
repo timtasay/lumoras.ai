@@ -37,7 +37,8 @@ const LIGHT: Record<ConnectionRow["status"], [LightState, string]> = {
   error: ["error", "Failing"],
 };
 
-const PLANNED = ["search_console", "ga4", "social"] as const;
+// Search Console and GA4 have their own section (components/google/GoogleConnections.tsx)
+const PLANNED = ["social"] as const;
 
 function summary(c: ConnectionRow) {
   if (c.kind === "git") return `${c.config.repository} · ${c.config.branch}`;
@@ -71,7 +72,7 @@ export function ConnectionsPanel({
     <div className="conns">
       {canEdit ? null : <ReadOnlyNote>Your role can see connections. Editors and owners manage them.</ReadOnlyNote>}
       <ul className="conn-list">
-        {connections.map((c) => {
+        {connections.filter((c) => c.kind !== "search_console" && c.kind !== "ga4").map((c) => {
           const k = KIND[c.kind] ?? { label: c.kind, icon: "plug" as IconName, phase: 3 };
           const [light, text] = LIGHT[c.status];
           return (

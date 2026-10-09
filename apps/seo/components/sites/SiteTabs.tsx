@@ -9,6 +9,7 @@ export function SiteTabs({ base }: { base: string }) {
   const path = usePathname();
   const tabs: [string, string, IconName][] = [
     ["", "Overview", "radar"],
+    ["/keywords", "Keywords", "key"],
     ["/brand", "Brand profile", "sparkle"],
     ["/authors", "Authors", "users"],
     ["/connections", "Connections", "plug"],

@@ -10,6 +10,7 @@ import "./styles/components.css";
 import "./styles/charts.css";
 import "./styles/pipeline.css";
 import "./styles/screens.css";
+import "./styles/research.css";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@lumoras/ui-tokens/theme";
 import { IconSprite } from "@/components/Icons";
 import { ToastProvider } from "@/components/ui/Toast";

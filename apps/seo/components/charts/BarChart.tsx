@@ -14,6 +14,7 @@ export function BarChart({
   summary,
   bars,
   seriesLabel,
+  categoryLabel = "Week",
   height = 220,
   replay = 0,
 }: {
@@ -21,6 +22,8 @@ export function BarChart({
   summary: string;
   bars: { label: string; value: number }[];
   seriesLabel: string;
+  /** Header of the category column in the hidden data table. */
+  categoryLabel?: string;
   height?: number;
   replay?: number;
 }) {
@@ -39,7 +42,7 @@ export function BarChart({
     <ChartFigure
       title={title}
       summary={summary}
-      table={{ caption: title, head: ["Week", seriesLabel], rows: bars.map((b) => [b.label, b.value]) }}
+      table={{ caption: title, head: [categoryLabel, seriesLabel], rows: bars.map((b) => [b.label, b.value]) }}
     >
       <div ref={ref} className="plot">
         <svg width={width} height={height} key={replay} role="presentation">

@@ -47,7 +47,7 @@ export function KpiTile({
       <div className="kpi-main">
         <p className="kpi-value">
           <span aria-hidden="true">
-            {formatNumber(format === "dec1" ? shown : Math.round(shown), format)}
+            {formatNumber(format === "dec1" || format === "usd" ? shown : Math.round(shown), format)}
             {suffix ? <span className="kpi-suffix">{suffix}</span> : null}
           </span>
           <span className="sr-only">{finalText}</span>

@@ -23,6 +23,9 @@ import { createSite, createAuthor } from "../../lib/data/sites.ts";
 import { createConnection } from "../../lib/data/connections.ts";
 import { finishCrawlRun, startCrawlRun } from "../../lib/data/crawl.ts";
 import { notify, platformWorkspaces, platformAudit } from "../../lib/data/workspaces.ts";
+import { addSeeds, saveKeywords, setBudget } from "../../lib/data/research.ts";
+import { meteredCall } from "../../lib/metering/metered.ts";
+import { FakeProvider } from "../../lib/providers/fake.ts";
 import { createTestDatabase, dropAll, skipReason, adminQuery, type TestDb } from "../helpers/db.ts";
 
 /** Every tenant table and the column that holds its workspace. */
@@ -36,7 +39,18 @@ const EXPECTED_TENANT_TABLES: Record<string, string> = {
   connections: "workspace_id",
   notifications: "workspace_id",
   audit_log: "workspace_id",
+  // Phase 2
+  budgets: "workspace_id",
+  usage_ledger: "workspace_id",
+  research_log: "workspace_id",
+  provider_cache: "workspace_id",
+  seed_backlog: "workspace_id",
+  keywords: "workspace_id",
 };
+
+/** Tables the app role may not UPDATE or DELETE at all (append-only): a write attempt must be refused outright. */
+const NO_UPDATE = new Set(["audit_log", "research_log"]);
+const NO_DELETE = new Set(["audit_log", "research_log", "usage_ledger"]);
 
 const RING = readKeyring({ ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64") });
 
@@ -75,14 +89,27 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
         truncated: false,
       });
       await notify(tx, ws, [u.id], { kind: "test", title: `${slug} note` });
+      await setBudget(tx, ws, "seo_credits", 5_000_000, 500_000);
+      await addSeeds(tx, ws, s.id, [`${slug} private seed`], 1, u.id);
       return s;
     });
+    // research through the one metered path: research_log, usage_ledger and provider_cache rows
+    const r = await meteredCall(
+      { db: pool, provider: new FakeProvider() },
+      { workspaceId: ws, actorId: u.id, siteId: site.id },
+      { op: "keywordIdeas", params: { seed: `${slug} secret research`, market: { locationCode: 2840, languageCode: "en", label: "United States" }, limit: 150 } },
+    );
+    await withWorkspace(pool, { workspaceId: ws, actorId: u.id }, (tx) =>
+      saveKeywords(tx, ws, site.id, [{ ...r.data[0], keyword: `${slug} private keyword`, market: "United States", fit: "unknown", variantKey: "", cluster: "", sourceLogId: r.logId, metricsAt: new Date() }]),
+    );
     return { ws, user: u.id, site: site.id };
   }
 
   before(async () => {
     db = await createTestDatabase();
     pool = new pg.Pool({ connectionString: db.appUrl, max: 4 });
+    // dropping the test database terminates idle connections: that is expected, not a crash
+    pool.on("error", () => {});
     A = await seedWorkspace("alpha");
     B = await seedWorkspace("bravo");
 
@@ -143,9 +170,15 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
         const foreign = all.filter((r) => r.w !== A.ws);
         assert.equal(foreign.length, 0, `${table}: an unfiltered SELECT as A returned ${foreign.length} row(s) of other workspaces (${foreign[0]?.w})`);
       });
-      if (table !== "audit_log") {
+      if (NO_UPDATE.has(table)) {
+        await assert.rejects(asA((tx) => tx.exec(`UPDATE ${table} SET ${col} = ${col} WHERE ${col} = $1`, [B.ws])), /permission denied/, `${table}: the app role may update rows`);
+      } else {
         const updated = await asA((tx) => tx.exec(`UPDATE ${table} SET ${col} = ${col} WHERE ${col} = $1`, [B.ws]));
         assert.equal(updated, 0, `${table}: workspace A updated ${updated} row(s) of workspace B (${col} = ${B.ws})`);
+      }
+      if (NO_DELETE.has(table)) {
+        await assert.rejects(asA((tx) => tx.exec(`DELETE FROM ${table} WHERE ${col} = $1`, [B.ws])), /permission denied/, `${table}: the app role may delete rows`);
+      } else {
         const deleted = await asA((tx) => tx.exec(`DELETE FROM ${table} WHERE ${col} = $1`, [B.ws]));
         assert.equal(deleted, 0, `${table}: workspace A deleted ${deleted} row(s) of workspace B (${col} = ${B.ws})`);
       }
@@ -162,6 +195,12 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
       ["connections", "INSERT INTO connections (workspace_id, site_id, kind, label) VALUES ($1, $2, 'git', 'planted')", [B.ws, B.site]],
       ["notifications", "INSERT INTO notifications (workspace_id, user_id, kind, title) VALUES ($1, $2, 'x', 'planted')", [B.ws, B.user]],
       ["crawl_runs", "INSERT INTO crawl_runs (workspace_id, site_id) VALUES ($1, $2)", [B.ws, B.site]],
+      ["budgets", "INSERT INTO budgets (workspace_id, category, monthly_ceiling) VALUES ($1, 'llm_tokens', 1)", [B.ws]],
+      ["usage_ledger", "INSERT INTO usage_ledger (workspace_id, site_id, category, operation, provider, period, status, actor_id) VALUES ($1, $2, 'seo_credits', 'x', 'fake', '2026-10-01', 'settled', 'system:test')", [B.ws, B.site]],
+      ["research_log", "INSERT INTO research_log (workspace_id, site_id, operation, provider, subject, params, params_hash, status, actor_id) VALUES ($1, $2, 'serp', 'fake', 'x', '{}', repeat('a', 64), 'ok', 'system:test')", [B.ws, B.site]],
+      ["provider_cache", "INSERT INTO provider_cache (workspace_id, cache_key, operation, provider, params, result, expires_at) VALUES ($1, repeat('b', 64), 'serp', 'fake', '{}', '[]', now() + interval '1 day')", [B.ws]],
+      ["seed_backlog", "INSERT INTO seed_backlog (workspace_id, site_id, seed, added_by) VALUES ($1, $2, 'planted', 'system:test')", [B.ws, B.site]],
+      ["keywords", "INSERT INTO keywords (workspace_id, site_id, keyword) VALUES ($1, $2, 'planted')", [B.ws, B.site]],
     ];
     for (const [table, sql, params] of attempts) {
       await assert.rejects(asA((tx) => tx.exec(sql, params)), /row-level security|violates/, `${table}: workspace A inserted a row with workspace_id ${B.ws}`);
@@ -223,6 +262,16 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
     for (const sql of ["INSERT INTO audit_log (action, entity_type) VALUES ('forged', 'x')", "UPDATE audit_log SET action = 'x'", "DELETE FROM audit_log"]) {
       await assert.rejects(asA((tx) => tx.exec(sql)), /permission denied/, `the app role could run: ${sql}`);
     }
+  });
+
+  it("research results are fingerprinted in the audit log, not copied (research_log and provider_cache)", async () => {
+    const rows = await adminQuery<{ entity_type: string; after: Record<string, unknown> }>(
+      "SELECT entity_type, after FROM audit_log WHERE entity_type IN ('research_log', 'provider_cache') AND after IS NOT NULL",
+      [],
+      db.name,
+    );
+    assert.ok(rows.length >= 4);
+    for (const r of rows) assert.match(String(r.after.result), /^\[redacted [0-9a-f]{8}\]$/, `${r.entity_type}: result copied into the audit log`);
   });
 
   it("connection secrets are never in the audit log, not even as ciphertext", async () => {

@@ -253,7 +253,7 @@ export function DomainOverviewLocked({ domain }: { domain: string }) {
           <Icon name="lock" />
         </span>
         <h3 id="dov-h">Domain overview for {domain}</h3>
-        <p>Available once SEO data is connected. Traffic, ranking keywords, backlinks and competitors are paid lookups that arrive with research in Phase 2, priced and budgeted per workspace.</p>
+        <p>Available once an SEO data provider is connected (owner decision #3). Traffic, ranking keywords, backlinks and competitors are paid lookups, priced first and charged to the workspace&apos;s budget.</p>
       </div>
     </section>
   );

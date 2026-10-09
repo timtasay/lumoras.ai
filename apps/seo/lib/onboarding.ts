@@ -6,7 +6,7 @@ export const STEPS: { key: StepKey; label: string; later?: number }[] = [
   { key: "scan", label: "Sitemap scan" },
   { key: "brand", label: "Brand profile" },
   { key: "authors", label: "Authors" },
-  { key: "search", label: "Search Console & GA4", later: 2 },
+  { key: "search", label: "Search Console & GA4" },
   { key: "publishing", label: "Publishing", later: 3 },
   { key: "schedule", label: "Schedule & budget", later: 3 },
   { key: "done", label: "Done" },

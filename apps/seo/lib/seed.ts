@@ -19,13 +19,26 @@ import { advanceOnboarding } from "./data/workspaces.ts";
 import type { Keyring } from "./crypto/secrets.ts";
 import type { BrandInput, SiteInput } from "./validation.ts";
 import { DEFAULT_SEO_RULES } from "./validation.ts";
+import { addSeeds, saveKeywords, setBudget, setKeywordCluster, setKeywordStatus } from "./data/research.ts";
+import { meteredCall } from "./metering/metered.ts";
+import { FakeProvider } from "./providers/fake.ts";
+import { marketFor } from "./research/market.ts";
+import { runResearch } from "./research/service.ts";
 
 const SEED: Actor = { actorId: "system:seed" };
 const HYPE = ["revolutionary", "seamless", "cutting-edge", "game-changer"];
 
 type SeedUser = { email: string; name: string; admin?: boolean };
-type SeedSite = { input: SiteInput; brand: Partial<BrandInput>; authors: { name: string; role: string; bio: string }[]; routes?: string[] };
-type SeedWorkspace = { name: string; slug: string; members: { email: string; role: "owner" | "editor" | "viewer" }[]; sites: SeedSite[]; webhook?: boolean };
+type SeedSite = { input: Omit<SiteInput, "researchMaxAgeDays">; brand: Partial<BrandInput>; authors: { name: string; role: string; bio: string }[]; routes?: string[]; seeds?: string[] };
+type SeedWorkspace = {
+  name: string;
+  slug: string;
+  members: { email: string; role: "owner" | "editor" | "viewer" }[];
+  sites: SeedSite[];
+  webhook?: boolean;
+  /** Monthly budgets in micro-USD (seo, llm) and posts (social): [ceiling, reserve]. */
+  budgets: { seo_credits: [number, number]; llm_tokens: [number, number]; social_posts: [number, number] };
+};
 
 export const SEED_USERS: SeedUser[] = [
   { email: "staff@lumoras.example", name: "Lumoras staff (demo)", admin: true },
@@ -53,6 +66,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
   {
     name: "Lumoras",
     slug: "lumoras",
+    budgets: { seo_credits: [25_000_000, 5_000_000], llm_tokens: [50_000_000, 5_000_000], social_posts: [60, 0] },
     members: [
       { email: "owner@lumoras.example", role: "owner" },
       { email: "editor@lumoras.example", role: "editor" },
@@ -75,6 +89,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
           keyPages: [{ url: "https://sonorch.ai/", title: "Sonorch", description: "POS and AI receptionist for salons." }],
         },
         authors: [DEMO_AUTHOR("sonorch.ai")],
+        seeds: ["salon pos", "no show policy", "esthetician salary", "salon booking software", "ai receptionist for salons", "salon deposit policy"],
       },
       {
         input: { domain: "seasonx.ai", name: "SeasonX", industry: "Restaurants", locale: "en-US", country: "US", serpLocation: "United States", timezone: "America/New_York" },
@@ -94,6 +109,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
           ],
         },
         authors: [DEMO_AUTHOR("seasonx.ai")],
+        seeds: ["restaurant reservation system", "restaurant phone ordering", "restaurant waitlist app"],
       },
       {
         input: { domain: "lumoras.ai", name: "Lumoras", industry: "Software", locale: "en-US", country: "US", serpLocation: "United States", timezone: "America/New_York" },
@@ -115,6 +131,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
         },
         authors: [DEMO_AUTHOR("lumoras.ai")],
         routes: LUMORAS_ROUTES,
+        seeds: ["ai receptionist", "missed calls", "call forwarding for business"],
       },
     ],
   },
@@ -122,6 +139,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
     name: "Northwind Dental (demo)",
     slug: "northwind-dental",
     webhook: true,
+    budgets: { seo_credits: [10_000_000, 2_000_000], llm_tokens: [20_000_000, 2_000_000], social_posts: [30, 0] },
     members: [
       { email: "owner@northwind-dental.example", role: "owner" },
       { email: "editor@northwind-dental.example", role: "editor" },
@@ -144,6 +162,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
           { name: "Dr. Alex Example (demo)", role: "Placeholder dentist", bio: "Fictional demo person. Replace with a real clinician before publishing." },
           { name: "Sam Example (demo)", role: "Placeholder hygienist", bio: "Fictional demo person." },
         ],
+        seeds: ["dental implants", "teeth whitening cost"],
       },
     ],
   },
@@ -151,7 +170,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
 
 export type SeedResult = { users: Record<string, string>; workspaces: Record<string, { id: string; sites: Record<string, string> }> };
 
-export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null } = {}): Promise<SeedResult> {
+export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; research?: boolean } = {}): Promise<SeedResult> {
   const users: Record<string, string> = {};
   // auth tables are not tenant tables; the audit trigger records them with the seed as actor
   const c = await db.connect();
@@ -215,15 +234,56 @@ export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null } = {})
             [wsId, siteId, s.input.domain, s.routes],
           );
         }
+        if (s.seeds?.length) await addSeeds(tx, wsId, siteId, s.seeds, 0, SEED.actorId);
         if (w.webhook && opts.keyring && !(await tx.maybe("SELECT 1 FROM connections WHERE site_id = $1", [siteId]))) {
           await createConnection(tx, opts.keyring, wsId, siteId, { kind: "webhook", label: "Demo webhook", endpoint: `https://${s.input.domain}/hooks/lumoras`, secret: "demo-signing-secret-not-real" });
         }
       }
       await advanceOnboarding(tx, "done", sites[w.sites[0].input.domain]);
+      for (const [category, [ceiling, reserve]] of Object.entries(w.budgets)) {
+        if (!(await tx.maybe("SELECT 1 FROM budgets WHERE category = $1", [category]))) await setBudget(tx, wsId, category as "seo_credits", ceiling, reserve);
+      }
     });
     out.workspaces[w.slug] = { id: wsId, sites };
+    if (opts.research !== false && w.slug === "lumoras") await seedResearch(db, wsId, sites["sonorch.ai"], w.sites[0]);
   }
   return out;
+}
+
+/**
+ * Demo research for sonorch.ai, bought through the real metered path from the
+ * FakeProvider (synthetic fixtures, no network, no real money): a few seeds,
+ * a SERP and its free repeat (a cache hit), the domain overview, and some
+ * saved keywords in each status. Skipped when the site already has research.
+ */
+async function seedResearch(db: pg.Pool, workspaceId: string, siteId: string, site: SeedSite): Promise<void> {
+  const ctx = { ...SEED, workspaceId, siteId };
+  const already = await withWorkspace(db, ctx, (tx) => tx.maybe("SELECT 1 FROM research_log WHERE site_id = $1 LIMIT 1", [siteId]), { readOnly: true });
+  if (already) return;
+  const deps = { db, provider: new FakeProvider() };
+  const market = marketFor({ country: site.input.country, locale: site.input.locale, serp_location: site.input.serpLocation });
+  const s = { id: siteId, domain: site.input.domain, research_max_age_days: 90 };
+  const brand = { sells: site.brand.sells ?? [], does_not_sell: site.brand.doesNotSell ?? [] };
+  const pos = await runResearch(deps, ctx, s, brand, market, { kind: "ideas", seed: "salon pos" });
+  const policy = await runResearch(deps, ctx, s, brand, market, { kind: "ideas", seed: "no show policy" });
+  const salary = await runResearch(deps, ctx, s, brand, market, { kind: "ideas", seed: "esthetician salary" });
+  await runResearch(deps, ctx, s, brand, market, { kind: "serp", keyword: "salon no show policy" });
+  await runResearch(deps, ctx, s, brand, market, { kind: "serp", keyword: "salon no show policy" }); // the repeat: a free cache hit
+  await meteredCall(deps, ctx, { op: "domainOverview", params: { domain: site.input.domain, market } });
+  await withWorkspace(db, ctx, async (tx) => {
+    await tx.action("seed.keywords");
+    const now = new Date();
+    for (const [r, cluster] of [[pos, "Point of sale"], [policy, "Policies"], [salary, "Careers"]] as const) {
+      if (r.kind !== "ideas") continue;
+      const rows = r.rows.filter((x) => x.target && x.fit !== "not_offered").slice(0, 4);
+      await saveKeywords(tx, workspaceId, siteId, rows.map((x) => ({ ...x, market: market.label, fit: x.fit, variantKey: x.variantKey, cluster, sourceLogId: r.logId, metricsAt: now })));
+    }
+    const ids = async (kw: string[]) => (await tx.many<{ id: string }>("SELECT id FROM keywords WHERE site_id = $1 AND keyword = ANY($2)", [siteId, kw])).map((x) => x.id);
+    await setKeywordStatus(tx, siteId, await ids(["salon pos", "salon cancellation policy"]), "targeted");
+    await setKeywordStatus(tx, siteId, await ids(["no show policy"]), "published");
+    await setKeywordStatus(tx, siteId, await ids(["salon no show policy"]), "ranking");
+    await setKeywordCluster(tx, siteId, await ids(["esthetician salary"]), "Careers");
+  });
 }
 
 async function upsertUserTx(c: pg.PoolClient, u: SeedUser): Promise<string> {

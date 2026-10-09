@@ -20,7 +20,6 @@ export const PRODUCT_NAME_PENDING = true;
 export const LATER: NavItem[] = [
   { key: "calendar", label: "Content calendar", icon: "calendar", phase: 3 },
   { key: "pipeline", label: "Pipeline runs", icon: "flow", phase: 3 },
-  { key: "keywords", label: "Keywords", icon: "key", phase: 2 },
   { key: "rankings", label: "Rankings", icon: "trend", phase: 4 },
   { key: "audit-site", label: "Site audit", icon: "audit", phase: 4 },
   { key: "backlinks", label: "Backlinks", icon: "link", phase: 5 },
@@ -39,6 +38,7 @@ export function buildNav(ws: ShellWorkspace | null, opts: { platformAdmin: boole
       items: [
         { key: "home", label: "Overview", icon: "home", href: base },
         ...ws.sites.slice(0, 8).map((s) => ({ key: `site-${s.id}`, label: s.domain, icon: "globe" as const, href: `${base}/sites/${s.id}`, prefix: true })),
+        { key: "keywords", label: "Keywords", icon: "key" as const, href: `${base}/keywords` },
         ...(ws.role !== "viewer" ? [{ key: "add-site", label: "Add a site", icon: "plus" as const, href: `${base}/sites/new` }] : []),
       ],
     });
@@ -47,6 +47,7 @@ export function buildNav(ws: ShellWorkspace | null, opts: { platformAdmin: boole
       group: "Settings",
       items: [
         { key: "settings", label: "Members and roles", icon: "users", href: `${base}/settings` },
+        { key: "budget", label: "Budget and usage", icon: "db", href: `${base}/settings/budget` },
         { key: "audit", label: "Audit log", icon: "history", href: `${base}/audit` },
       ],
     });

@@ -18,6 +18,8 @@ export function webEnv(): WebEnv {
     if (e.emailOutboxDir) warn.warn("EMAIL_OUTBOX_DIR is set: outgoing email is written to disk, not sent (tests only)");
     if (e.crawlerTestOrigins.size) warn.warn("CRAWLER_TEST_ORIGINS is set: the crawler may reach local fake sites (tests only)", { domains: [...e.crawlerTestOrigins.keys()] });
     if (e.rateLimitScale !== 1) warn.warn("RATE_LIMIT_SCALE is set: rate limits are relaxed (tests only)", { scale: e.rateLimitScale });
+    if (e.googleApiTestOrigin) warn.warn("GOOGLE_API_TEST_ORIGIN is set: Google OAuth and APIs point at a local fake (tests only)", { origin: e.googleApiTestOrigin });
+    if (e.seoProvider.kind === "fake" && process.env.NODE_ENV === "production") warn.warn("SEO_PROVIDER=fake in a production build: research returns demo data (tests only)");
   }
   return g.__seoEnv;
 }

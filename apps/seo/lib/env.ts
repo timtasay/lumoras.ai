@@ -112,7 +112,65 @@ export type WebEnv = {
   rateLimitScale: number;
   /** Tests only: crawl these domains at a local fake site (loopback, any port). */
   crawlerTestOrigins: TestOrigins;
+  /** Which SEO data provider answers research calls (lib/providers/registry.ts). */
+  seoProvider: SeoProviderEnv;
+  /** OAuth client for Search Console and GA4 connections; null turns the connect buttons into a "not configured" state. */
+  googleOAuth: { clientId: string; clientSecret: string } | null;
+  /** Tests only: every Google endpoint (OAuth and APIs) lives at this loopback origin. */
+  googleApiTestOrigin: string | null;
 };
+
+export type SeoProviderEnv =
+  | { kind: "none" }
+  | { kind: "fake" }
+  | { kind: "openseo"; url: string; token: string | null; cfAccess: { clientId: string; clientSecret: string } | null }
+  | { kind: "dataforseo"; login: string; password: string; baseUrl: string };
+
+const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1:\d{2,5}$/;
+
+/**
+ * SEO_PROVIDER and its credentials. Default: "fake" in development and tests,
+ * "none" in production (no paid data until a real provider is configured,
+ * and never demo data by accident). "fake" in production is a test knob,
+ * refused next to an https base URL like the others.
+ */
+export function readSeoProviderEnv(env: Env, problems: string[], opts: { production: boolean; secure: boolean }): SeoProviderEnv {
+  const raw = env.SEO_PROVIDER?.trim() || (opts.production ? "none" : "fake");
+  switch (raw) {
+    case "none":
+      return { kind: "none" };
+    case "fake":
+      if (opts.secure) problems.push("SEO_PROVIDER=fake serves demo data and cannot be used with an https BETTER_AUTH_URL");
+      return { kind: "fake" };
+    case "openseo": {
+      const url = env.OPENSEO_MCP_URL?.trim() || "";
+      if (!url) problems.push("OPENSEO_MCP_URL is required when SEO_PROVIDER=openseo (e.g. http://open-seo:3001/mcp on the private network)");
+      else {
+        try {
+          const u = new URL(url);
+          if (u.protocol !== "https:" && u.protocol !== "http:") problems.push("OPENSEO_MCP_URL must be an http(s) URL");
+          if (u.username || u.password) problems.push("OPENSEO_MCP_URL must not contain credentials (use OPENSEO_MCP_TOKEN)");
+        } catch {
+          problems.push("OPENSEO_MCP_URL is not a valid URL");
+        }
+      }
+      const id = env.OPENSEO_CF_ACCESS_CLIENT_ID?.trim(), secret = env.OPENSEO_CF_ACCESS_CLIENT_SECRET?.trim();
+      if (!!id !== !!secret) problems.push("OPENSEO_CF_ACCESS_CLIENT_ID and OPENSEO_CF_ACCESS_CLIENT_SECRET must be set together");
+      return { kind: "openseo", url, token: env.OPENSEO_MCP_TOKEN?.trim() || null, cfAccess: id && secret ? { clientId: id, clientSecret: secret } : null };
+    }
+    case "dataforseo": {
+      const login = env.DATAFORSEO_LOGIN?.trim() || "", password = env.DATAFORSEO_PASSWORD?.trim() || "";
+      if (!login || !password) problems.push("DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are required when SEO_PROVIDER=dataforseo");
+      const baseUrl = (env.DATAFORSEO_BASE_URL?.trim() || "https://api.dataforseo.com").replace(/\/+$/, "");
+      const allowed = baseUrl === "https://api.dataforseo.com" || baseUrl === "https://sandbox.dataforseo.com" || (!opts.secure && LOOPBACK_ORIGIN.test(baseUrl));
+      if (!allowed) problems.push("DATAFORSEO_BASE_URL must be https://api.dataforseo.com or https://sandbox.dataforseo.com (a loopback origin only in tests)");
+      return { kind: "dataforseo", login, password, baseUrl };
+    }
+    default:
+      problems.push(`SEO_PROVIDER must be one of none, fake, openseo, dataforseo (got "${raw}")`);
+      return { kind: "none" };
+  }
+}
 
 /**
  * Settings for the web server (Next.js) and anything it imports. Read once,
@@ -185,6 +243,15 @@ export function readWebEnv(env: Env = process.env): WebEnv {
     }
   }
 
+  const seoProvider = readSeoProviderEnv(env, problems, { production, secure });
+
+  const goid = env.GOOGLE_OAUTH_CLIENT_ID?.trim(), gosecret = env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
+  if (!!goid !== !!gosecret) problems.push("GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET must be set together (or both left empty: Search Console and GA4 show as not configured)");
+  const googleOAuth = goid && gosecret ? { clientId: goid, clientSecret: gosecret } : null;
+  const gto = env.GOOGLE_API_TEST_ORIGIN?.trim() || null;
+  if (gto && secure) problems.push("GOOGLE_API_TEST_ORIGIN is for tests only and cannot be used with an https BETTER_AUTH_URL");
+  else if (gto && !LOOPBACK_ORIGIN.test(gto)) problems.push("GOOGLE_API_TEST_ORIGIN must look like http://127.0.0.1:4566");
+
   if (problems.length || !databaseUrl) throw new EnvError(problems);
-  return { databaseUrl, logLevel: level, baseUrl, secure, authSecret, google, email, emailOutboxDir, rateLimitScale, crawlerTestOrigins };
+  return { databaseUrl, logLevel: level, baseUrl, secure, authSecret, google, email, emailOutboxDir, rateLimitScale, crawlerTestOrigins, seoProvider, googleOAuth, googleApiTestOrigin: gto };
 }

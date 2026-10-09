@@ -24,6 +24,14 @@ export const LIMITS = {
   workspacePerUser: { name: "workspace:user", max: 5, windowSec: 24 * 60 * 60 },
   /** impersonations started per platform admin */
   impersonatePerAdmin: { name: "impersonate:admin", max: 30, windowSec: 60 * 60 },
+  /** paid research calls (and their quotes) per member: a runaway client or script cannot drain a budget in a burst */
+  researchPerUser: { name: "research:user", max: 40, windowSec: 10 * 60 },
+  /** paid research calls per workspace */
+  researchPerWorkspace: { name: "research:workspace", max: 200, windowSec: 60 * 60 },
+  /** Google connect attempts per site */
+  googleConnectPerSite: { name: "google-connect:site", max: 10, windowSec: 60 * 60 },
+  /** Google live tests and property listings per site */
+  googleTestPerSite: { name: "google-test:site", max: 60, windowSec: 60 * 60 },
 } as const satisfies Record<string, Limit>;
 
 export class RateLimitedError extends Error {

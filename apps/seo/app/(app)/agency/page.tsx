@@ -10,7 +10,10 @@ import { Badge, StatusLight } from "@/components/ui/Status";
 import { requirePlatformAdmin } from "@/lib/auth/app";
 import { pool } from "@/lib/db/pool";
 import { withActor } from "@/lib/db/tenant";
-import { platformWorkspaces } from "@/lib/data/workspaces";
+import { platformBudgets, platformWorkspaces } from "@/lib/data/workspaces";
+import { ProviderStatus } from "@/components/google/ProviderStatus";
+import { provider, providerInfo } from "@/lib/providers/registry";
+import { formatMicros } from "@/lib/research/money";
 import { relativeTime } from "@/lib/ui/time";
 import { impersonateAction, membersForImpersonation } from "./actions";
 
@@ -21,14 +24,16 @@ const LATER: [string, string, number][] = [
   ["Runway", "Runway (days of scheduled content)", 3],
   ["Published", "Articles published this month", 3],
   ["Clicks", "Organic clicks trend", 4],
-  ["Budget", "Budget used this month", 2],
   ["Reviews", "Items awaiting review", 3],
 ];
 
 export default async function AgencyHome() {
   const v = await requirePlatformAdmin();
   // the audited cross-workspace read (0005_platform.sql)
-  const list = await withActor(pool(), { actorId: v.user.id, requestId: v.requestId }, (tx) => platformWorkspaces(tx));
+  const { list, budgets } = await withActor(pool(), { actorId: v.user.id, requestId: v.requestId }, async (tx) => ({ list: await platformWorkspaces(tx), budgets: await platformBudgets(tx) }));
+  const seoBudget = (id: string) => budgets.find((b) => b.workspace_id === id && b.category === "seo_credits");
+  const p = provider();
+  const bal = p ? await p.balance().catch(() => ({ micros: null, note: "Balance unavailable right now" })) : { micros: null, note: "No provider configured" };
   const sites = list.reduce((n, w) => n + w.sites, 0);
   const failing = list.reduce((n, w) => n + w.failing_connections, 0);
   return (
@@ -53,10 +58,11 @@ export default async function AgencyHome() {
           <KpiTile key="f" label="Failing connections" value={failing} tone={failing ? "amber" : undefined} note={failing ? "Needs a look" : "None failing"} />,
         ]}
       </RevealGroup>
+      <ProviderStatus info={providerInfo()} balance={bal.micros} note={bal.note ?? null} />
       <section className="sec" aria-labelledby="ws-list-h">
         <div className="sec-head">
           <h2 id="ws-list-h">Workspaces</h2>
-          <p className="muted">Runway, articles, clicks, budget and reviews fill in as their phases arrive.</p>
+          <p className="muted">Runway, articles, clicks and reviews fill in as their phases arrive.</p>
         </div>
         {list.length ? (
           <RevealGroup className="agency-grid" as="ul">
@@ -103,6 +109,17 @@ export default async function AgencyHome() {
                       </span>
                     </li>
                   ))}
+                  {(() => {
+                    const b = seoBudget(w.id);
+                    const used = b ? Number(b.used) : 0, ceiling = b ? Number(b.monthly_ceiling) : 0, reserve = b ? Number(b.reserve) : 0;
+                    const state = !ceiling ? "warn" : ceiling - used <= reserve ? "error" : "ok";
+                    return (
+                      <li className="health-item">
+                        <span className="label">Budget</span>
+                        <StatusLight state={state}>{ceiling ? `${formatMicros(used)} of ${formatMicros(ceiling)}` : "Not set"}</StatusLight>
+                      </li>
+                    );
+                  })()}
                   <li className="health-item">
                     <span className="label">Connections</span>
                     <StatusLight state={w.failing_connections ? "error" : "ok"}>{w.failing_connections ? `${w.failing_connections} failing` : "OK"}</StatusLight>

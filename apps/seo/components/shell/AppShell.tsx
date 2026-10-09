@@ -323,7 +323,7 @@ function Shell({ children, data, actions }: { children: ReactNode; data: ShellDa
         </nav>
         <div className="side-foot">
           <span className="side-env">
-            <span className="light-dot" aria-hidden="true" /> Phase 1 · tenancy
+            <span className="light-dot" aria-hidden="true" /> Phase 2 · research
           </span>
         </div>
       </aside>

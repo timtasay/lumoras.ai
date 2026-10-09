@@ -20,12 +20,14 @@ export type Site = {
   status: "active" | "paused" | "archived";
   last_crawl_at: Date | null;
   last_crawl_status: "ok" | "partial" | "failed" | null;
+  /** Rule 4: seeds are not re-researched until their data is older than this. */
+  research_max_age_days: number;
   created_at: Date;
 };
 
 export type SiteSummary = Site & { routes: number; authors: number; connections: number; failing_connections: number; brand_filled: number };
 
-const SITE_COLS = "id, workspace_id, domain, name, industry, locale, country, serp_location, timezone, status, last_crawl_at, last_crawl_status, created_at";
+const SITE_COLS = "id, workspace_id, domain, name, industry, locale, country, serp_location, timezone, status, last_crawl_at, last_crawl_status, research_max_age_days, created_at";
 
 export function listSites(tx: Tx): Promise<SiteSummary[]> {
   return tx.many<SiteSummary>(
@@ -46,7 +48,7 @@ export function getSite(tx: Tx, id: string): Promise<Site> {
   return tx.one<Site>(`SELECT ${SITE_COLS} FROM sites WHERE id = $1`, [id], "site");
 }
 
-export async function createSite(tx: Tx, workspaceId: string, s: SiteInput): Promise<Site> {
+export async function createSite(tx: Tx, workspaceId: string, s: Omit<SiteInput, "researchMaxAgeDays">): Promise<Site> {
   const site = await tx.one<Site>(
     `INSERT INTO sites (workspace_id, domain, name, industry, locale, country, serp_location, timezone)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING ${SITE_COLS}`,
@@ -58,9 +60,9 @@ export async function createSite(tx: Tx, workspaceId: string, s: SiteInput): Pro
 
 export function updateSite(tx: Tx, id: string, s: Omit<SiteInput, "domain">): Promise<Site> {
   return tx.one<Site>(
-    `UPDATE sites SET name = $2, industry = $3, locale = $4, country = $5, serp_location = $6, timezone = $7
+    `UPDATE sites SET name = $2, industry = $3, locale = $4, country = $5, serp_location = $6, timezone = $7, research_max_age_days = $8
      WHERE id = $1 RETURNING ${SITE_COLS}`,
-    [id, s.name, s.industry, s.locale, s.country, s.serpLocation, s.timezone],
+    [id, s.name, s.industry, s.locale, s.country, s.serpLocation, s.timezone, s.researchMaxAgeDays],
     "site",
   );
 }

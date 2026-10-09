@@ -47,20 +47,39 @@ export function watchConsole(page: Page): string[] {
   return errors;
 }
 
+/** The deepest elements that stick out past the right edge (to name the culprit when a page scrolls sideways). */
+export const wideElements = (page: Page) =>
+  page.evaluate(() => {
+    const w = document.documentElement.clientWidth;
+    const out: string[] = [];
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
+      const r = el.getBoundingClientRect();
+      if (r.right > w + 1 && r.width > 0 && ![...el.children].some((c) => c.getBoundingClientRect().right > w + 1)) {
+        out.push(`${el.tagName.toLowerCase()}.${[...el.classList].join(".")} right=${Math.round(r.right)}`);
+      }
+    }
+    return out.slice(0, 8);
+  });
+
 export const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 export async function setTheme(page: Page, theme: "dark" | "light") {
   await page.addInitScript((t) => localStorage.setItem("lumoras-theme", t), theme);
 }
 
-export async function shot(page: Page, name: string) {
+export async function shot(page: Page, name: string, prefix = "seo-p1") {
   if (!E2E.shots) return;
   // full page, with a viewport as tall as the page so sticky parts render as a user sees them
-  const h = await page.evaluate(() => document.documentElement.scrollHeight);
+  await page.waitForLoadState("load");
+  const h = await page.evaluate(() => document.documentElement.scrollHeight).catch(async () => {
+    // a navigation finished in between (a redirect or refresh): measure the page that is there now
+    await page.waitForLoadState("load");
+    return page.evaluate(() => document.documentElement.scrollHeight);
+  });
   const vp = page.viewportSize()!;
   await page.setViewportSize({ width: vp.width, height: Math.min(Math.max(h, vp.height), 6000) });
   await page.waitForTimeout(250);
-  await page.screenshot({ path: path.join(E2E.shots, `seo-p1-${name}.png`) });
+  await page.screenshot({ path: path.join(E2E.shots, `${prefix}-${name}.png`) });
   await page.setViewportSize(vp);
 }
 

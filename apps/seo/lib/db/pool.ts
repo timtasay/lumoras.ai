@@ -4,7 +4,7 @@
  * Better Auth gets the same pool wrapped by lib/auth/audited-pool.ts.
  */
 import pg from "pg";
-import { webEnv } from "../config.ts";
+import { log, webEnv } from "../config.ts";
 
 const g = globalThis as { __seoPool?: pg.Pool };
 
@@ -18,6 +18,9 @@ export function pool(): pg.Pool {
       connectionTimeoutMillis: 5_000,
       statement_timeout: 15_000,
     });
+    // an idle client can lose its connection (Postgres restarted, network blip); pg then emits
+    // "error" on the pool, which would crash the process if nobody listened. The pool replaces it.
+    g.__seoPool.on("error", (err) => log().warn("idle database connection lost", { err: err.message }));
   }
   return g.__seoPool;
 }

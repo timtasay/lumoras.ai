@@ -43,9 +43,15 @@ for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
     await expect(page.locator(".scan-tally dd").nth(1)).toContainText("7");
     await expect(page.locator(".scan-log")).toContainText("sitemap-blog.xml.gz: 1 URLs");
     await expect(page.locator(".scan-tally dd").first()).toHaveText("3");
-    await expect(page.getByText(`Domain overview for ${E2E.fakeDomain}`)).toBeVisible();
-    await expect(page.getByText("Available once SEO data is connected")).toBeVisible();
+    // the domain overview is real now (fake provider): priced first, and refused here because a new
+    // workspace has no budget yet; nothing is bought
+    const dov = page.getByRole("region", { name: "Domain overview" });
+    await expect(dov).toBeVisible();
+    await dov.getByRole("button", { name: "Get the price" }).click();
+    await expect(page.getByRole("heading", { name: "No budget set for paid SEO data" })).toBeVisible();
+    await expect(page.getByText("Nothing was bought and nothing was charged.")).toBeVisible();
     await step(page, "scan", width, theme);
+    if (width === 1440) await shot(page, `onboarding-scan-overview-refused-${theme}-${width}`, "seo-p2");
     await page.getByRole("button", { name: "Continue to the brand profile" }).click();
 
     // brand profile pre-filled from the homepage, for the client to correct
@@ -72,7 +78,11 @@ for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
     await step(page, "authors", width, theme);
     await page.getByRole("button", { name: "Continue", exact: true }).click();
 
-    // Search Console & GA4, publishing, schedule: designed, skippable "coming next" steps
+    // Search Console & GA4 (real now: connect buttons, skippable), publishing, schedule
+    await expect(page).toHaveURL(new RegExp(`/w/${slug}/onboarding/search$`));
+    await expect(page.getByRole("button", { name: "Connect Search Console" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Connect GA4" })).toBeVisible();
+    await shot(page, `onboarding-search-${theme}-${width}`, "seo-p2");
     for (const [path, heading] of [
       ["search", "Connect Search Console and GA4"],
       ["publishing", "Choose how articles get published"],
@@ -106,6 +116,8 @@ for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
     expect(brand).toEqual({ competitors: ["rival-dental.example"], sells: ["Cleanings", "Invisalign", "Crowns"] });
     const actions = (await pool.query<{ action: string }>("SELECT DISTINCT action FROM audit_log WHERE workspace_id = $1", [ws.id])).rows.map((r) => r.action);
     expect(actions).toEqual(expect.arrayContaining(["workspace.create", "site.create", "crawl.start", "crawl.finish", "brand_profile.update", "author.create", "workspace.onboarding"]));
+    const spent = (await pool.query("SELECT 1 FROM usage_ledger WHERE workspace_id = $1", [ws.id])).rows;
+    expect(spent, "the refused domain overview was charged").toEqual([]);
     expect(errors).toEqual([]);
   });
 }

@@ -5,6 +5,8 @@ import { Icon, type IconName } from "@/components/Icons";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Status";
 import { DomainOverviewLocked, ScanVisual } from "@/components/scan/ScanVisual";
+import { DomainOverviewPanel } from "@/components/research/DomainOverview";
+import type { DomainOverview } from "@/lib/providers/types";
 import { continueOnboarding } from "@/app/(app)/w/[slug]/actions";
 
 export function ContinueButton({ slug, from, label = "Continue", variant = "primary" }: { slug: string; from: string; label?: string; variant?: "primary" | "secondary" | "ghost" }) {
@@ -35,13 +37,28 @@ export function ContinueButton({ slug, from, label = "Continue", variant = "prim
   );
 }
 
-/** Step 3: the live scan, then the (locked) domain overview, then continue. */
-export function ScanStep({ slug, siteId, domain, alreadyScanned }: { slug: string; siteId: string; domain: string; alreadyScanned: boolean }) {
+/**
+ * Step 3: the live scan, then the domain overview (a paid lookup: priced,
+ * budgeted, confirmed; locked when no provider is configured), then continue.
+ */
+export function ScanStep({
+  slug,
+  siteId,
+  domain,
+  alreadyScanned,
+  overview,
+}: {
+  slug: string;
+  siteId: string;
+  domain: string;
+  alreadyScanned: boolean;
+  overview: { available: boolean; demo: boolean; last: { data: DomainOverview; at: string; costMicros: number } | null };
+}) {
   const [done, setDone] = useState<null | "ok" | "partial" | "failed">(null);
   return (
     <div className="scan-step">
       <ScanVisual slug={slug} siteId={siteId} domain={domain} autoStart={!alreadyScanned} onFinished={(r) => setDone(r.status)} />
-      <DomainOverviewLocked domain={domain} />
+      {overview.available ? <DomainOverviewPanel slug={slug} siteId={siteId} domain={domain} canRun demo={overview.demo} last={overview.last} /> : <DomainOverviewLocked domain={domain} />}
       <div className="onb-foot">
         <p className="muted small" aria-live="polite">
           {done === "failed"
@@ -59,7 +76,7 @@ export function ScanStep({ slug, siteId, domain, alreadyScanned }: { slug: strin
 }
 
 /** A designed "coming next" step: what it will do, which phase delivers it, and a skip. */
-export function LaterStep({ slug, from, phase, cards, note, preview = false }: { slug: string; from: string; phase: number; cards: { icon: IconName; title: string; text: string; phase?: number }[]; note: ReactNode; preview?: boolean }) {
+export function LaterStep({ slug, from, phase, cards, note, preview = false }: { slug: string; from: string; phase: number; cards: { icon: IconName; title: string; text: string; phase?: number; available?: boolean }[]; note: ReactNode; preview?: boolean }) {
   return (
     <div className="later">
       <ul className="later-cards" data-preview={preview ? "" : undefined}>
@@ -70,7 +87,7 @@ export function LaterStep({ slug, from, phase, cards, note, preview = false }: {
             </span>
             <div>
               <p className="later-title">
-                {c.title} <Badge tone="info">Phase {c.phase ?? phase}</Badge>
+                {c.title} {c.available ? <Badge tone="ion">Available now</Badge> : <Badge tone="info">Phase {c.phase ?? phase}</Badge>}
               </p>
               <p className="muted small">{c.text}</p>
             </div>

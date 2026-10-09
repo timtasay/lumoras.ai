@@ -8,9 +8,12 @@
  *   platform admin  Lumoras staff (auth_user.role = 'admin'). Not a workspace
  *                   role: reads every workspace through the audited platform
  *                   path and acts inside one only by impersonating a member.
- *   owner           everything in the workspace, including members and billing
- *   editor          runs research and crawls, edits and approves content,
- *                   manages sites, brand profiles, authors and connections
+ *   owner           everything in the workspace, including members, billing
+ *                   and the budget and reserve
+ *   editor          runs research (paid, within the budget) and crawls, edits
+ *                   and approves content, manages sites, brand profiles,
+ *                   authors, keywords, the seed backlog and connections
+ *                   (including Search Console and GA4)
  *   viewer          the client reviewer: sees everything, comments; no writes
  *
  * Section 5 of the build prompt also lets a client reviewer approve or reject
@@ -30,8 +33,8 @@ export const ROLE_LABEL: Record<WorkspaceRole, string> = {
 };
 
 export const ROLE_SUMMARY: Record<WorkspaceRole, string> = {
-  owner: "Everything, including members, roles and billing.",
-  editor: "Sites, brand profiles, authors, connections, crawls; edits and approves content.",
+  owner: "Everything, including members, roles, billing and the budget.",
+  editor: "Sites, brand profiles, authors, connections, crawls, research within the budget; edits and approves content.",
   viewer: "Sees dashboards and settings, comments. Cannot change anything.",
 };
 
@@ -58,10 +61,14 @@ export const PERMISSIONS = [
   "content:approve",
   "comment:create",
   "audit:read",
+  "research:run",
+  "keyword:manage",
+  "budget:read",
+  "budget:manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
-const READ: Permission[] = ["workspace:read", "member:read", "site:read", "connection:read", "content:read", "audit:read"];
+const READ: Permission[] = ["workspace:read", "member:read", "site:read", "connection:read", "content:read", "audit:read", "budget:read"];
 
 const EDITOR: Permission[] = [
   ...READ,
@@ -72,13 +79,15 @@ const EDITOR: Permission[] = [
   "author:manage",
   "connection:manage",
   "crawl:run",
+  "research:run",
+  "keyword:manage",
   "content:edit",
   "content:approve",
   "comment:create",
 ];
 
 export const PERMISSION_MAP: Record<WorkspaceRole, ReadonlySet<Permission>> = {
-  owner: new Set<Permission>([...EDITOR, "workspace:update", "workspace:delete", "member:manage", "invitation:manage", "billing:manage"]),
+  owner: new Set<Permission>([...EDITOR, "workspace:update", "workspace:delete", "member:manage", "invitation:manage", "billing:manage", "budget:manage"]),
   editor: new Set<Permission>(EDITOR),
   viewer: new Set<Permission>([...READ, "comment:create"]),
 };

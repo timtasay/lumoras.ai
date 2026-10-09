@@ -189,6 +189,10 @@ export type WorkspaceSummary = {
   last_activity_at: Date | null;
 };
 
+export type WorkspaceBudget = { workspace_id: string; category: string; monthly_ceiling: string; reserve: string; used: string };
+/** SEO spend this month per workspace (audited platform read, 0006). */
+export const platformBudgets = (tx: Tx) => tx.many<WorkspaceBudget>("SELECT workspace_id, category, monthly_ceiling::text, reserve::text, used::text FROM platform_workspace_budgets()");
+
 export const platformWorkspaces = (tx: Tx) => tx.many<WorkspaceSummary>("SELECT * FROM platform_workspace_summaries()");
 
 export const platformMembers = (tx: Tx, workspaceId: string) =>

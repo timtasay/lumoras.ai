@@ -104,6 +104,8 @@ export const siteInput = z.object({
   country: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/, "Use a two-letter country code").default("US"),
   serpLocation: trimmed(120, "Search location").default("United States"),
   timezone: z.string().trim().refine(isTimeZone, "Pick a time zone from the list").default("UTC"),
+  // rule 4: how long a researched seed counts as fresh
+  researchMaxAgeDays: z.coerce.number().int("Use whole days").min(1, "At least 1 day").max(730, "At most 730 days").default(90),
 });
 export type SiteInput = z.infer<typeof siteInput>;
 

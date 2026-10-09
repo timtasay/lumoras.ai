@@ -25,7 +25,7 @@ export default async function SiteSettingsPage({ params }: { params: Promise<{ s
           readOnly={!canEdit}
           action={updateSiteAction.bind(null, slug, site.id)}
           timezones={timezones()}
-          defaults={{ name: site.name, industry: site.industry, locale: site.locale, country: site.country, serpLocation: site.serp_location, timezone: site.timezone }}
+          defaults={{ name: site.name, industry: site.industry, locale: site.locale, country: site.country, serpLocation: site.serp_location, timezone: site.timezone, researchMaxAgeDays: site.research_max_age_days }}
         />
       </section>
       <section className="panel pad later-settings" aria-labelledby="later-h">

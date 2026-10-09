@@ -13,7 +13,7 @@ export const COUNTRIES: [string, string][] = [
 ];
 export const INDUSTRIES = ["Salons and spas", "Restaurants", "Dental and medical", "Home services", "Retail", "Professional services", "Software", "Hospitality", "Fitness", "Automotive"];
 
-export type SiteDefaults = { domain?: string; name?: string; industry?: string; locale?: string; country?: string; serpLocation?: string; timezone?: string };
+export type SiteDefaults = { domain?: string; name?: string; industry?: string; locale?: string; country?: string; serpLocation?: string; timezone?: string; researchMaxAgeDays?: number };
 
 /**
  * Site details. Creating: domain (normalised server-side: scheme, www and paths
@@ -99,6 +99,20 @@ export function SiteForm({
         error={fe.timezone}
         disabled={readOnly}
       />
+      {mode === "edit" ? (
+        <TextField
+          label="Research data max age (days)"
+          name="researchMaxAgeDays"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={730}
+          defaultValue={String(defaults.researchMaxAgeDays ?? 90)}
+          hint="A seed already researched is not bought again until its data is older than this."
+          error={fe.researchMaxAgeDays}
+          disabled={readOnly}
+        />
+      ) : null}
       {readOnly ? null : (
         <div className="form-acts span-2">
           <Button type="submit" variant="primary" size={mode === "edit" ? "md" : "lg"} loading={pending} icon={mode === "edit" ? "check" : undefined} iconRight={mode === "edit" ? undefined : "arrow"}>

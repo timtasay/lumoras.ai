@@ -83,6 +83,12 @@ describe("readWebEnv", () => {
   it("Google needs both halves", () => {
     assert.throws(() => readWebEnv({ ...PROD, GOOGLE_CLIENT_ID: "id" }), /must be set together/);
     assert.deepEqual(readWebEnv({ ...PROD, GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "sec" }).google, { clientId: "id", clientSecret: "sec" });
+    // Search Console / GA4 OAuth client: both or neither; the test origin never next to https
+    assert.throws(() => readWebEnv({ ...PROD, GOOGLE_OAUTH_CLIENT_ID: "id" }), /GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET must be set together/);
+    assert.equal(readWebEnv(PROD).googleOAuth, null);
+    assert.throws(() => readWebEnv({ ...PROD, GOOGLE_API_TEST_ORIGIN: "http://127.0.0.1:4566" }), /GOOGLE_API_TEST_ORIGIN is for tests only/);
+    assert.equal(readWebEnv(PROD).seoProvider.kind, "none", "no demo data in production by default");
+    assert.throws(() => readWebEnv({ ...PROD, SEO_PROVIDER: "fake" }), /SEO_PROVIDER=fake serves demo data/);
   });
   it("test-only knobs are refused next to a real https origin", () => {
     for (const [k, v] of [["EMAIL_OUTBOX_DIR", "/tmp/x"], ["CRAWLER_TEST_ORIGINS", "a.test=http://127.0.0.1:4000"], ["RATE_LIMIT_SCALE", "50"]]) {
