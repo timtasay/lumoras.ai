@@ -1,11 +1,17 @@
 .git
+.github
 **/node_modules
 **/.next
 **/.env
 **/.env.*
 !**/.env.example
+**/*.tsbuildinfo
+**/test-results
+**/playwright-report
 brand
 docs
 prototypes
+apps/seo/deploy
+apps/seo/docs
 *.log
 .DS_Store

@@ -1,0 +1,61 @@
+# Lumoras Growth on VPS3. FILES ONLY: nothing here has been deployed.
+# The owner deploys; the build session does not SSH, deploy or edit server env files.
+#
+# One image, two containers, both on the shared external network lumoras_internal
+# (where lumoras-postgres and the shared Caddy live). Port 3007 is internal only;
+# Caddy reaches it as lumoras-seo:3007 (see Caddyfile.snippet).
+#
+#   docker compose -f apps/seo/deploy/docker-compose.yml build
+#   docker compose -f apps/seo/deploy/docker-compose.yml up -d
+#
+# Environment: /opt/lumoras/env/lumoras-seo.env on the server, created by the
+# owner from apps/seo/.env.example (DATABASE_URL, DATABASE_URL_OWNER, …).
+name: lumoras-seo
+
+services:
+  lumoras-seo:
+    build:
+      context: ../../..
+      dockerfile: apps/seo/Dockerfile
+    image: lumoras-seo:latest
+    container_name: lumoras-seo
+    restart: unless-stopped
+    env_file:
+      - /opt/lumoras/env/lumoras-seo.env
+    environment:
+      NODE_ENV: production
+      PORT: "3007"
+    # default CMD: migrations as the owner role, then the web server
+    expose:
+      - "3007"
+    networks:
+      - lumoras_internal
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3007/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+    stop_grace_period: 30s
+
+  lumoras-seo-worker:
+    image: lumoras-seo:latest
+    container_name: lumoras-seo-worker
+    command: ["node", "--import", "tsx", "worker/index.ts"]
+    restart: unless-stopped
+    env_file:
+      - /opt/lumoras/env/lumoras-seo.env
+    environment:
+      NODE_ENV: production
+    networks:
+      - lumoras_internal
+    # start after the web container is healthy, i.e. after migrations have applied
+    depends_on:
+      lumoras-seo:
+        condition: service_healthy
+    # pg-boss (Phase 3) gets this long to finish in-flight jobs on docker stop
+    stop_grace_period: 30s
+
+networks:
+  lumoras_internal:
+    external: true

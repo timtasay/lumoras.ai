@@ -1,14 +1,57 @@
 /**
- * Spectrum particle field (from prototypes/c-spectrum.html), running behind the
- * Voice Core homepage. Nine formations (sphere, waveform, receipt, call
- * rings, constellation, orbits, globe, stream, sphere) with staggered morphs.
- * The constellation clusters sit behind the vertical cards (#vgrid .vcard) so a
- * hovered card lights its own cluster. Colours come from CSS tokens and
- * cross-fade on theme change; each formation has its own dim level so Voice
- * Core text stays legible. Pauses when the tab is hidden, renders a single
- * static frame under reduced motion.
+ * Spectrum particle field (from prototypes/c-spectrum.html), shared by the
+ * lumoras.ai homepage and the Lumoras Growth sign-in and onboarding backdrops.
+ * Nine formations (sphere, waveform, receipt, call rings, constellation,
+ * orbits, globe, stream, sphere) with staggered morphs. The constellation
+ * clusters can sit behind a grid of cards (options.grid) so a hovered card
+ * lights its own cluster. Colours come from CSS tokens (--s1..--s4, --cv-*,
+ * from @lumoras/ui-tokens) and cross-fade on theme change; each formation has
+ * its own dim level so text stays legible. Pauses when the tab is hidden (and,
+ * with pauseOffscreen, when the canvas is scrolled out of view), renders a
+ * single static frame under reduced motion.
  */
-import { homeState, onHome } from "@/lib/home-bus";
+import { THEME_EVENT } from "@lumoras/ui-tokens/theme";
+
+/** What the field shows. Writers update it and notify subscribers. */
+export type FieldState = {
+  /**
+   * Particle formation 0..8: 0 sphere (offset right, hero), 1 waveform,
+   * 2 receipt, 3 speaker rings, 4 constellation, 5 orbits, 6 globe,
+   * 7 stream, 8 sphere (centred).
+   */
+  form: number;
+  /** daypart 0..3 (open, midday, rush, close): ring speed and hue band */
+  dp: number;
+  /** highlighted constellation cluster, -1 for none */
+  hl: number;
+};
+
+/** A readable, subscribable FieldState (lumoras.ai passes its home bus). */
+export type FieldSource = {
+  get(): FieldState;
+  subscribe(fn: () => void): () => void;
+};
+
+export type FieldOptions = {
+  /** State to follow. Defaults to a fixed formation (see `form`). */
+  source?: FieldSource;
+  /** Fixed formation when no source is given (default 8, centred sphere). */
+  form?: number;
+  /** Cards whose positions anchor the constellation clusters (formation 4). */
+  grid?: HTMLElement | null;
+  /** Selector for those cards inside `grid` (default ".vcard"). */
+  cardSelector?: string;
+  /** Stop drawing while the canvas is off screen (IntersectionObserver). */
+  pauseOffscreen?: boolean;
+  /** Map pointer coordinates into the canvas box (for canvases not pinned at the viewport origin). */
+  localPointer?: boolean;
+};
+
+/** A FieldSource that never changes. */
+export function staticFieldSource(state: Partial<FieldState> = {}): FieldSource {
+  const s: FieldState = { form: 8, dp: 2, hl: -1, ...state };
+  return { get: () => s, subscribe: () => () => {} };
+}
 
 type RGBA = [number, number, number, number];
 type RGB = [number, number, number];
@@ -29,7 +72,9 @@ type Palette = {
   colorAt: (h: number) => RGB;
 };
 
-export function startField(canvas: HTMLCanvasElement): () => void {
+export function startField(canvas: HTMLCanvasElement, options: FieldOptions = {}): () => void {
+  const source = options.source ?? staticFieldSource({ form: options.form ?? 8 });
+  const homeState = source.get();
   const ctx = canvas.getContext("2d", { alpha: true });
   if (!ctx) return () => {};
   const root = document.documentElement;
@@ -218,8 +263,8 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   // 4 constellation: one cluster per vertical card. Cluster centres follow the
   // cards on screen (offsets cached on resize, grid position read per frame);
   // without the grid they fall back to a sunflower layout around the anchor.
-  const grid = document.getElementById("vgrid");
-  const cards = grid ? Array.from(grid.querySelectorAll<HTMLElement>(".vcard")) : [];
+  const grid = options.grid ?? null;
+  const cards = grid ? Array.from(grid.querySelectorAll<HTMLElement>(options.cardSelector ?? ".vcard")) : [];
   const NC = Math.max(2, cards.length || 12);
   const CL: [number, number][] = [];
   for (let k = 0; k < NC; k++) {
@@ -558,7 +603,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
 
   /* ---------- state + loop ---------- */
   let cur = 0, morphT0 = 0, morphDur = 1200, raf = 0, last = 0;
-  let mx = -9999, my = -9999, pointerOn = false;
+  let mx = -9999, my = -9999, pointerOn = false, offscreen = false;
   const STATIC_T = 9.3;
 
   function resize() {
@@ -639,9 +684,9 @@ export function startField(canvas: HTMLCanvasElement): () => void {
       oX[i] *= 0.9; oY[i] *= 0.9;
     }
     draw();
-    if (!document.hidden && !reduced) raf = requestAnimationFrame(frame);
+    if (!document.hidden && !reduced && !offscreen) raf = requestAnimationFrame(frame);
   }
-  function kick() { if (!raf && !disposed && !document.hidden && !reduced) { last = 0; raf = requestAnimationFrame(frame); } }
+  function kick() { if (!raf && !disposed && !document.hidden && !reduced && !offscreen) { last = 0; raf = requestAnimationFrame(frame); } }
 
   function renderStatic() {
     const D = RING_MOODS[dpTarget]; Object.assign(dp, D);
@@ -676,7 +721,18 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   const gridRO = grid && "ResizeObserver" in window ? new ResizeObserver(() => { measureCards(); if (reduced && cur === 4) renderStatic(); }) : null;
   gridRO?.observe(grid!);
   const onVis = () => { if (!document.hidden) kick(); };
-  const onMove = (e: PointerEvent) => { mx = e.clientX; my = e.clientY; pointerOn = true; };
+  const onMove = options.localPointer
+    ? (e: PointerEvent) => { const r = canvas.getBoundingClientRect(); mx = e.clientX - r.left; my = e.clientY - r.top; pointerOn = true; }
+    : (e: PointerEvent) => { mx = e.clientX; my = e.clientY; pointerOn = true; };
+  const viewIO = options.pauseOffscreen && "IntersectionObserver" in window
+    ? new IntersectionObserver((entries) => {
+        const vis = entries[entries.length - 1]?.isIntersecting ?? true;
+        offscreen = !vis;
+        if (offscreen) { if (raf) cancelAnimationFrame(raf); raf = 0; }
+        else kick();
+      })
+    : null;
+  viewIO?.observe(canvas);
   const onLeave = () => { pointerOn = false; };
   const onMQ = () => {
     reduced = mq.matches;
@@ -688,7 +744,8 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     if (reduced || document.hidden) { PAL = next; PREV = null; if (reduced) renderStatic(); }
     else { PREV = PAL; PAL = next; palT0 = performance.now(); kick(); }
   };
-  const offHome = onHome(() => {
+  const offHome = source.subscribe(() => {
+    const homeState = source.get();
     let dirty = false;
     if (homeState.dp !== dpTarget) { dpTarget = Math.max(0, Math.min(3, homeState.dp)); dirty = true; }
     if (homeState.hl !== hlTarget) { hlTarget = homeState.hl; dirty = true; }
@@ -704,7 +761,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   document.addEventListener("pointerleave", onLeave);
   window.addEventListener("blur", onLeave);
   mq.addEventListener("change", onMQ);
-  document.addEventListener("lumoras:themechange", onTheme);
+  document.addEventListener(THEME_EVENT, onTheme);
 
   /* ---------- boot: drifting dust that gathers into the current chapter's formation ---------- */
   resize();
@@ -730,6 +787,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     document.removeEventListener("pointerleave", onLeave);
     window.removeEventListener("blur", onLeave);
     mq.removeEventListener("change", onMQ);
-    document.removeEventListener("lumoras:themechange", onTheme);
+    document.removeEventListener(THEME_EVENT, onTheme);
+    viewIO?.disconnect();
   };
 }

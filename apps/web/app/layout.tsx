@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
+import "@lumoras/ui-tokens/tokens.css";
+import "@lumoras/ui-tokens/theme-control.css";
 import "./globals.css";
 import { IconSprite } from "@/components/Icons";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
-import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
+import { THEME_COLORS, THEME_INIT_SCRIPT } from "@lumoras/ui-tokens/theme";
 import { InsightCard } from "@/components/InsightCard";
 import { JsonLd } from "@/components/JsonLd";
 import { getInsights } from "@/lib/content";

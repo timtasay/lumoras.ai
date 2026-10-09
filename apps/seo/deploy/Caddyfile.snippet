@@ -1,0 +1,26 @@
+# Lumoras Growth: route for the shared Caddy on VPS3. FILES ONLY, not deployed.
+#
+# PENDING OWNER DECISION #1 (build prompt, section 18): the public host name and
+# the product name. "growth.lumoras.ai" below is a PLACEHOLDER; "app.lumoras.ai"
+# is the other candidate. Replace it once decided, add the DNS record, then
+# append this block to the shared Caddyfile and reload Caddy.
+#
+# Caddy and lumoras-seo share the external network lumoras_internal, so the
+# upstream is the container name. Caddy obtains the TLS certificate itself.
+growth.lumoras.ai {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# a private app: keep it out of search indexes even if a link leaks
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	reverse_proxy lumoras-seo:3007 {
+		health_uri /api/health
+		health_interval 30s
+	}
+}

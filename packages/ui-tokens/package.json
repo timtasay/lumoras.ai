@@ -1,0 +1,29 @@
+{
+  "name": "@lumoras/ui-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice Core design tokens (control room + clean room) and the Light/Dark/Auto theme control shared by Lumoras apps.",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    "./tokens.css": "./tokens.css",
+    "./theme-control.css": "./theme-control.css",
+    "./theme": "./src/theme.ts",
+    "./theme-control": "./src/ThemeControl.tsx"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.0",
+    "react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

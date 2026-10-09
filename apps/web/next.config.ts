@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Shared workspace packages ship TypeScript source; Next compiles them.
+  transpilePackages: ["@lumoras/ui-tokens", "@lumoras/ui-field"],
   // Content is read from ./content at build time; make sure it ships with server output.
   outputFileTracingIncludes: {
     "/**": ["./content/**/*"],

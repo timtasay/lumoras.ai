@@ -4,9 +4,17 @@
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build",
+    "dev:seo": "pnpm --filter seo dev",
+    "build": "pnpm --filter web --filter seo build",
+    "build:web": "pnpm --filter web build",
+    "build:seo": "pnpm --filter seo build",
     "start": "pnpm --filter web start",
-    "lint": "pnpm --filter web lint",
-    "typecheck": "pnpm --filter web typecheck"
+    "start:seo": "pnpm --filter seo start",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm -r --if-present test:e2e",
+    "migrate:seo": "pnpm --filter seo migrate",
+    "worker:seo": "pnpm --filter seo worker"
   }
 }

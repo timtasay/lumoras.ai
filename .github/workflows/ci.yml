@@ -1,0 +1,79 @@
+# CI for the pnpm workspace: lumoras.ai (apps/web), Lumoras Growth (apps/seo) and
+# the shared packages (packages/*). Runs on pushes and pull requests to dev and main.
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  check:
+    name: Typecheck, lint, unit + integration tests, build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      # throwaway PostgreSQL 16 for the migrations runner integration test
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  e2e:
+    name: End-to-end smoke (Playwright)
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # the browser matching the pinned @playwright/test
+      - run: pnpm --filter seo exec playwright install --with-deps chromium
+      - run: pnpm build
+      # apps/seo: /design in both themes at 375 and 1440, reduced motion, shell; apps/web: homepage smoke
+      - run: pnpm test:e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            apps/*/test-results
+            apps/*/playwright-report
+          retention-days: 7

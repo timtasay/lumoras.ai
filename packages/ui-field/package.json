@@ -1,0 +1,22 @@
+{
+  "name": "@lumoras/ui-field",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Spectrum particle field (canvas engine) shared by lumoras.ai and Lumoras Growth backdrops.",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/field-engine.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lumoras/ui-tokens": "workspace:*"
+  },
+  "devDependencies": {
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.0",
+    "typescript": "5.9.3"
+  }
+}

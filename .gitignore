@@ -13,3 +13,5 @@ npm-debug.log*
 pnpm-debug.log*
 .vercel
 .turbo
+test-results/
+playwright-report/

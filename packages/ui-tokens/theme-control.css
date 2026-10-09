@@ -1,0 +1,19 @@
+/* =====================================================================
+   @lumoras/ui-tokens · theme control (Light · Dark · Auto)
+   Styles for <ThemeControl> from "@lumoras/ui-tokens/theme-control" and the
+   circular view-transition reveal it runs. Moved verbatim from apps/web.
+   Apps size it per breakpoint by overriding --ts / --tp on .theme-seg.
+   ===================================================================== */
+.theme-seg{--ts:30px;--tp:3px;--i:2;position:relative;flex:none;display:inline-flex;align-items:center;padding:var(--tp);border-radius:999px;border:1px solid var(--line-2);background:var(--wash);isolation:isolate}
+:root[data-theme="light"] .theme-seg{--i:0}
+:root[data-theme="dark"] .theme-seg{--i:1}
+.ts-btn{position:relative;z-index:1;width:var(--ts);height:var(--ts);border-radius:999px;display:grid;place-items:center;color:var(--mute);transition:color .3s}
+.ts-btn:hover{color:var(--ink)}
+.ts-btn[aria-checked="true"]{color:var(--ion)}
+.ts-btn:focus-visible{outline-offset:1px;border-radius:999px}
+.ts-btn .ico{width:15px;height:15px;stroke-width:2;pointer-events:none}
+.ts-pill{position:absolute;z-index:0;top:var(--tp);bottom:var(--tp);left:calc(var(--tp) + var(--i) * var(--ts));right:calc(var(--tp) + (2 - var(--i)) * var(--ts));border-radius:999px;background:var(--seg-pill);box-shadow:var(--seg-pill-shadow);pointer-events:none}
+.theme-seg.ready .ts-pill{transition:left .5s cubic-bezier(.2,.7,.1,1) var(--dl,0s),right .5s cubic-bezier(.2,.7,.1,1) var(--dr,0s)}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+::view-transition-old(root){z-index:1}
+::view-transition-new(root){z-index:2}
