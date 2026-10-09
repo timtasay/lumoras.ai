@@ -583,8 +583,12 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
 ::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
 ::view-transition-new(root){z-index:2}
 /* light-only refinements */
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero-core::before{inset:-10% -4%;background:radial-gradient(52% 52% at 50% 50%,rgba(var(--shade-rgb),.8) 0%,rgba(var(--shade-rgb),.55) 48%,rgba(var(--shade-rgb),0) 100%)}}
-:root[data-theme="light"] .hero-core::before{inset:-10% -4%;background:radial-gradient(52% 52% at 50% 50%,rgba(var(--shade-rgb),.8) 0%,rgba(var(--shade-rgb),.55) 48%,rgba(var(--shade-rgb),0) 100%)}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]) .hero-core::before{inset:-10% -4%;background:radial-gradient(52% 52% at 50% 50%,rgba(var(--shade-rgb),.8) 0%,rgba(var(--shade-rgb),.55) 48%,rgba(var(--shade-rgb),0) 100%)}
+  :root:not([data-theme="dark"]) .cta-copy .scrim::before{inset:-16% -6%;background:radial-gradient(55% 55% at 45% 55%,rgba(var(--shade-rgb),.9),rgba(var(--shade-rgb),.6) 55%,rgba(var(--shade-rgb),0))}
+}
+  :root[data-theme="light"] .hero-core::before{inset:-10% -4%;background:radial-gradient(52% 52% at 50% 50%,rgba(var(--shade-rgb),.8) 0%,rgba(var(--shade-rgb),.55) 48%,rgba(var(--shade-rgb),0) 100%)}
+  :root[data-theme="light"] .cta-copy .scrim::before{inset:-16% -6%;background:radial-gradient(55% 55% at 45% 55%,rgba(var(--shade-rgb),.9),rgba(var(--shade-rgb),.6) 55%,rgba(var(--shade-rgb),0))}
 
 /* ---------- responsive ---------- */
 @media (max-width:1100px){
