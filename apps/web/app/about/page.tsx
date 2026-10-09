@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { PageHero } from "@/components/PageHero";
 import { CallChip } from "@/components/CallChip";
 import { Icon } from "@/components/Icons";
+import { ProductMark, brandFor } from "@/components/ProductMark";
 import { getAbout } from "@/lib/content";
 import { pageMeta } from "@/lib/seo";
 import { tone } from "@/lib/tones";
@@ -90,7 +91,7 @@ export default function AboutPage() {
                 <div className="fam-grid">
                   {a.products.map((p, n) => (
                     <article key={p.name} className="fam panel" style={{ ["--tone" as string]: tone(n) }}>
-                      <h3 className="fam-name">{p.name}</h3>
+                      <h3 className="fam-name">{brandFor(p.name) ? <ProductMark brand={brandFor(p.name)!} /> : null}{p.name}</h3>
                       <p>{p.text}</p>
                       {p.url ? (
                         <a className="fam-link" href={p.url}>

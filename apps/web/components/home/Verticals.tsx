@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ProductMark, brandFor } from "@/components/ProductMark";
 import { VertHighlight } from "./VertHighlight";
 
 const VI: Record<string, ReactNode> = {
@@ -55,7 +56,7 @@ export function Verticals() {
             <p>{v.ex}</p>
             {v.href ? (
               <a className="badge" href={v.href}>
-                <i aria-hidden="true" />
+                {brandFor(v.badge) ? <ProductMark brand={brandFor(v.badge)!} /> : <i aria-hidden="true" />}
                 {v.badge}
               </a>
             ) : (

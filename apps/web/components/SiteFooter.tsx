@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandMark } from "./Icons";
+import { ProductMark } from "./ProductMark";
 import { COMPANY_LINKS, LEGAL_NAME, PRODUCTS, SIGN_IN_URL } from "@/lib/site";
 
 export function SiteFooter() {
@@ -30,9 +31,9 @@ export function SiteFooter() {
           <nav aria-labelledby="ft-products">
             <h2 className="foot-h" id="ft-products">Products</h2>
             <ul>
-              <li><a href={PRODUCTS.sonorch.url}>Sonorch</a><small>{PRODUCTS.sonorch.domain}</small></li>
-              <li><a href={PRODUCTS.seasonx.url}>SeasonX</a><small>{PRODUCTS.seasonx.domain}</small></li>
-              <li><a href={PRODUCTS.kitchenspot.url}>KitchenSpot</a><small>{PRODUCTS.kitchenspot.domain}</small></li>
+              <li><a href={PRODUCTS.sonorch.url}><ProductMark brand="sonorch" />Sonorch</a><small>{PRODUCTS.sonorch.domain}</small></li>
+              <li><a href={PRODUCTS.seasonx.url}><ProductMark brand="seasonx" />SeasonX</a><small>{PRODUCTS.seasonx.domain}</small></li>
+              <li><a href={PRODUCTS.kitchenspot.url}><ProductMark brand="kitchenspot" />KitchenSpot</a><small>{PRODUCTS.kitchenspot.domain}</small></li>
             </ul>
           </nav>
           <nav aria-labelledby="ft-company">

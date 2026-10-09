@@ -673,3 +673,32 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:0s !important;animation-iteration-count:1 !important;transition-duration:0s !important;animation-delay:0s !important}
 }
+
+/* ---------- Product-family marks (components/ProductMark.tsx) ---------- */
+:root{
+  --bm-sonorch:url("/brand/sonorch-mark-white.png");
+  --bm-seasonx:url("/brand/seasonx-mark-dark.svg");
+  --bm-kitchenspot:url("/brand/kitchenspot-mark-dark.svg");
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bm-sonorch:url("/brand/sonorch-mark-slate.png");
+    --bm-seasonx:url("/brand/seasonx-mark-light.svg");
+    --bm-kitchenspot:url("/brand/kitchenspot-mark-light.svg");
+  }
+}
+:root[data-theme="light"]{
+  --bm-sonorch:url("/brand/sonorch-mark-slate.png");
+  --bm-seasonx:url("/brand/seasonx-mark-light.svg");
+  --bm-kitchenspot:url("/brand/kitchenspot-mark-light.svg");
+}
+.bmark{display:inline-block;flex:none;width:1em;height:1em;background:center / contain no-repeat}
+.bmark-sonorch{background-image:var(--bm-sonorch)}
+.bmark-seasonx{background-image:var(--bm-seasonx)}
+.bmark-kitchenspot{background-image:var(--bm-kitchenspot)}
+.pname .mark .bmark{width:26px;height:26px}
+.flow span{display:inline-flex;align-items:center;gap:7px}
+.flow .bmark{width:15px;height:15px}
+.badge .bmark{width:13px;height:13px}
+.foot ul a .bmark{width:16px;height:16px;margin-right:8px;vertical-align:-3px}
+.fam-name .bmark{width:28px;height:28px;margin-right:10px;vertical-align:-5px}

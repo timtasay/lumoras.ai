@@ -11,6 +11,7 @@ import { HelloCycle } from "@/components/home/HelloCycle";
 import { Verticals } from "@/components/home/Verticals";
 import { SwitchDemo } from "@/components/home/SwitchDemo";
 import { RetailOrders } from "@/components/home/RetailOrders";
+import { ProductMark } from "@/components/ProductMark";
 import { getGuide, getHelpArticle, getInsight } from "@/lib/content";
 import { DEMO_LINE, DEMO_LINE_TEL, PRODUCTS } from "@/lib/site";
 
@@ -310,11 +311,7 @@ export default function HomePage() {
             <article className="prod p-son rv">
               <div className="prod-top">
                 <div className="pname">
-                  <span className="mark" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--v-salon)" }} strokeWidth="1.8" strokeLinecap="round">
-                      <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12" />
-                    </svg>
-                  </span>
+                  <span className="mark" aria-hidden="true"><ProductMark brand="sonorch" /></span>
                   <div><h3>Sonorch</h3><small>sonorch.ai · salons, barbers, spas, nail, lash, med spa</small></div>
                 </div>
                 <span className="status live"><i aria-hidden="true" />Live</span>
@@ -348,11 +345,7 @@ export default function HomePage() {
             <article className="prod p-sx rv">
               <div className="prod-top">
                 <div className="pname">
-                  <span className="mark" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--v-restaurant)" }} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 21V3c-2 1.5-3 4.5-3 8h3" />
-                    </svg>
-                  </span>
+                  <span className="mark" aria-hidden="true"><ProductMark brand="seasonx" /></span>
                   <div><h3>SeasonX</h3><small>seasonx.ai · restaurants</small></div>
                 </div>
                 <span className="status live"><i aria-hidden="true" />Live</span>
@@ -380,11 +373,7 @@ export default function HomePage() {
             <article className="prod p-ks rv">
               <div className="prod-top">
                 <div className="pname">
-                  <span className="mark" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" style={{ stroke: "var(--v-dental)" }} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" />
-                    </svg>
-                  </span>
+                  <span className="mark" aria-hidden="true"><ProductMark brand="kitchenspot" /></span>
                   <div><h3>KitchenSpot</h3><small>kitchenspot.ai · diner discovery</small></div>
                 </div>
                 <span className="status live"><i aria-hidden="true" />Florida</span>
@@ -395,9 +384,9 @@ export default function HomePage() {
               </p>
               <ul className="cities" aria-label="Launch cities"><li>Sarasota</li><li>Tampa</li><li>Orlando</li><li>Miami</li></ul>
               <p className="flow" aria-label="KitchenSpot order flows into SeasonX and the kitchen">
-                <span>KitchenSpot order</span>
+                <span><ProductMark brand="kitchenspot" />KitchenSpot order</span>
                 <S w={2}><path d="M5 12h14M13 6l6 6-6 6" /></S>
-                <span>SeasonX ticket</span>
+                <span><ProductMark brand="seasonx" />SeasonX ticket</span>
                 <S w={2}><path d="M5 12h14M13 6l6 6-6 6" /></S>
                 <span>Kitchen display</span>
               </p>

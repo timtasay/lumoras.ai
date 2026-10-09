@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icon } from "./Icons";
 import { CallChip } from "./CallChip";
+import { ProductMark } from "./ProductMark";
 import { PRODUCTS } from "@/lib/site";
 
 /** "Still stuck?" block: contact via /demo, the live line, and product help centers. */
@@ -26,12 +27,12 @@ export function StillStuck({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3"
         <ul>
           <li>
             <a href={PRODUCTS.sonorch.helpCenter}>
-              <strong>Sonorch</strong> <span>Salons, barbers and spas</span> <Icon name="ext" />
+              <ProductMark brand="sonorch" /><strong>Sonorch</strong> <span>Salons, barbers and spas</span> <Icon name="ext" />
             </a>
           </li>
           <li>
             <a href={PRODUCTS.seasonx.helpCenter}>
-              <strong>SeasonX</strong> <span>Restaurants</span> <Icon name="ext" />
+              <ProductMark brand="seasonx" /><strong>SeasonX</strong> <span>Restaurants</span> <Icon name="ext" />
             </a>
           </li>
         </ul>
