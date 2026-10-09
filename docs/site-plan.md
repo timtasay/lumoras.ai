@@ -1,15 +1,16 @@
 # lumoras.ai site: implementation plan
 
-Direction chosen: **C · Spectrum** (`prototypes/c-spectrum.html`), keeping its logo, with
-Light · Dark · Auto themes. Add a **Company** dropdown like seasonx.ai: About us, Insights,
+Direction chosen: **A · Voice Core** (`prototypes/a-voice-core.html`), with two elements carried
+over from C · Spectrum: the Spectrum **logo** and the Spectrum **background particle field**, which
+sits behind the Voice Core homepage and morphs into a new formation for each section. Light · Dark ·
+Auto themes. (The site was first built from Spectrum; that version is in git history.) Add a **Company** dropdown like seasonx.ai: About us, Insights,
 Knowledge base, Help center, FAQ, plus the two latest insights as illustrated cards.
 
 ## Stack (matches seasonx.ai and kitchenspot.ai)
 
 - Next.js 16 (App Router, Turbopack), React 19, TypeScript, pnpm workspace: `apps/web`.
-- Plain CSS with the Spectrum tokens (no Tailwind). Fonts self-hosted through `next/font/google`
-  (Bricolage Grotesque, Hanken Grotesk, Martian Mono), so no layout shift and no third-party
-  font request.
+- Plain CSS with the Voice Core tokens (no Tailwind). Fonts self-hosted through `next/font/google`
+  (Sora, Geist, Geist Mono), so no layout shift and no third-party font request.
 - Content in Markdown with frontmatter under `apps/web/content/` (see `docs/content-spec.md`),
   statically generated at build time.
 
@@ -17,7 +18,7 @@ Knowledge base, Help center, FAQ, plus the two latest insights as illustrated ca
 
 | Route | What |
 | --- | --- |
-| `/` | Spectrum homepage, ported to React. Text server-rendered; the particle canvas is a client-only enhancement loaded after paint. |
+| `/` | Voice Core homepage, ported to React, over the Spectrum particle field. Text server-rendered; the orb console and particle canvas are client-only enhancements loaded after paint. |
 | `/about` | About Lumoras LLC: what we build, the product family, how we work. |
 | `/insights`, `/insights/[slug]` | Articles for owners and operators, illustrated cards, newest first. |
 | `/knowledge-base`, `/knowledge-base/[slug]` | In-depth guides by topic (AI receptionists, voice AI, AI call centers, phone lines, missed calls, store audio). |
