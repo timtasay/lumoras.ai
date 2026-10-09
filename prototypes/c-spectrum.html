@@ -159,8 +159,8 @@
   --seg-pill:#FFFFFF;
   --seg-pill-sh:0 1px 3px rgba(20,30,80,.16),0 0 0 1px rgba(10,15,40,.06);
   --cv-blend:source-over;
-  --cv-size:.74;
-  --cv-alpha:1.15;
+  --cv-size:.84;
+  --cv-alpha:1.3;
   --cv-core:-28;
   --cv-mid:.3;
   --cv-glow:.5;
@@ -231,8 +231,8 @@
   --seg-pill:#FFFFFF;
   --seg-pill-sh:0 1px 3px rgba(20,30,80,.16),0 0 0 1px rgba(10,15,40,.06);
   --cv-blend:source-over;
-  --cv-size:.74;
-  --cv-alpha:1.15;
+  --cv-size:.84;
+  --cv-alpha:1.3;
   --cv-core:-28;
   --cv-mid:.3;
   --cv-glow:.5;
@@ -1092,10 +1092,93 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
 <script>
 (() => {
   'use strict';
+  /* ================= Theme: Light · Dark · Auto ================= */
+  const root = document.documentElement;
+  const KEY = 'lumoras-theme';
+  const mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+  const mqMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let themeMode = 'auto';
+  try { const v = localStorage.getItem(KEY); if (v === 'light' || v === 'dark' || v === 'auto') themeMode = v; } catch (e) {}
+  const resolveTheme = m => m === 'auto' ? (mqDark.matches ? 'dark' : 'light') : m;
+  let themeResolved = resolveTheme(themeMode);
+  const seg = document.querySelector('.theme-seg');
+  const segBtns = [...seg.querySelectorAll('.ts-btn')];
+  const ORDER = ['light', 'dark', 'auto'];
+
+  function paintSeg(prev) {
+    const a = ORDER.indexOf(prev), b = ORDER.indexOf(themeMode);
+    // leading edge moves first, trailing edge follows: the pill stretches, then settles
+    seg.style.setProperty('--dl', b > a ? '.07s' : '0s');
+    seg.style.setProperty('--dr', b > a ? '0s' : '.07s');
+    seg.dataset.mode = themeMode;
+    segBtns.forEach(btn => {
+      const on = btn.dataset.mode === themeMode;
+      btn.setAttribute('aria-checked', String(on));
+      btn.tabIndex = on ? 0 : -1;
+    });
+  }
+  function writeAttr() {
+    if (themeMode === 'auto') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', themeMode);
+  }
+  function announce() {
+    const r = resolveTheme(themeMode);
+    if (r === themeResolved) return;
+    themeResolved = r;
+    document.dispatchEvent(new CustomEvent('lumoras:themechange', { detail: { mode: themeMode, resolved: r } }));
+  }
+  function setTheme(next, origin) {
+    if (next === themeMode) return;
+    const prev = themeMode;
+    themeMode = next;
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+    paintSeg(prev);
+    const changes = resolveTheme(next) !== themeResolved;
+    if (changes && document.startViewTransition && !mqMotion.matches) {
+      const rect = origin ? origin.getBoundingClientRect() : { left: innerWidth / 2, top: 0, width: 0, height: 0 };
+      const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
+      const rad = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      const vt = document.startViewTransition(() => { writeAttr(); announce(); });
+      vt.ready.then(() => {
+        root.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${rad}px at ${x}px ${y}px)`] },
+          { duration: 600, easing: 'cubic-bezier(.2,.7,.1,1)', pseudoElement: '::view-transition-new(root)' }
+        );
+      }).catch(() => {});
+    } else {
+      writeAttr(); announce();
+    }
+  }
+  writeAttr();
+  paintSeg(themeMode);
+  requestAnimationFrame(() => requestAnimationFrame(() => seg.classList.add('ready')));
+  segBtns.forEach(btn => btn.addEventListener('click', () => setTheme(btn.dataset.mode, btn)));
+  seg.addEventListener('keydown', e => {
+    const i = ORDER.indexOf(themeMode);
+    let j = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % 3;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i + 2) % 3;
+    else if (e.key === 'Home') j = 0;
+    else if (e.key === 'End') j = 2;
+    if (j < 0) return;
+    e.preventDefault();
+    const btn = segBtns.find(b => b.dataset.mode === ORDER[j]);
+    setTheme(ORDER[j], btn);
+    btn.focus();
+  });
+  const onScheme = () => { if (themeMode === 'auto') announce(); };
+  if (mqDark.addEventListener) mqDark.addEventListener('change', onScheme); else if (mqDark.addListener) mqDark.addListener(onScheme);
+  // another prototype tab changed the shared choice
+  window.addEventListener('storage', e => {
+    if (e.key !== KEY) return;
+    const v = e.newValue === 'light' || e.newValue === 'dark' ? e.newValue : 'auto';
+    if (v !== themeMode) { const prev = themeMode; themeMode = v; paintSeg(prev); writeAttr(); announce(); }
+  });
+
   /* ================= Particle field ================= */
   const canvas = document.getElementById('field');
   const ctx = canvas.getContext('2d', { alpha: true });
-  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const mq = mqMotion;
   let reduced = mq.matches;
   const TAU = Math.PI * 2;
   let W = 0, H = 0, DPR = 1;
@@ -1121,29 +1204,64 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
   const tX = F32(), tY = F32(), tH = F32(), tA = F32(), tS = F32();
   const oX = F32(), oY = F32();
 
-  /* ---------- spectrum palette + sprites ---------- */
-  const STOPS = [[62, 231, 255], [124, 140, 255], [255, 111, 181], [255, 210, 122]];
-  function colorAt(h) {
-    h = Math.max(0, Math.min(1, h)) * (STOPS.length - 1);
-    const k = Math.min(STOPS.length - 2, Math.floor(h)), f = h - k;
-    const a = STOPS[k], b = STOPS[k + 1];
-    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
-  }
+  /* ---------- spectrum palette + sprites (all colours come from CSS tokens) ---------- */
   const rgb = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
-  const NB = 48, SPR = [];
-  for (let b = 0; b < NB; b++) {
-    const c = colorAt(b / (NB - 1));
-    const s = document.createElement('canvas'); s.width = s.height = 32;
-    const g = s.getContext('2d');
-    const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-    const core = [Math.min(255, c[0] + 90), Math.min(255, c[1] + 90), Math.min(255, c[2] + 90)];
-    gr.addColorStop(0, rgb(core, 1));
-    gr.addColorStop(0.16, rgb(c, 0.95));
-    gr.addColorStop(0.42, rgb(c, 0.28));
-    gr.addColorStop(1, rgb(c, 0));
-    g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
-    SPR.push(s);
+  const clamp255 = v => v < 0 ? 0 : v > 255 ? 255 : v;
+  const probe = document.createElement('canvas').getContext('2d');
+  function parseColor(str, fallback) {
+    str = (str || '').trim();
+    if (!str) return fallback;
+    let m = /^#([0-9a-f]{3,8})$/i.exec(str);
+    if (m) {
+      let h = m[1]; if (h.length <= 4) h = h.split('').map(x => x + x).join('');
+      return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1];
+    }
+    m = /rgba?\(([^)]+)\)/i.exec(str);
+    if (!m) { probe.fillStyle = '#000'; probe.fillStyle = str; return parseColor(probe.fillStyle, fallback); }
+    const p = m[1].split(/[ ,/]+/).filter(Boolean).map(parseFloat);
+    return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
   }
+  const NB = 48;
+  let PAL = null, PREV = null, palT0 = 0;
+  const PAL_FADE = 600;
+  function readPalette() {
+    const cs = getComputedStyle(root);
+    const tok = n => cs.getPropertyValue(n).trim();
+    const num = (n, d) => { const v = parseFloat(tok(n)); return isFinite(v) ? v : d; };
+    const stops = ['--s1', '--s2', '--s3', '--s4'].map(n => parseColor(tok(n), [128, 128, 128, 1]));
+    const P = {
+      stops,
+      blend: tok('--cv-blend') === 'lighter' ? 'lighter' : 'source-over',
+      size: num('--cv-size', 1), alpha: num('--cv-alpha', 1),
+      core: num('--cv-core', 90), mid: num('--cv-mid', .16), glow: num('--cv-glow', .42), glowA: num('--cv-glow-a', .28),
+      line: parseColor(tok('--cv-line'), [143, 151, 184, 1]), lineA: num('--cv-line-a', .16),
+      arcA: num('--cv-arc-a', .42), pathA: num('--cv-path-a', .35),
+      label: parseColor(tok('--cv-label'), [242, 244, 255, 1]), halo: parseColor(tok('--cv-halo'), [0, 0, 0, 0]),
+      spr: []
+    };
+    P.colorAt = h => {
+      h = Math.max(0, Math.min(1, h)) * (stops.length - 1);
+      const k = Math.min(stops.length - 2, Math.floor(h)), f = h - k;
+      const a = stops[k], b = stops[k + 1];
+      return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+    };
+    for (let b = 0; b < NB; b++) {
+      const c = P.colorAt(b / (NB - 1));
+      const s = document.createElement('canvas'); s.width = s.height = 32;
+      const g = s.getContext('2d');
+      const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+      const core = [clamp255(c[0] + P.core), clamp255(c[1] + P.core), clamp255(c[2] + P.core)];
+      gr.addColorStop(0, rgb(core, 1));
+      gr.addColorStop(P.mid, rgb(c, 0.95));
+      gr.addColorStop(P.glow, rgb(c, P.glowA));
+      gr.addColorStop(1, rgb(c, 0));
+      g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+      P.spr.push(s);
+    }
+    return P;
+  }
+  PAL = readPalette();
+  const colorAt = h => PAL.colorAt(h);
 
   /* ---------- formation data ---------- */
   // 0 sphere (fibonacci)
@@ -1468,15 +1586,15 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
     const f = 3 / (3 - z2) * sc;
     return [cx + x * f, cy + y2 * f, z2];
   }
-  function drawLines() {
+  function drawLines(P, k0) {
     ctx.lineWidth = 1;
     if (LW[4] > 0.01) {
       const [cx, cy, sc] = anchor(4);
       for (const [a, b] of EDGES) {
         const lit = hlIdx >= 0 && (a === hlIdx || b === hlIdx);
         const k = lit ? hlAmt : 0;
-        ctx.globalAlpha = LW[4] * (0.16 + 0.5 * k);
-        ctx.strokeStyle = lit ? rgb(colorAt(hlIdx / (NC - 1) * 0.98), 1) : '#8F97B8';
+        ctx.globalAlpha = k0 * LW[4] * (P.lineA + 0.5 * k);
+        ctx.strokeStyle = lit ? rgb(P.colorAt(hlIdx / (NC - 1) * 0.98), 1) : rgb(P.line, 1);
         ctx.beginPath();
         ctx.moveTo(cx + CL[a][0] * sc, cy + CL[a][1] * sc);
         ctx.lineTo(cx + CL[b][0] * sc, cy + CL[b][1] * sc);
@@ -1484,17 +1602,23 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
       }
       if (hlIdx >= 0 && hlAmt > 0.05 && tileNames[hlIdx]) {
         const c = CL[hlIdx];
-        ctx.globalAlpha = LW[4] * hlAmt;
-        ctx.fillStyle = '#F2F4FF';
+        ctx.globalAlpha = k0 * LW[4] * hlAmt;
+        ctx.fillStyle = rgb(P.label, P.label[3]);
         ctx.font = '500 10.5px "Martian Mono", ui-monospace, monospace';
         const label = String(hlIdx + 1).padStart(2, '0') + ' ' + tileNames[hlIdx].toUpperCase();
         const dir = c[0] > 0.15 ? -1 : 1;
         const lx = cx + c[0] * sc + dir * 0.24 * sc, ly = cy + c[1] * sc - 0.2 * sc;
-        ctx.strokeStyle = rgb(colorAt(hlIdx / (NC - 1) * 0.98), 1);
+        ctx.strokeStyle = rgb(P.colorAt(hlIdx / (NC - 1) * 0.98), 1);
         ctx.beginPath(); ctx.moveTo(cx + c[0] * sc + dir * 0.08 * sc, cy + c[1] * sc - 0.07 * sc); ctx.lineTo(lx - dir * 4, ly + 4); ctx.stroke();
         ctx.textAlign = dir < 0 ? 'right' : 'left';
+        if (P.halo[3] > 0) {
+          // light theme: a soft paper halo keeps the label crisp over saturated particles
+          ctx.save(); ctx.globalCompositeOperation = 'source-over';
+          ctx.lineJoin = 'round'; ctx.lineWidth = 5; ctx.strokeStyle = rgb(P.halo, P.halo[3]);
+          ctx.strokeText(label, lx, ly); ctx.restore();
+        }
         ctx.fillText(label, lx, ly);
-        ctx.textAlign = 'left';
+        ctx.textAlign = 'left'; ctx.lineWidth = 1;
       }
     }
     if (LW[6] > 0.01 && GROT.ct !== undefined) {
@@ -1503,7 +1627,7 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
         const A = NODES[a], B = NODES[b];
         const va = [Math.cos(A[0]) * Math.sin(A[1]), -Math.sin(A[0]), Math.cos(A[0]) * Math.cos(A[1])];
         const vb = [Math.cos(B[0]) * Math.sin(B[1]), -Math.sin(B[0]), Math.cos(B[0]) * Math.cos(B[1])];
-        ctx.strokeStyle = rgb(colorAt(((a * 7 + b * 3) % 10) / 10), 1);
+        ctx.strokeStyle = rgb(P.colorAt(((a * 7 + b * 3) % 10) / 10), 1);
         let prev = null;
         for (let s = 0; s <= 28; s++) {
           const u = s / 28;
@@ -1515,7 +1639,7 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
           if (prev) {
             const dz = (p[2] + prev[2]) * 0.5;
             if (dz > -0.25) {
-              ctx.globalAlpha = LW[6] * 0.42 * Math.min(1, (dz + 0.25) * 1.6) * Math.sin(Math.PI * u + 0.2);
+              ctx.globalAlpha = k0 * LW[6] * P.arcA * Math.min(1, (dz + 0.25) * 1.6) * Math.sin(Math.PI * u + 0.2);
               ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
             }
           }
@@ -1526,8 +1650,9 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
     if (LW[7] > 0.01) {
       const [cx, cy, sc] = anchor(7);
       const g = ctx.createLinearGradient(cx - 1.6 * sc, 0, cx + 1.6 * sc, 0);
-      g.addColorStop(0, 'rgba(62,231,255,0)'); g.addColorStop(0.15, '#3EE7FF'); g.addColorStop(0.5, '#7C8CFF'); g.addColorStop(0.8, '#FF6FB5'); g.addColorStop(1, 'rgba(255,210,122,0)');
-      ctx.strokeStyle = g; ctx.globalAlpha = LW[7] * 0.35;
+      const S = P.stops;
+      g.addColorStop(0, rgb(S[0], 0)); g.addColorStop(0.15, rgb(S[0], 1)); g.addColorStop(0.5, rgb(S[1], 1)); g.addColorStop(0.8, rgb(S[2], 1)); g.addColorStop(1, rgb(S[3], 0));
+      ctx.strokeStyle = g; ctx.globalAlpha = k0 * LW[7] * P.pathA;
       ctx.beginPath(); ctx.moveTo(cx - 1.6 * sc, cy); ctx.lineTo(cx + 1.6 * sc, cy); ctx.stroke();
     }
   }
@@ -1544,23 +1669,31 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
     if (reduced) renderStatic(); else kick();
   }
 
+  function layer(P, k0) {
+    ctx.globalCompositeOperation = P.blend;
+    drawLines(P, k0);
+    const base = (SMALL ? 6.2 : 7.4) * P.size, am = P.alpha * k0, SPR = P.spr;
+    for (let i = 0; i < N; i++) {
+      const a0 = pA[i]; if (a0 < 0.015) continue;
+      const x = pX[i] + oX[i], y = pY[i] + oY[i];
+      if (x < -12 || x > W + 12 || y < -12 || y > H + 12) continue;
+      const s = base * pS[i];
+      let hb = (pH[i] * (NB - 1) + 0.5) | 0; hb = hb < 0 ? 0 : hb >= NB ? NB - 1 : hb;
+      const a = a0 * am;
+      ctx.globalAlpha = a > 1 ? 1 : a;
+      ctx.drawImage(SPR[hb], x - s * 0.5, y - s * 0.5, s, s);
+    }
+  }
   function draw() {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'lighter';
-    drawLines();
-    const base = SMALL ? 6.2 : 7.4;
-    for (let i = 0; i < N; i++) {
-      let a = pA[i]; if (a < 0.015) continue;
-      const x = pX[i] + oX[i], y = pY[i] + oY[i];
-      if (x < -12 || x > W + 12 || y < -12 || y > H + 12) continue;
-      const s = base * pS[i];
-      let hb = (pH[i] * (NB - 1) + 0.5) | 0; hb = hb < 0 ? 0 : hb >= NB ? NB - 1 : hb;
-      ctx.globalAlpha = a > 1 ? 1 : a;
-      ctx.drawImage(SPR[hb], x - s * 0.5, y - s * 0.5, s, s);
-    }
+    if (PREV) {
+      const u = Math.min(1, (performance.now() - palT0) / PAL_FADE), k = u * u * (3 - 2 * u);
+      if (u >= 1) { PREV = null; layer(PAL, 1); }
+      else { layer(PREV, 1 - k); layer(PAL, k); }
+    } else layer(PAL, 1);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
   }
@@ -1646,6 +1779,13 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
   const onMQ = () => { reduced = mq.matches; if (reduced) { if (raf) cancelAnimationFrame(raf); raf = 0; renderStatic(); } else kick(); };
   if (mq.addEventListener) mq.addEventListener('change', onMQ); else if (mq.addListener) mq.addListener(onMQ);
 
+  document.addEventListener('lumoras:themechange', () => {
+    const next = readPalette();
+    if (reduced || document.hidden) { PAL = next; PREV = null; if (reduced) renderStatic(); }
+    else { PREV = PAL; PAL = next; palT0 = performance.now(); kick(); }
+    retone();
+  });
+
   /* ================= Chapters + rail ================= */
   const railBtns = [...document.querySelectorAll('.rail button')];
   function setRail(ch) { railBtns.forEach(b => b.setAttribute('aria-current', String(+b.dataset.ch === ch))); }
@@ -1688,13 +1828,13 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
 
   /* ================= Dayparts ================= */
   const DP_DATA = [
-    { time: '9:00 AM', name: 'Doors open', c: '#3EE7FF', next: '10:00 AM · Welcome message, all zones',
+    { time: '9:00 AM', name: 'Doors open', c: 'var(--s1)', next: '10:00 AM · Welcome message, all zones',
       z: [['Warm acoustic · 84 BPM', .45], ['Ambient piano · 70 BPM', .3], ['Bright indie · 96 BPM', .55], ['Acoustic soul · 88 BPM', .4]] },
-    { time: '12:30 PM', name: 'Midday', c: '#7C8CFF', next: '12:45 PM · Curbside pickup is ready at Door 2',
+    { time: '12:30 PM', name: 'Midday', c: 'var(--s2)', next: '12:45 PM · Curbside pickup is ready at Door 2',
       z: [['Indie pop · 104 BPM', .6], ['Lo-fi soul · 86 BPM', .4], ['Indie pop · 104 BPM', .65], ['Neo-soul · 92 BPM', .5]] },
-    { time: '4:00 PM', name: 'After-work rush', c: '#FF6FB5', next: '4:30 PM · Weekend event, Zones A and C',
+    { time: '4:00 PM', name: 'After-work rush', c: 'var(--s3)', next: '4:30 PM · Weekend event, Zones A and C',
       z: [['Energy set · 118 BPM', .88], ['Nu-disco · 112 BPM', .6], ['Energy set · 118 BPM', .92], ['Funk edits · 108 BPM', .7]] },
-    { time: '8:45 PM', name: 'Closing', c: '#FFD27A', next: '8:45 PM · 15 minutes to close, all zones',
+    { time: '8:45 PM', name: 'Closing', c: 'var(--s4)', next: '8:45 PM · 15 minutes to close, all zones',
       z: [['Downtempo · 78 BPM', .3], ['Ambient · 66 BPM', .2], ['Downtempo · 78 BPM', .35], ['Quiet jazz · 72 BPM', .3]] }
   ];
   const dpBtns = [...document.querySelectorAll('.dp')];
@@ -1716,7 +1856,11 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
   const tileNames = tiles.map(t => t.querySelector('.t-name').textContent);
   const nowDot = document.getElementById('nowDot'), nowText = document.getElementById('nowText');
   let pinned = -1;
-  tiles.forEach(t => { const k = +t.dataset.cl; t.style.setProperty('--tone', rgb(colorAt(k / (NC - 1) * 0.98), 1)); });
+  function retone() {
+    tiles.forEach(t => { const k = +t.dataset.cl; t.style.setProperty('--tone', rgb(colorAt(k / (NC - 1) * 0.98), 1)); });
+    if (hlTarget >= 0) nowDot.style.setProperty('--now', rgb(colorAt(hlTarget / (NC - 1) * 0.98), 1));
+  }
+  retone();
   function highlight(k) {
     hlTarget = k;
     if (k >= 0) { nowDot.style.setProperty('--now', rgb(colorAt(k / (NC - 1) * 0.98), 1)); nowText.innerHTML = 'Cluster ' + String(k + 1).padStart(2, '0') + ' · <b></b>'; nowText.querySelector('b').textContent = tileNames[k]; }
@@ -1743,7 +1887,7 @@ fieldset{border:0;padding:0;margin:0;min-width:0}
     err.textContent = '';
     const bad = [...form.querySelectorAll('input[required]')].find(i => !i.checkValidity());
     if (bad) {
-      err.style.color = 'var(--s3)';
+      err.style.color = 'var(--s3-ink)';
       err.textContent = bad.type === 'email' && bad.value ? 'Please enter a valid work email.' : 'Please fill in your ' + bad.labels[0].textContent.toLowerCase() + '.';
       bad.focus();
       return;
