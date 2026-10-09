@@ -25,3 +25,9 @@ Before any of this goes live, check these:
 - Every figure is illustrative except Sonorch's own published results, which are credited to Sonorch.
 - Compliance and security wording (SSO/SCIM, audit logs, card data handling) describes intended
   capabilities. Confirm it before launch.
+
+## Logo concepts
+
+`brand/logo-concepts/index.html` shows ten logo concepts (large, on dark, as an app icon and
+down to 16px), with a shortlist you can copy. Mark-only SVGs are in `brand/logo-concepts/svg/`.
+Edit `brand/logo-concepts/build.py` and run `python3 build.py` to regenerate both.
