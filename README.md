@@ -28,6 +28,8 @@ Before any of this goes live, check these:
 
 ## Logo concepts
 
-`brand/logo-concepts/index.html` shows ten logo concepts (large, on dark, as an app icon and
-down to 16px), with a shortlist you can copy. Mark-only SVGs are in `brand/logo-concepts/svg/`.
-Edit `brand/logo-concepts/build.py` and run `python3 build.py` to regenerate both.
+`brand/logo-concepts/index.html` shows round 2: six concepts built on light (lanterns, dawn),
+each shown large, on dark, as an app icon and down to 16px, with a shortlist you can copy.
+Round 1 (ten sound-based marks, set aside) is in `round-1.html`. Mark-only SVGs are in
+`brand/logo-concepts/svg/`. Round 2 marks live in `round2.py`; run `python3 build.py` to
+regenerate everything.

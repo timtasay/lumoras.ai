@@ -1,6 +1,6 @@
 """Builds the Lumoras logo-concept review page and standalone mark SVGs.
 
-python3 build.py                -> index.html (full document) + svg/*.svg
+python3 build.py                -> index.html (round 2), round-1.html, svg/*.svg
 python3 build.py --body OUT     -> also writes a body-only copy to OUT (for artifact publishing)
 """
 import math, sys, pathlib
@@ -163,7 +163,8 @@ def lockup(c, mark_px, text_px, cls=''):
 
 def card(c):
     v = (f'--ac:{c["ac"]};--ac2:{c["ac2"]};--dark-ac:{c["dark_ac"]};--dark-ac2:{c.get("dark_ac2", c["dark_ac"])};'
-         f'--app-bg:{c["app_bg"]};--app-ink:{c["app_ink"]};--app-ac:{c["app_ac"]};--app-ac2:{c.get("app_ac2", c["app_ac"])}')
+         f'--app-bg:{c["app_bg"]};--app-ink:{c["app_ink"]};--app-ac:{c["app_ac"]};--app-ac2:{c.get("app_ac2", c["app_ac"])};'
+         f'--ac3:{c.get("ac3", c["ac2"])};--dark-ac3:{c.get("dark_ac3", c.get("dark_ac2", c["dark_ac"]))};--app-ac3:{c.get("app_ac3", c.get("app_ac2", c["app_ac"]))}')
     ladder = ''.join(f'<figure><div class="sz" style="width:{s}px;height:{s}px">{svg(c, s)}</div><figcaption>{s}</figcaption></figure>'
                      for s in (48, 32, 24, 16))
     return f'''
@@ -189,14 +190,15 @@ def card(c):
   <dl class="meta">
     <div><dt>Wordmark</dt><dd>{c["fontname"]}</dd></div>
     <div><dt>Accent</dt><dd><i class="sw" style="background:{c["ac"]}"></i>{c["ac"]}{(" → " + c["ac2"]) if c["ac2"] != c["ac"] else ""}</dd></div>
-    <div><dt>File</dt><dd>svg/{c["n"]}-{c["key"]}.svg</dd></div>
+    <div><dt>File</dt><dd>svg/{c.get("file", c["n"] + "-" + c["key"])}.svg</dd></div>
   </dl>
 </article>'''
 
 FONTS = ('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500'
          '&family=Sora:wght@600&family=Instrument+Serif&family=Manrope:wght@700&family=Outfit:wght@600'
          '&family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Anybody:wdth,wght@115,800'
-         '&family=JetBrains+Mono:wght@600&family=Unbounded:wght@500&family=Lexend:wght@300&display=swap')
+         '&family=JetBrains+Mono:wght@600&family=Unbounded:wght@500&family=Lexend:wght@300'
+         '&family=Fraunces:opsz,wght@9..144,500&family=Cormorant+Garamond:wght@600&family=Plus+Jakarta+Sans:wght@600&display=swap')
 
 CSS = r'''
 /* Layout: a review board. Header with controls, then a two-column grid of concept cards; each card is
@@ -264,10 +266,10 @@ button:focus-visible, .stage:focus-visible { outline: 2px solid var(--focus); ou
 .mk { flex: none; display: block; overflow: visible; }
 .tiles { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
 .tile { border-radius: 12px; display: grid; place-items: center; min-height: 112px; padding: 16px; min-width: 0; overflow: hidden; }
-.tile.dark { background: var(--night); color: var(--night-ink); border: 1px solid var(--night-rule); --ac: var(--dark-ac); --ac2: var(--dark-ac2); }
+.tile.dark { background: var(--night); color: var(--night-ink); border: 1px solid var(--night-rule); --ac: var(--dark-ac); --ac2: var(--dark-ac2); --ac3: var(--dark-ac3); }
 .app-wrap { background: color-mix(in srgb, var(--bg) 60%, var(--surface)); border: 1px solid var(--rule); gap: 8px; padding: 12px 18px; }
 .app { width: 88px; height: 88px; border-radius: 22px; display: grid; place-items: center; background: var(--app-bg); color: var(--app-ink);
-  --ac: var(--app-ac); --ac2: var(--app-ac2); box-shadow: 0 0 0 1px var(--rule), 0 1px 0 rgba(255,255,255,.08) inset, 0 6px 18px -8px rgba(10,15,30,.35); }
+  --ac: var(--app-ac); --ac2: var(--app-ac2); --ac3: var(--app-ac3); box-shadow: 0 0 0 1px var(--rule), 0 1px 0 rgba(255,255,255,.08) inset, 0 6px 18px -8px rgba(10,15,30,.35); }
 .cap { font: 400 11px/1 var(--f-mono); color: var(--mute); }
 .ladder { display: flex; align-items: flex-end; gap: 22px; padding: 4px 2px 0; flex-wrap: wrap; color: var(--ink); }
 .ladder figure { margin: 0; display: grid; justify-items: center; gap: 6px; }
@@ -290,6 +292,7 @@ button:focus-visible, .stage:focus-visible { outline: 2px solid var(--focus); ou
 .dock button:focus-visible { outline-color: var(--bg); }
 footer { color: var(--mute); font-size: 13px; border-top: 1px solid var(--rule); padding-top: 18px; display: grid; gap: 4px; }
 footer code { font-family: var(--f-mono); font-size: 12px; }
+footer a { color: inherit; text-underline-offset: 3px; }
 @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 520px) {
   .lock.big { gap: 14px; }
@@ -334,6 +337,20 @@ footer code { font-family: var(--f-mono); font-size: 12px; }
 :is(.stage:hover, .stage:focus-visible, body.play .stage) .spin { animation: spin 14s linear infinite; }
 :is(.stage:hover, .stage:focus-visible, body.play .stage) .eclipse { animation: eclipse 3s ease-in-out infinite; }
 :is(.stage:hover, .stage:focus-visible, body.play .stage) .ringo { animation: ringo 1.3s ease-in-out infinite; }
+.flame, .float, .sun, .spill, .beam, .glow { transform-origin: 50% 100%; }
+.glow { transform-origin: 50% 50%; }
+@keyframes flame { 0%,100% { transform: scale(1,1) skewX(0); } 25% { transform: scale(.94,1.08) skewX(-3deg); } 50% { transform: scale(1.04,.95) skewX(2deg); } 75% { transform: scale(.97,1.05) skewX(-1deg); } }
+@keyframes glow { 0%,100% { opacity: .9; transform: scale(1); } 50% { opacity: .55; transform: scale(.9); } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes sun { 0% { transform: translateY(9px); } 55%,100% { transform: translateY(0); } }
+@keyframes spill { 0% { opacity: .05; } 55%,100% { opacity: 1; } }
+@keyframes beam { 0%,100% { opacity: var(--o); } 50% { opacity: .08; } }
+:is(.stage:hover, .stage:focus-visible, body.play .stage) .flame { animation: flame 1.3s ease-in-out infinite; }
+:is(.stage:hover, .stage:focus-visible, body.play .stage) .glow { animation: glow 1.3s ease-in-out infinite; }
+:is(.stage:hover, .stage:focus-visible, body.play .stage) .float { animation: float 3s ease-in-out infinite; }
+:is(.stage:hover, .stage:focus-visible, body.play .stage) .sun { animation: sun 3.2s var(--ease) infinite; }
+:is(.stage:hover, .stage:focus-visible, body.play .stage) .spill { animation: spill 3.2s var(--ease) infinite; }
+:is(.stage:hover, .stage:focus-visible, body.play .stage) .beam { animation: beam 1.6s var(--d) ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .stage * { animation: none !important; } .star svg { transition: none; } }
 '''
 
@@ -363,7 +380,7 @@ JS = r'''
   paintTheme();
 
   /* shortlist, remembered in this browser */
-  const KEY = 'lumoras-logo-shortlist';
+  const KEY = document.body.dataset.key || 'lumoras-logo-shortlist';
   let picks = [];
   try { picks = JSON.parse(localStorage.getItem(KEY) || '[]').filter(x => /^\d\d$/.test(x)); } catch (e) {}
   const cards = [...document.querySelectorAll('.card')];
@@ -423,8 +440,8 @@ THEME_CTRL = '''<div class="seg theme" role="radiogroup" aria-label="Color theme
   <button type="button" role="radio" aria-checked="true" data-mode="auto" title="Auto (follows your device)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17Z" fill="currentColor" stroke="none"/></svg><span class="sr">Auto</span></button>
 </div>'''
 
-def page(full):
-    head = f'''<title>Lumoras Logo Concepts</title>
+def page(full, concepts, meta):
+    head = f'''<title>{meta['title']}</title>
 <script>try {{ var t = localStorage.getItem('lumoras-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); }} catch (e) {{}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -433,13 +450,13 @@ def page(full):
     body = f'''<main class="wrap">
   <div class="top">
     <div class="intro">
-      <span class="eyebrow">Lumoras · identity · round 1</span>
-      <h1>Ten logo concepts for Lumoras</h1>
-      <p>Each concept is a mark and a wordmark, shown large, on dark, as an app icon and down to 16 pixels, the size of a browser tab icon. Hover a logo to see how it moves. Star the ones worth taking further and copy your shortlist.</p>
+      <span class="eyebrow">{meta['eyebrow']}</span>
+      <h1>{meta['h1']}</h1>
+      <p>{meta['intro']}</p>
     </div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Show">
-        <button type="button" data-filter="all" aria-pressed="true">All <span class="count">10</span></button>
+        <button type="button" data-filter="all" aria-pressed="true">All <span class="count">{len(concepts)}</span></button>
         <button type="button" data-filter="short" aria-pressed="false">Shortlist <span class="count" id="count">0</span></button>
       </div>
       <div class="seg"><button type="button" id="play" class="toggle-motion" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5v14l12-7z"/></svg><span class="pl">Play motion</span></button></div>
@@ -447,7 +464,7 @@ def page(full):
     </div>
   </div>
   <section class="grid" aria-label="Logo concepts">
-    {''.join(card(c) for c in CONCEPTS)}
+    {''.join(card(c) for c in concepts)}
     <p class="empty" id="empty" hidden>No logos on your shortlist yet. Use the Shortlist button on any concept to add it.</p>
   </section>
   <div class="dock" id="dock" hidden>
@@ -455,7 +472,7 @@ def page(full):
     <button type="button" id="copy">Copy shortlist</button>
   </div>
   <footer>
-    <span>Round 1 concepts. Wordmarks are set in Google Fonts for review; final artwork would be drawn and outlined.</span>
+    <span>{meta['footer']}</span>
     <span>Source: <code>brand/logo-concepts/</code> · mark files in <code>svg/</code> · regenerate with <code>python3 build.py</code></span>
   </footer>
 </main>
@@ -468,22 +485,33 @@ def page(full):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 {head}
 </head>
-<body>
+<body data-key="{meta['key']}">
 {body}
 </body>
 </html>
 '''
-    return head + '\n' + body + '\n'
+    return head + '\n' + f'<script>document.body.dataset.key = "{meta["key"]}";</script>' + '\n' + body + '\n'
 
 def standalone(c):
-    inner = c['fn']('s').replace('currentColor', '#0D1016').replace('var(--ac2)', c['ac2']).replace('var(--ac)', c['ac'])
+    inner = (c['fn']('s').replace('currentColor', '#0D1016').replace('var(--ac2)', c['ac2']).replace('var(--ac)', c['ac'])
+             .replace('var(--ac3)', c.get('ac3', c['ac2'])))
     return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256"><title>Lumoras · {c["name"]}</title>{inner}</svg>\n'
 
+R1_META = dict(
+    title='Lumoras Logo Concepts, Round 1', key='lumoras-logo-shortlist',
+    eyebrow='Lumoras · identity · round 1',
+    h1='Ten logo concepts for Lumoras',
+    intro='Each concept is a mark and a wordmark, shown large, on dark, as an app icon and down to 16 pixels, the size of a browser tab icon. Hover a logo to see how it moves. Star the ones worth taking further and copy your shortlist.',
+    footer='Round 1 concepts (set aside). <a href="index.html">See round 2</a>. Wordmarks are set in Google Fonts for review; final artwork would be drawn and outlined.')
+
+from round2 import ROUND2, R2_META  # noqa: E402
+
 if __name__ == '__main__':
-    (HERE / 'index.html').write_text(page(True))
+    (HERE / 'round-1.html').write_text(page(True, CONCEPTS, R1_META))
+    (HERE / 'index.html').write_text(page(True, ROUND2, R2_META))
     (HERE / 'svg').mkdir(exist_ok=True)
-    for c in CONCEPTS:
-        (HERE / 'svg' / f'{c["n"]}-{c["key"]}.svg').write_text(standalone(c))
+    for c in CONCEPTS + ROUND2:
+        (HERE / 'svg' / f'{c.get("file", c["n"] + "-" + c["key"])}.svg').write_text(standalone(c))
     if len(sys.argv) == 3 and sys.argv[1] == '--body':
-        pathlib.Path(sys.argv[2]).write_text(page(False))
-    print('built', len(CONCEPTS), 'concepts')
+        pathlib.Path(sys.argv[2]).write_text(page(False, ROUND2, R2_META))
+    print('built', len(CONCEPTS), '+', len(ROUND2), 'concepts')
