@@ -16,7 +16,7 @@ export function PageHero({
 }) {
   return (
     <header className={center ? "phero phero-center" : "phero"}>
-      {eyebrow ? <p className="eyebrow mono">{eyebrow}</p> : null}
+      {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
       <h1 className="ph-title">{title}</h1>
       {lede ? <p className="ph-lede">{lede}</p> : null}
       {children}

@@ -13,7 +13,7 @@ export default function NotFound() {
   return (
     <PageShell className="pg-404">
       <div className="wrap nf">
-        <p className="nf-code mono" aria-hidden="true">
+        <p className="nf-code" aria-hidden="true">
           404
         </p>
         <h1 className="ph-title">This page is off the score.</h1>

@@ -18,7 +18,7 @@ export function InsightCard({ insight, variant = "card", headingLevel = "h3", sh
       <InsightArt kind={insight.art.kind} chips={insight.art.chips} size={variant === "feature" ? "md" : "sm"} />
       <div className="icard-body">
         {variant !== "menu" && insight.tags.length > 0 ? (
-          <p className="icard-tags mono">{insight.tags.slice(0, 2).map(tagLabel).join(" · ")}</p>
+          <p className="icard-tags">{insight.tags.slice(0, 2).map(tagLabel).join(" · ")}</p>
         ) : null}
         <H className="icard-title">
           <Link href={`/insights/${insight.slug}`} className="icard-link">

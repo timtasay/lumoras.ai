@@ -49,7 +49,7 @@ export const BRANDS = [PRODUCTS.sonorch, PRODUCTS.seasonx, PRODUCTS.kitchenspot]
 
 /** Homepage section anchors used by the nav and footer. */
 export const NAV_SECTIONS = [
-  { label: "Platform", href: "/#voice" },
+  { label: "Platform", href: "/#platform" },
   { label: "Verticals", href: "/#verticals" },
   { label: "Products", href: "/#products" },
   { label: "Retail Sound", href: "/#sound" },

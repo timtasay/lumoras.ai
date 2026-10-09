@@ -7,7 +7,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
   const all: Crumb[] = [{ name: "Home", path: "/" }, ...items];
   return (
     <>
-      <nav className="crumbs mono" aria-label="Breadcrumb">
+      <nav className="crumbs" aria-label="Breadcrumb">
         <ol>
           {all.map((c, i) => (
             <li key={c.path}>

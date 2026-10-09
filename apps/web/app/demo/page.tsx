@@ -54,7 +54,7 @@ export default function DemoPage() {
               <Link className="tlink" href="/faq">FAQ</Link>.
             </p>
           </div>
-          <DemoForm title="Tell us about your business" />
+          <DemoForm title="Tell us about your business" className="panel" />
         </div>
       </div>
     </PageShell>

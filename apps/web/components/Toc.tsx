@@ -15,11 +15,11 @@ export function Toc({ items }: { items: TocItem[] }) {
   return (
     <>
       <nav className="toc toc-desk" aria-label="On this page">
-        <p className="toc-title mono">On this page</p>
+        <p className="toc-title">On this page</p>
         {list}
       </nav>
       <details className="toc toc-mob">
-        <summary className="mono">On this page</summary>
+        <summary>On this page</summary>
         <nav aria-label="On this page (compact)">{list}</nav>
       </details>
     </>

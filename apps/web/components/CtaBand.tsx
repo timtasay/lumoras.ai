@@ -11,7 +11,7 @@ export function CtaBand({
   text?: string;
 }) {
   return (
-    <section className="ctaband glass" aria-labelledby="cta-band-h">
+    <section className="ctaband panel" aria-labelledby="cta-band-h">
       <div>
         <h2 id="cta-band-h" className="ctaband-title">{title}</h2>
         <p>{text}</p>

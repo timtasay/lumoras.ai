@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <div className="empty glass">
+    <div className="empty panel">
       <p className="empty-title">{title}</p>
       <p>{text}</p>
       <p>

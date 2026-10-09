@@ -46,7 +46,7 @@ export default async function GuidePage({ params }: { params: Promise<Params> })
         <Breadcrumbs items={[{ name: "Knowledge base", path: "/knowledge-base" }, { name: g.title, path }]} />
         <article className="art art-doc">
           <header className="art-head">
-            <p className="eyebrow mono">{topicTitle(g.topic)}</p>
+            <p className="eyebrow">{topicTitle(g.topic)}</p>
             <h1 className="art-title">{g.title}</h1>
             {g.description ? <p className="art-lede">{g.description}</p> : null}
             <p className="byline">
@@ -61,8 +61,8 @@ export default async function GuidePage({ params }: { params: Promise<Params> })
             </aside>
             <div className="doc-main">
               {g.keyPoints.length > 0 ? (
-                <section className="keypoints glass" aria-labelledby="kp-h">
-                  <h2 id="kp-h" className="mono kp-title">Key points</h2>
+                <section className="keypoints panel" aria-labelledby="kp-h">
+                  <h2 id="kp-h" className="kp-title">Key points</h2>
                   <ul className="kp-list">
                     {g.keyPoints.map((k) => (
                       <li key={k}>
@@ -80,7 +80,7 @@ export default async function GuidePage({ params }: { params: Promise<Params> })
 
         {related.length > 0 ? (
           <section className="pg-sec" aria-labelledby="rel-h">
-            <div className="sec-head">
+            <div className="pg-head">
               <h2 id="rel-h" className="sec-title">Related guides</h2>
               <Link href="/knowledge-base" className="sec-link">
                 All guides <Icon name="arrow" />
@@ -88,8 +88,8 @@ export default async function GuidePage({ params }: { params: Promise<Params> })
             </div>
             <div className="guide-grid">
               {related.map((r) => (
-                <Link key={r.slug} className="guide-card glass" href={`/knowledge-base/${r.slug}`}>
-                  <span className="mono gc-topic">{topicTitle(r.topic)} · {r.readingMinutes} min</span>
+                <Link key={r.slug} className="guide-card panel" href={`/knowledge-base/${r.slug}`}>
+                  <span className="gc-topic">{topicTitle(r.topic)} · {r.readingMinutes} min</span>
                   <span className="gc-title">{r.title}</span>
                   <span className="gc-desc">{r.description}</span>
                 </Link>

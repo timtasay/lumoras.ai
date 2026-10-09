@@ -1,9 +1,12 @@
 /**
- * Spectrum particle field, ported from prototypes/c-spectrum.html.
- * Nine formations (sphere, waveform, receipt, speaker rings, constellation,
- * triad, globe, path, sphere) with staggered morphs between them. All colours
- * come from CSS tokens and cross-fade on theme change. Pauses when the tab is
- * hidden, renders a single static frame under reduced motion.
+ * Spectrum particle field (from prototypes/c-spectrum.html), running behind the
+ * Voice Core homepage. Nine formations (sphere, waveform, receipt, speaker
+ * rings, constellation, orbits, globe, stream, sphere) with staggered morphs.
+ * The constellation clusters sit behind the vertical cards (#vgrid .vcard) so a
+ * hovered card lights its own cluster. Colours come from CSS tokens and
+ * cross-fade on theme change; each formation has its own dim level so Voice
+ * Core text stays legible. Pauses when the tab is hidden, renders a single
+ * static frame under reduced motion.
  */
 import { homeState, onHome } from "@/lib/home-bus";
 
@@ -22,8 +25,6 @@ type Palette = {
   lineA: number;
   arcA: number;
   pathA: number;
-  label: RGBA;
-  halo: RGBA;
   spr: HTMLCanvasElement[];
   colorAt: (h: number) => RGB;
 };
@@ -37,7 +38,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   const TAU = Math.PI * 2;
   let W = 0, H = 0, DPR = 1;
   const SMALL = Math.min(window.innerWidth, (screen && screen.width) || window.innerWidth) < 700;
-  const N = SMALL ? 1000 : 2600;
+  const N = SMALL ? 900 : 2200;
   let disposed = false;
 
   function rng(seed: number) {
@@ -103,7 +104,6 @@ export function startField(canvas: HTMLCanvasElement): () => void {
       core: num("--cv-core", 90), mid: num("--cv-mid", 0.16), glow: num("--cv-glow", 0.42), glowA: num("--cv-glow-a", 0.28),
       line: parseColor(tok("--cv-line"), [143, 151, 184, 1]), lineA: num("--cv-line-a", 0.16),
       arcA: num("--cv-arc-a", 0.42), pathA: num("--cv-path-a", 0.35),
-      label: parseColor(tok("--cv-label"), [242, 244, 255, 1]), halo: parseColor(tok("--cv-halo"), [0, 0, 0, 0]),
       spr: [],
       colorAt,
     };
@@ -215,32 +215,58 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   const dp = Object.assign({}, DAYPARTS[dpTarget]);
   let ringClock = 0;
 
-  // 4 constellation
-  const NC = 14;
+  // 4 constellation: one cluster per vertical card. Cluster centres follow the
+  // cards on screen (offsets cached on resize, grid position read per frame);
+  // without the grid they fall back to a sunflower layout around the anchor.
+  const grid = document.getElementById("vgrid");
+  const cards = grid ? Array.from(grid.querySelectorAll<HTMLElement>(".vcard")) : [];
+  const NC = Math.max(2, cards.length || 12);
   const CL: [number, number][] = [];
   for (let k = 0; k < NC; k++) {
     const rr = 0.98 * Math.sqrt((k + 0.6) / NC), a = k * 2.39996 + 0.7;
     CL.push([Math.cos(a) * rr * 1.12, Math.sin(a) * rr * 0.98]);
   }
-  const EDGES: [number, number][] = [];
-  (function () {
+  /** per card: centre x/y relative to the grid's top-left, and cluster radius (px) */
+  const CARD = new Float32Array(NC * 3);
+  let gridX = 0, gridY = 0, attached = false;
+  let EDGES: [number, number][] = [];
+  function nearestEdges(pos: (k: number) => [number, number]) {
+    const out: [number, number][] = [];
     const seen = new Set<string>();
     for (let k = 0; k < NC; k++) {
-      const dists = CL.map((c, j) => [j, (c[0] - CL[k][0]) ** 2 + (c[1] - CL[k][1]) ** 2] as [number, number])
-        .filter((e) => e[0] !== k)
-        .sort((a, b) => a[1] - b[1]);
-      for (let m = 0; m < 2; m++) {
-        const j = dists[m][0];
-        const key = Math.min(j, k) + "-" + Math.max(j, k);
-        if (!seen.has(key)) { seen.add(key); EDGES.push([k, j]); }
+      const pk = pos(k);
+      const dists: [number, number][] = [];
+      for (let j = 0; j < NC; j++) if (j !== k) { const pj = pos(j); dists.push([j, (pj[0] - pk[0]) ** 2 + (pj[1] - pk[1]) ** 2]); }
+      dists.sort((a, b) => a[1] - b[1]);
+      for (let m = 0; m < 2 && m < dists.length; m++) {
+        const j = dists[m][0], key = Math.min(j, k) + "-" + Math.max(j, k);
+        if (!seen.has(key)) { seen.add(key); out.push([k, j]); }
       }
     }
-  })();
+    return out;
+  }
+  function measureCards() {
+    attached = false;
+    if (!grid || cards.length !== NC) { EDGES = nearestEdges((k) => CL[k]); return; }
+    if (grid.offsetWidth < 1) { EDGES = nearestEdges((k) => CL[k]); return; }
+    // layout offsets (the grid is the cards' offsetParent), so scroll-reveal transforms don't skew them
+    cards.forEach((c, k) => {
+      CARD[k * 3] = c.offsetLeft + c.offsetWidth / 2;
+      CARD[k * 3 + 1] = c.offsetTop + c.offsetHeight / 2;
+      CARD[k * 3 + 2] = Math.min(c.offsetWidth, c.offsetHeight) * 0.42;
+    });
+    attached = true;
+    EDGES = nearestEdges((k) => [CARD[k * 3], CARD[k * 3 + 1]]);
+  }
+  function locateGrid() {
+    if (!attached || !grid) return;
+    const g = grid.getBoundingClientRect();
+    gridX = g.left; gridY = g.top;
+  }
   const CC = new Uint8Array(N), CR = F32(), CAng = F32();
-  for (let i = 0; i < N; i++) { CC[i] = i % NC; CR[i] = 0.012 + 0.17 * Math.pow(r1[i], 1.7); CAng[i] = r2[i] * TAU; }
+  for (let i = 0; i < N; i++) { CC[i] = i % NC; CR[i] = 0.07 + 0.93 * Math.pow(r1[i], 1.7); CAng[i] = r2[i] * TAU; }
   let hlTarget = homeState.hl;
   let hlIdx = hlTarget, hlAmt = 0;
-  const tileNames = Array.from(document.querySelectorAll<HTMLElement>(".tile .t-name")).map((el) => el.textContent ?? "");
 
   // 5 triad (product family)
   const TRI = [
@@ -280,32 +306,36 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   // 7 path
   const PNX = [-1.5, -0.5, 0.5, 1.5];
 
-  /* ---------- anchors ---------- */
+  /* ---------- anchors (tuned for the Voice Core layout) ---------- */
   function anchor(k: number): [number, number, number] {
     const m = Math.min(W, H);
     if (W < 900) {
       switch (k) {
-        case 0: return [W * 0.5, H * 0.42, Math.min(W * 0.42, H * 0.32)];
-        case 1: return [W * 0.5, H * 0.46, W * 0.29];
-        case 2: return [W * 0.5, H * 0.5, H * 0.3];
+        case 0: return [W * 0.62, H * 0.3, Math.min(W * 0.46, H * 0.3)];
+        case 1: return [W * 0.5, H * 0.5, W * 0.3];
+        case 2: return [W * 0.5, H * 0.5, H * 0.32];
+        case 3: return [W * 0.5, H * 0.5, Math.min(W * 0.62, H * 0.4)];
         case 7: return [W * 0.5, H * 0.5, W * 0.28];
-        case 8: return [W * 0.5, H * 0.45, Math.min(W * 0.42, H * 0.3)];
-        default: return [W * 0.5, H * 0.48, Math.min(W * 0.4, H * 0.3)];
+        case 8: return [W * 0.5, H * 0.45, Math.min(W * 0.46, H * 0.3)];
+        default: return [W * 0.5, H * 0.5, Math.min(W * 0.42, H * 0.3)];
       }
     }
     switch (k) {
-      case 0: return [W * 0.5, H * 0.47, m * 0.37];
-      case 1: return [W * 0.7, H * 0.36, W * 0.13];
-      case 2: return [W * 0.29, H * 0.5, H * 0.36];
-      case 3: return [W * 0.68, H * 0.5, Math.min(W * 0.15, H * 0.34)];
-      case 4: return [W * 0.25, H * 0.75, Math.min(W * 0.13, H * 0.19)];
-      case 5: return [W * 0.76, H * 0.3, Math.min(W * 0.13, H * 0.22)];
-      case 6: return [W * 0.7, H * 0.5, Math.min(W * 0.17, H * 0.34)];
-      case 7: return [W * 0.5, H * 0.66, W * 0.27];
-      case 8: return [W * 0.27, H * 0.5, m * 0.3];
+      case 0: return [W * 0.74, H * 0.36, m * 0.3];
+      case 1: return [W * 0.5, H * 0.5, W * 0.31];
+      case 2: return [W * 0.68, H * 0.34, H * 0.3];
+      case 3: return [W * 0.5, H * 0.5, Math.min(W * 0.4, H * 0.62)];
+      case 4: return [W * 0.5, H * 0.52, Math.min(W * 0.36, H * 0.4)];
+      case 5: return [W * 0.6, H * 0.64, Math.min(W * 0.24, H * 0.4)];
+      case 6: return [W * 0.24, H * 0.6, Math.min(W * 0.17, H * 0.32)];
+      case 7: return [W * 0.5, H * 0.56, W * 0.3];
+      case 8: return [W * 0.5, H * 0.5, m * 0.38];
     }
     return [W / 2, H / 2, m * 0.3];
   }
+  /** Per-formation brightness, so the field stays behind the Voice Core content (hero orb, copy, panels). */
+  const FDIM = [0.62, 0.8, 0.85, 0.9, 1, 0.85, 0.85, 0.85, 0.78];
+  let dim = FDIM[Math.max(0, Math.min(8, homeState.form))];
 
   /* ---------- formations: write tX..tS ---------- */
   type FormFn = (t: number, cx: number, cy: number, sc: number, dr: number) => void;
@@ -380,16 +410,21 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   };
   const fConst: FormFn = (t, cx, cy, sc, dr) => {
     const hl = hlIdx, amt = hlAmt;
+    locateGrid();
     for (let i = 0; i < N; i++) {
-      const c = CC[i], ce = CL[c];
+      const c = CC[i];
       const ang = CAng[i] + t * 0.09 * (c % 2 ? 1 : -1) * dr;
-      tX[i] = cx + (ce[0] + Math.cos(ang) * CR[i]) * sc;
-      tY[i] = cy + (ce[1] + Math.sin(ang) * CR[i] * 0.9) * sc;
-      let a = 0.42 + 0.4 * (1 - CR[i] * 5) + 0.18 * Math.sin(t * 2 * dr + r3[i] * TAU);
-      let s = 0.8 + 0.3 * (1 - CR[i] * 5);
+      let px: number, py: number, rad: number;
+      if (attached) { px = gridX + CARD[c * 3]; py = gridY + CARD[c * 3 + 1]; rad = CARD[c * 3 + 2]; }
+      else { px = cx + CL[c][0] * sc; py = cy + CL[c][1] * sc; rad = 0.18 * sc; }
+      tX[i] = px + Math.cos(ang) * CR[i] * rad;
+      tY[i] = py + Math.sin(ang) * CR[i] * rad * 0.9;
+      const core = 1 - CR[i];
+      let a = 0.42 + 0.4 * core + 0.18 * Math.sin(t * 2 * dr + r3[i] * TAU);
+      let s = 0.8 + 0.3 * core;
       if (amt > 0.001 && hl >= 0) {
-        if (c === hl) { a *= 1 + 1.3 * amt; s *= 1 + 0.55 * amt; }
-        else { a *= 1 - 0.6 * amt; }
+        if (c === hl) { a *= 1 + 2.2 * amt; s *= 1 + 0.7 * amt; }
+        else { a *= 1 - 0.55 * amt; }
       }
       tA[i] = a; tS[i] = s;
       tH[i] = (c / (NC - 1)) * 0.98;
@@ -471,34 +506,18 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     c.lineWidth = 1;
     if (LW[4] > 0.01) {
       const [cx, cy, sc] = anchor(4);
+      const at = (k: number): [number, number] =>
+        attached ? [gridX + CARD[k * 3], gridY + CARD[k * 3 + 1]] : [cx + CL[k][0] * sc, cy + CL[k][1] * sc];
       for (const [a, b] of EDGES) {
         const lit = hlIdx >= 0 && (a === hlIdx || b === hlIdx);
         const k = lit ? hlAmt : 0;
-        c.globalAlpha = k0 * LW[4] * (P.lineA + 0.5 * k);
+        c.globalAlpha = k0 * LW[4] * dim * (P.lineA + 0.5 * k);
         c.strokeStyle = lit ? rgb(P.colorAt((hlIdx / (NC - 1)) * 0.98), 1) : rgb(P.line, 1);
+        const pa = at(a), pb = at(b);
         c.beginPath();
-        c.moveTo(cx + CL[a][0] * sc, cy + CL[a][1] * sc);
-        c.lineTo(cx + CL[b][0] * sc, cy + CL[b][1] * sc);
+        c.moveTo(pa[0], pa[1]);
+        c.lineTo(pb[0], pb[1]);
         c.stroke();
-      }
-      if (hlIdx >= 0 && hlAmt > 0.05 && tileNames[hlIdx]) {
-        const cc = CL[hlIdx];
-        c.globalAlpha = k0 * LW[4] * hlAmt;
-        c.fillStyle = rgb(P.label, P.label[3]);
-        c.font = '500 10.5px "Martian Mono", ui-monospace, monospace';
-        const label = String(hlIdx + 1).padStart(2, "0") + " " + tileNames[hlIdx].toUpperCase();
-        const dir = cc[0] > 0.15 ? -1 : 1;
-        const lx = cx + cc[0] * sc + dir * 0.24 * sc, ly = cy + cc[1] * sc - 0.2 * sc;
-        c.strokeStyle = rgb(P.colorAt((hlIdx / (NC - 1)) * 0.98), 1);
-        c.beginPath(); c.moveTo(cx + cc[0] * sc + dir * 0.08 * sc, cy + cc[1] * sc - 0.07 * sc); c.lineTo(lx - dir * 4, ly + 4); c.stroke();
-        c.textAlign = dir < 0 ? "right" : "left";
-        if (P.halo[3] > 0) {
-          c.save(); c.globalCompositeOperation = "source-over";
-          c.lineJoin = "round"; c.lineWidth = 5; c.strokeStyle = rgb(P.halo, P.halo[3]);
-          c.strokeText(label, lx, ly); c.restore();
-        }
-        c.fillText(label, lx, ly);
-        c.textAlign = "left"; c.lineWidth = 1;
       }
     }
     if (LW[6] > 0.01 && !Number.isNaN(GROT.ct)) {
@@ -519,7 +538,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
           if (prev) {
             const dz = (p[2] + prev[2]) * 0.5;
             if (dz > -0.25) {
-              c.globalAlpha = k0 * LW[6] * P.arcA * Math.min(1, (dz + 0.25) * 1.6) * Math.sin(Math.PI * u + 0.2);
+              c.globalAlpha = k0 * LW[6] * dim * P.arcA * Math.min(1, (dz + 0.25) * 1.6) * Math.sin(Math.PI * u + 0.2);
               c.beginPath(); c.moveTo(prev[0], prev[1]); c.lineTo(p[0], p[1]); c.stroke();
             }
           }
@@ -532,7 +551,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
       const g = c.createLinearGradient(cx - 1.6 * sc, 0, cx + 1.6 * sc, 0);
       const S = P.stops;
       g.addColorStop(0, rgb(S[0], 0)); g.addColorStop(0.15, rgb(S[0], 1)); g.addColorStop(0.5, rgb(S[1], 1)); g.addColorStop(0.8, rgb(S[2], 1)); g.addColorStop(1, rgb(S[3], 0));
-      c.strokeStyle = g; c.globalAlpha = k0 * LW[7] * P.pathA;
+      c.strokeStyle = g; c.globalAlpha = k0 * LW[7] * dim * P.pathA;
       c.beginPath(); c.moveTo(cx - 1.6 * sc, cy); c.lineTo(cx + 1.6 * sc, cy); c.stroke();
     }
   }
@@ -546,13 +565,14 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     DPR = Math.min(2, window.devicePixelRatio || 1);
     W = canvas.clientWidth || window.innerWidth; H = canvas.clientHeight || window.innerHeight;
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+    measureCards();
     if (reduced) renderStatic(); else kick();
   }
 
   function layer(c: CanvasRenderingContext2D, P: Palette, k0: number) {
     c.globalCompositeOperation = P.blend;
     drawLines(c, P, k0);
-    const base = (SMALL ? 6.2 : 7.4) * P.size, am = P.alpha * k0, SPR = P.spr;
+    const base = (SMALL ? 6.2 : 7.4) * P.size, am = P.alpha * k0 * dim, SPR = P.spr;
     for (let i = 0; i < N; i++) {
       const a0 = pA[i]; if (a0 < 0.015) continue;
       const x = pX[i] + oX[i], y = pY[i] + oY[i];
@@ -592,6 +612,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     if (hlTarget >= 0) { hlIdx = hlTarget; hlAmt += (1 - hlAmt) * 0.12; }
     else { hlAmt += (0 - hlAmt) * 0.1; if (hlAmt < 0.005) { hlAmt = 0; hlIdx = -1; } }
     for (let k = 0; k < LW.length; k++) LW[k] += ((k === cur ? 1 : 0) - LW[k]) * 0.06;
+    dim += (FDIM[cur] - dim) * 0.05;
 
     const [cx, cy, sc] = anchor(cur);
     FN[cur](t, cx, cy, sc, 1);
@@ -610,7 +631,8 @@ export function startField(canvas: HTMLCanvasElement): () => void {
       } else {
         pX[i] = tX[i]; pY[i] = tY[i]; pH[i] = tH[i]; pA[i] = tA[i]; pS[i] = tS[i];
       }
-      if (pointerOn) {
+      // no repulsion over the vertical cards: the cursor sits on the cluster it is lighting
+      if (pointerOn && cur !== 4) {
         const dx = pX[i] + oX[i] - mx, dy = pY[i] + oY[i] - my, d2 = dx * dx + dy * dy;
         if (d2 < R2 && d2 > 0.01) { const d = Math.sqrt(d2), f = (1 - d / 120) * 2.6; oX[i] += (dx / d) * f; oY[i] += (dy / d) * f; }
       }
@@ -626,6 +648,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     ringClock = 0.18 + dpTarget * 0.07;
     hlIdx = hlTarget; hlAmt = hlTarget >= 0 ? 1 : 0;
     for (let k = 0; k < LW.length; k++) LW[k] = k === cur ? 1 : 0;
+    dim = FDIM[cur];
     const [cx, cy, sc] = anchor(cur);
     FN[cur](STATIC_T, cx, cy, sc, 0);
     pX.set(tX); pY.set(tY); pH.set(tH); pA.set(tA); pS.set(tS); oX.fill(0); oY.fill(0);
@@ -644,6 +667,14 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   /* ---------- listeners ---------- */
   let resizeT: ReturnType<typeof setTimeout> | undefined;
   const onResize = () => { clearTimeout(resizeT); resizeT = setTimeout(resize, 120); };
+  // the constellation follows the cards: keep it in place while scrolling under reduced motion
+  let scrollRaf = 0;
+  const onScroll = () => {
+    if (!reduced || cur !== 4 || scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => { scrollRaf = 0; renderStatic(); });
+  };
+  const gridRO = grid && "ResizeObserver" in window ? new ResizeObserver(() => { measureCards(); if (reduced && cur === 4) renderStatic(); }) : null;
+  gridRO?.observe(grid!);
   const onVis = () => { if (!document.hidden) kick(); };
   const onMove = (e: PointerEvent) => { mx = e.clientX; my = e.clientY; pointerOn = true; };
   const onLeave = () => { pointerOn = false; };
@@ -666,6 +697,7 @@ export function startField(canvas: HTMLCanvasElement): () => void {
   });
 
   window.addEventListener("resize", onResize);
+  window.addEventListener("scroll", onScroll, { passive: true });
   document.addEventListener("visibilitychange", onVis);
   window.addEventListener("pointermove", onMove, { passive: true });
   window.addEventListener("pointerdown", onMove, { passive: true });
@@ -689,6 +721,9 @@ export function startField(canvas: HTMLCanvasElement): () => void {
     clearTimeout(resizeT);
     offHome();
     window.removeEventListener("resize", onResize);
+    window.removeEventListener("scroll", onScroll);
+    if (scrollRaf) cancelAnimationFrame(scrollRaf);
+    gridRO?.disconnect();
     document.removeEventListener("visibilitychange", onVis);
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerdown", onMove);

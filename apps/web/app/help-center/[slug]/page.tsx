@@ -45,14 +45,14 @@ export default async function HelpArticlePage({ params }: { params: Promise<Para
         {/* data-review marks articles awaiting product sign-off (frontmatter review: true) */}
         <article className="art art-help" data-review={h.review ? "pending" : undefined}>
           <header className="art-head">
-            <p className="eyebrow mono">
+            <p className="eyebrow">
               <Link href={`/help-center#${h.category}`}>{categoryTitle(h.category)}</Link>
             </p>
             <h1 className="art-title">{h.title}</h1>
             {h.description ? <p className="art-lede">{h.description}</p> : null}
             {h.appliesTo.length > 0 ? (
               <div className="applies">
-                <span className="mono applies-k">Applies to</span>
+                <span className="applies-k">Applies to</span>
                 <ul>
                   {h.appliesTo.map((p) => (
                     <li key={p}>{p}</li>
@@ -69,7 +69,7 @@ export default async function HelpArticlePage({ params }: { params: Promise<Para
 
         {related.length > 0 ? (
           <section className="pg-sec pg-narrow" aria-labelledby="rel-h">
-            <div className="sec-head">
+            <div className="pg-head">
               <h2 id="rel-h" className="sec-title">Related articles</h2>
               <Link href="/help-center" className="sec-link">
                 Help center <Icon name="arrow" />
@@ -78,8 +78,8 @@ export default async function HelpArticlePage({ params }: { params: Promise<Para
             <ul className="pop-grid pop-2">
               {related.map((a) => (
                 <li key={a.slug}>
-                  <Link className="pop glass" href={`/help-center/${a.slug}`}>
-                    <span className="mono pop-cat">{categoryTitle(a.category)}</span>
+                  <Link className="pop panel" href={`/help-center/${a.slug}`}>
+                    <span className="pop-cat">{categoryTitle(a.category)}</span>
                     <strong>{a.title}</strong>
                     <Icon name="arrow" />
                   </Link>

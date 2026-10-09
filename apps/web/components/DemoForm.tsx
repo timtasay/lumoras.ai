@@ -19,7 +19,22 @@ function joinList(xs: string[]) {
   return `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
 }
 
-export function DemoForm({ headingLevel = "h2", title = "Book a demo" }: { headingLevel?: "h2" | "h3"; title?: string }) {
+type Props = {
+  headingLevel?: "h2" | "h3";
+  title?: string;
+  sub?: string;
+  cta?: string;
+  className?: string;
+};
+
+/** Demo request form: validates on the client and on /api/demo, then shows an inline confirmation. */
+export function DemoForm({
+  headingLevel = "h2",
+  title = "Book a demo",
+  sub = "Tell us a little about your business. We'll tailor the walkthrough.",
+  cta = "Request a demo",
+  className,
+}: Props) {
   const H = headingLevel;
   const uid = useId();
   const formRef = useRef<HTMLFormElement>(null);
@@ -65,7 +80,7 @@ export function DemoForm({ headingLevel = "h2", title = "Book a demo" }: { headi
       const what = value.interests.length ? ` of ${joinList(value.interests)}` : "";
       setSummary({
         title: `Thanks, ${first}. You're on the schedule.`,
-        text: `We'll reach out to ${value.email} to set up a walkthrough${what} for ${value.company} (${value.locations} ${value.locations === "1" ? "location" : "locations"}). Want to hear it now? Call ${DEMO_LINE}.`,
+        text: `A Lumoras specialist will reach ${value.email} within one business day to set up a walkthrough${what} for ${value.company} across ${value.locations === "1" ? "one location" : `${value.locations} locations`}.`,
       });
       setStatus("done");
       requestAnimationFrame(() => okRef.current?.focus());
@@ -97,10 +112,10 @@ export function DemoForm({ headingLevel = "h2", title = "Book a demo" }: { headi
     ) : null;
 
   return (
-    <div className="form glass">
+    <div className={className ? `form ${className}` : "form"}>
       <form ref={formRef} onSubmit={onSubmit} noValidate hidden={status === "done"} aria-labelledby={id("title")}>
         <H className="form-title" id={id("title")}>{title}</H>
-        <p className="sub">Tell us a little about your business. We&apos;ll tailor the walkthrough.</p>
+        <p className="sub">{sub}</p>
         <div className="fgrid">
           <div className="field">
             <label htmlFor={id("name")}>Full name</label>
@@ -153,9 +168,10 @@ export function DemoForm({ headingLevel = "h2", title = "Book a demo" }: { headi
           </div>
         </div>
         <button className="btn btn-primary" type="submit" disabled={status === "sending"}>
-          {status === "sending" ? "Sending…" : "Request a demo"} <Icon name="arrow" />
+          {status === "sending" ? "Sending…" : cta} <Icon name="arrow" />
         </button>
-        <p className="fine" role="alert">
+        <p className="fine">By requesting a demo you agree to be contacted about Lumoras. No spam, no sharing.</p>
+        <p className="fine err" role="alert">
           {status === "error" ? "Something went wrong sending your request. Please try again, or call the live demo line." : ""}
         </p>
       </form>
@@ -165,7 +181,10 @@ export function DemoForm({ headingLevel = "h2", title = "Book a demo" }: { headi
         </div>
         <p className="ok-title">{summary?.title}</p>
         <p>{summary?.text}</p>
-        <button className="btn" type="button" onClick={reset}>
+        <p className="ok-small">
+          Can&apos;t wait? Call the live demo at <span className="mono sel">{DEMO_LINE}</span> and talk to a Lumoras agent right now.
+        </p>
+        <button className="ok-reset" type="button" onClick={reset}>
           Send another request
         </button>
       </div>

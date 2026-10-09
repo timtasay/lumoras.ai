@@ -4,7 +4,8 @@ export const OG_SIZE = { width: 1200, height: 630 };
 export const OG_CONTENT_TYPE = "image/png";
 
 /**
- * Open Graph card: title text on the Spectrum gradient, brand mark and URL.
+ * Open Graph card in the Voice Core palette: obsidian with mint and amber
+ * glows, a faint control-room grid, the Spectrum brand mark and the title.
  * Uses next/og's bundled default font (no external font requests).
  */
 export function ogImage({ eyebrow, title, footer = "lumoras.ai" }: { eyebrow?: string; title: string; footer?: string }) {
@@ -19,10 +20,11 @@ export function ogImage({ eyebrow, title, footer = "lumoras.ai" }: { eyebrow?: s
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "64px 72px",
-          backgroundColor: "#04060F",
+          backgroundColor: "#06070B",
           backgroundImage:
-            "radial-gradient(circle at 8% 0%, rgba(62,231,255,0.38), rgba(62,231,255,0) 46%), radial-gradient(circle at 100% 10%, rgba(255,111,181,0.32), rgba(255,111,181,0) 44%), radial-gradient(circle at 70% 110%, rgba(124,140,255,0.42), rgba(124,140,255,0) 52%), radial-gradient(circle at 104% 92%, rgba(255,210,122,0.26), rgba(255,210,122,0) 34%)",
-          color: "#F2F4FF",
+            "radial-gradient(circle at 82% 18%, rgba(77,243,208,0.30), rgba(77,243,208,0) 42%), radial-gradient(circle at 4% 0%, rgba(255,138,76,0.20), rgba(255,138,76,0) 38%), radial-gradient(circle at 60% 120%, rgba(127,216,255,0.14), rgba(127,216,255,0) 46%), linear-gradient(rgba(255,255,255,0.035) 1px, rgba(255,255,255,0) 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, rgba(255,255,255,0) 1px)",
+          backgroundSize: "1200px 630px, 1200px 630px, 1200px 630px, 64px 64px, 64px 64px",
+          color: "#E9EEF5",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
@@ -42,23 +44,26 @@ export function ogImage({ eyebrow, title, footer = "lumoras.ai" }: { eyebrow?: s
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           {eyebrow ? (
-            <div style={{ display: "flex", fontSize: 24, letterSpacing: 4, textTransform: "uppercase", color: "#C9CEE6" }}>{eyebrow}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 24, letterSpacing: 4, textTransform: "uppercase", color: "#8A93A6" }}>
+              <div style={{ width: 12, height: 12, borderRadius: 12, backgroundColor: "#4DF3D0", boxShadow: "0 0 18px #4DF3D0" }} />
+              {eyebrow}
+            </div>
           ) : null}
-          <div style={{ display: "flex", fontSize: size, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2, maxWidth: 1040 }}>{title}</div>
+          <div style={{ display: "flex", fontSize: size, fontWeight: 700, lineHeight: 1.04, letterSpacing: -2.5, maxWidth: 1040 }}>{title}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div
             style={{
               display: "flex",
-              height: 4,
+              height: 3,
               width: "100%",
-              borderRadius: 4,
-              backgroundImage: "linear-gradient(90deg, #3EE7FF, #7C8CFF 38%, #FF6FB5 70%, #FFD27A)",
+              borderRadius: 3,
+              backgroundImage: "linear-gradient(90deg, rgba(77,243,208,0), #4DF3D0 18%, #A6FFEC 52%, #FF8A4C 86%, rgba(255,138,76,0))",
             }}
           />
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#C9CEE6" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, color: "#C3CAD6" }}>
             <span>{footer}</span>
-            <span>AI receptionist · Voice · POS · Sound</span>
+            <span style={{ color: "#4DF3D0" }}>AI receptionist · Voice · POS · Sound</span>
           </div>
         </div>
       </div>

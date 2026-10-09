@@ -49,14 +49,14 @@ export function HelpSearch({ items }: { items: HelpIndexItem[] }) {
           aria-describedby={`${id}-count`}
         />
       </div>
-      <p id={`${id}-count`} className="hs-count mono" aria-live="polite">
+      <p id={`${id}-count`} className="hs-count" aria-live="polite">
         {active ? `${results.length} ${results.length === 1 ? "article" : "articles"} found` : ""}
       </p>
-      <ul id={`${id}-res`} className="hs-res glass" hidden={!active || results.length === 0}>
+      <ul id={`${id}-res`} className="hs-res panel" hidden={!active || results.length === 0}>
         {results.map((r) => (
           <li key={r.slug}>
             <Link href={`/help-center/${r.slug}`}>
-              <span className="mono hs-cat">{r.category}</span>
+              <span className="hs-cat">{r.category}</span>
               <strong>{r.title}</strong>
               <span>{r.description}</span>
             </Link>

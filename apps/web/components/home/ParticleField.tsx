@@ -9,5 +9,5 @@ export default function ParticleField() {
     if (!ref.current) return;
     return startField(ref.current);
   }, []);
-  return <canvas id="field" ref={ref} aria-hidden="true" className="field-on" />;
+  return <canvas id="field" ref={ref} aria-hidden="true" />;
 }

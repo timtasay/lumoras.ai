@@ -7,7 +7,7 @@ import { PRODUCTS } from "@/lib/site";
 export function StillStuck({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3" }) {
   const H = headingLevel;
   return (
-    <section className="stuck glass" aria-labelledby="stuck-h">
+    <section className="stuck panel" aria-labelledby="stuck-h">
       <div className="stuck-main">
         <H id="stuck-h" className="stuck-title">Still stuck?</H>
         <p>
@@ -22,7 +22,7 @@ export function StillStuck({ headingLevel = "h2" }: { headingLevel?: "h2" | "h3"
         </div>
       </div>
       <div className="stuck-side">
-        <p className="mono stuck-k">Product help centers</p>
+        <p className="stuck-k">Product help centers</p>
         <ul>
           <li>
             <a href={PRODUCTS.sonorch.helpCenter}>

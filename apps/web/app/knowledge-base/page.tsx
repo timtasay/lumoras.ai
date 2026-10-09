@@ -8,6 +8,7 @@ import { CtaBand } from "@/components/CtaBand";
 import { Icon } from "@/components/Icons";
 import { KB_TOPICS, formatDate, getGuides, topicTitle } from "@/lib/content";
 import { pageMeta } from "@/lib/seo";
+import { tone } from "@/lib/tones";
 
 export const metadata: Metadata = pageMeta({
   title: "Knowledge base: AI receptionists and voice AI",
@@ -36,17 +37,17 @@ export default function KnowledgeBasePage() {
           <EmptyState title="Guides are being written." text="The first knowledge-base guides will appear here shortly." />
         ) : (
           <>
-            <dl className="stats-strip glass">
+            <dl className="stats-strip panel">
               <div>
-                <dt className="mono">Guides</dt>
+                <dt>Guides</dt>
                 <dd>{guides.length}</dd>
               </div>
               <div>
-                <dt className="mono">Minutes of reading</dt>
+                <dt>Minutes of reading</dt>
                 <dd>{minutes}</dd>
               </div>
               <div>
-                <dt className="mono">Last updated</dt>
+                <dt>Last updated</dt>
                 <dd>
                   <time dateTime={lastUpdated}>{formatDate(lastUpdated)}</time>
                 </dd>
@@ -55,12 +56,12 @@ export default function KnowledgeBasePage() {
 
             {pillar ? (
               <section className="pg-sec" aria-labelledby="start-h">
-                <div className="sec-head">
+                <div className="pg-head">
                   <h2 id="start-h" className="sec-title">Start here</h2>
                 </div>
-                <article className="pillar glass">
+                <article className="pillar panel">
                   <div className="pillar-main">
-                    <p className="eyebrow mono">{topicTitle(pillar.topic)} · {pillar.readingMinutes} min read</p>
+                    <p className="eyebrow">{topicTitle(pillar.topic)} · {pillar.readingMinutes} min read</p>
                     <h3 className="pillar-title">
                       <Link href={`/knowledge-base/${pillar.slug}`}>{pillar.title}</Link>
                     </h3>
@@ -71,7 +72,7 @@ export default function KnowledgeBasePage() {
                   </div>
                   {pillar.keyPoints.length > 0 ? (
                     <div className="pillar-points">
-                      <p className="mono kp-title">Key points</p>
+                      <p className="kp-title">Key points</p>
                       <ul className="kp-list">
                         {pillar.keyPoints.map((k) => (
                           <li key={k}>
@@ -87,15 +88,15 @@ export default function KnowledgeBasePage() {
             ) : null}
 
             <section className="pg-sec" aria-labelledby="topics-h">
-              <div className="sec-head">
+              <div className="pg-head">
                 <h2 id="topics-h" className="sec-title">Browse by topic</h2>
               </div>
               <div className="topic-grid">
                 {KB_TOPICS.map((t, n) => {
                   const list = guides.filter((g) => g.topic === t.id);
                   return (
-                    <section key={t.id} className="topic glass" aria-labelledby={`t-${t.id}`} style={{ ["--tone" as string]: `var(--s${(n % 4) + 1})` }}>
-                      <p className="topic-n mono">{String(n + 1).padStart(2, "0")}</p>
+                    <section key={t.id} className="topic panel" aria-labelledby={`t-${t.id}`} style={{ ["--tone" as string]: tone(n) }}>
+                      <p className="topic-n">{String(n + 1).padStart(2, "0")}</p>
                       <h3 id={`t-${t.id}`} className="topic-title">{t.title}</h3>
                       <p className="topic-blurb">{t.blurb}</p>
                       {list.length > 0 ? (
@@ -104,13 +105,13 @@ export default function KnowledgeBasePage() {
                             <li key={g.slug}>
                               <Link href={`/knowledge-base/${g.slug}`}>
                                 <span>{g.title}</span>
-                                <span className="mins mono">{g.readingMinutes} min</span>
+                                <span className="mins">{g.readingMinutes} min</span>
                               </Link>
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="topic-soon mono">Guide coming soon</p>
+                        <p className="topic-soon">Guide coming soon</p>
                       )}
                     </section>
                   );
@@ -121,19 +122,19 @@ export default function KnowledgeBasePage() {
         )}
 
         <section className="pg-sec" aria-labelledby="more-help-h">
-          <div className="sec-head">
+          <div className="pg-head">
             <h2 id="more-help-h" className="sec-title">Need a quick answer instead?</h2>
           </div>
           <div className="link-cards">
-            <Link className="link-card glass" href="/help-center">
+            <Link className="link-card panel" href="/help-center">
               <Icon name="help" />
               <span><strong>Help center</strong><span>Setup steps and how-to articles for every product.</span></span>
             </Link>
-            <Link className="link-card glass" href="/faq">
+            <Link className="link-card panel" href="/faq">
               <Icon name="list" />
               <span><strong>FAQ</strong><span>Short answers about voice, POS, sound, pricing and data.</span></span>
             </Link>
-            <Link className="link-card glass" href="/insights">
+            <Link className="link-card panel" href="/insights">
               <Icon name="doc" />
               <span><strong>Insights</strong><span>Practical reads for owners and operators.</span></span>
             </Link>

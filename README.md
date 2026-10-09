@@ -10,8 +10,11 @@ Product family: [Sonorch](https://sonorch.ai) (salons),
 ## Website (apps/web)
 
 The production site lives in [`apps/web`](apps/web/README.md): Next.js 16, React 19,
-TypeScript, plain CSS, built from the approved Spectrum direction. Content (insights, knowledge
-base, help center, FAQ, About) is Markdown/JSON under `apps/web/content/`.
+TypeScript, plain CSS, built from the **A · Voice Core** direction (control-room dark and
+clean-room light themes, the live voice-orb console), keeping two things from C · Spectrum: the
+**Spectrum logo** and the **Spectrum particle field**, which sits behind the homepage and morphs
+into a new formation for each section. Content (insights, knowledge base, help center, FAQ,
+About) is Markdown/JSON under `apps/web/content/`.
 
 ```bash
 pnpm install

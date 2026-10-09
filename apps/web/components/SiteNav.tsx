@@ -120,9 +120,9 @@ function CompanyMenu({ latest }: { latest: ReactNode }) {
         Company
         <Icon name="chev" className="chev" />
       </button>
-      <div ref={panelRef} id={panelId} className="co-panel glass" hidden={!open} data-open={open ? "" : undefined}>
+      <div ref={panelRef} id={panelId} className="co-panel" hidden={!open} data-open={open ? "" : undefined}>
         <div className="co-col">
-          <p className="co-title mono">Company</p>
+          <p className="co-title">Company</p>
           <ul className="co-links">
             {COMPANY_LINKS.map((l) => (
               <li key={l.href}>
@@ -136,7 +136,7 @@ function CompanyMenu({ latest }: { latest: ReactNode }) {
         </div>
         <div className="co-latest">
           <div className="co-latest-head">
-            <p className="co-title mono">Latest insights</p>
+            <p className="co-title">Latest insights</p>
             <Link href="/insights" className="co-all" onClick={() => close()}>
               All insights <Icon name="arrow" />
             </Link>
@@ -190,7 +190,7 @@ export function SiteNav({ latest }: { latest: ReactNode }) {
       <div className="wrap nav-in">
         <Link className="brand" href="/" aria-label="Lumoras home">
           <BrandMark />
-          Lumoras
+          <span className="brand-t">Lumoras</span>
         </Link>
         <nav className="nav-main" aria-label="Main">
           <ul className="nav-links">
@@ -208,8 +208,9 @@ export function SiteNav({ latest }: { latest: ReactNode }) {
           <a className="nav-sign" href={SIGN_IN_URL}>
             Sign in
           </a>
-          <Link className="btn btn-primary btn-sm" href="/demo">
-            Book a demo
+          <Link className="btn btn-primary btn-sm nav-demo" href="/demo" aria-label="Book a demo">
+            <span className="l">Book a demo</span>
+            <span className="s" aria-hidden="true">Demo</span>
           </Link>
           <button
             ref={menuBtnRef}
@@ -224,7 +225,7 @@ export function SiteNav({ latest }: { latest: ReactNode }) {
           </button>
         </div>
       </div>
-      <nav className="menu-panel glass" id="menuPanel" aria-label="Mobile">
+      <nav className="menu-panel" id="menuPanel" aria-label="Mobile">
         {NAV_SECTIONS.map((s) => (
           <Link key={s.href} href={s.href} onClick={closeMenu}>
             {s.label}

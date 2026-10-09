@@ -9,6 +9,7 @@ import { StillStuck } from "@/components/StillStuck";
 import { Icon } from "@/components/Icons";
 import { HELP_CATEGORIES, categoryTitle, getHelpArticles } from "@/lib/content";
 import { pageMeta } from "@/lib/seo";
+import { tone } from "@/lib/tones";
 
 export const metadata: Metadata = pageMeta({
   title: "Help center: setup and how-to guides",
@@ -51,14 +52,14 @@ export default function HelpCenterPage() {
         ) : (
           <>
             <section className="pg-sec" aria-labelledby="pop-h">
-              <div className="sec-head">
+              <div className="pg-head">
                 <h2 id="pop-h" className="sec-title">Popular articles</h2>
               </div>
               <ul className="pop-grid">
                 {popular.map((a) => (
                   <li key={a.slug}>
-                    <Link className="pop glass" href={`/help-center/${a.slug}`}>
-                      <span className="mono pop-cat">{categoryTitle(a.category)}</span>
+                    <Link className="pop panel" href={`/help-center/${a.slug}`}>
+                      <span className="pop-cat">{categoryTitle(a.category)}</span>
                       <strong>{a.title}</strong>
                       <Icon name="arrow" />
                     </Link>
@@ -68,17 +69,17 @@ export default function HelpCenterPage() {
             </section>
 
             <section className="pg-sec" aria-labelledby="cat-h">
-              <div className="sec-head">
+              <div className="pg-head">
                 <h2 id="cat-h" className="sec-title">Browse by category</h2>
               </div>
               <div className="cat-grid">
                 {HELP_CATEGORIES.map((c, n) => {
                   const list = articles.filter((a) => a.category === c.id);
                   return (
-                    <section key={c.id} className="cat glass" id={c.id} aria-labelledby={`c-${c.id}`} style={{ ["--tone" as string]: `var(--s${(n % 4) + 1})` }}>
+                    <section key={c.id} className="cat panel" id={c.id} aria-labelledby={`c-${c.id}`} style={{ ["--tone" as string]: tone(n) }}>
                       <div className="cat-head">
                         <h3 id={`c-${c.id}`} className="cat-title">{c.title}</h3>
-                        <span className="cat-count mono">
+                        <span className="cat-count">
                           {list.length} {list.length === 1 ? "article" : "articles"}
                         </span>
                       </div>
@@ -92,7 +93,7 @@ export default function HelpCenterPage() {
                           ))}
                         </ul>
                       ) : (
-                        <p className="topic-soon mono">Articles coming soon</p>
+                        <p className="topic-soon">Articles coming soon</p>
                       )}
                     </section>
                   );
@@ -105,15 +106,15 @@ export default function HelpCenterPage() {
         <StillStuck />
 
         <section className="pg-sec" aria-labelledby="deeper-h">
-          <div className="sec-head">
+          <div className="pg-head">
             <h2 id="deeper-h" className="sec-title">Go deeper</h2>
           </div>
           <div className="link-cards">
-            <Link className="link-card glass" href="/knowledge-base">
+            <Link className="link-card panel" href="/knowledge-base">
               <Icon name="book" />
               <span><strong>Knowledge base</strong><span>In-depth guides to AI receptionists, voice AI and store audio.</span></span>
             </Link>
-            <Link className="link-card glass" href="/faq">
+            <Link className="link-card panel" href="/faq">
               <Icon name="list" />
               <span><strong>FAQ</strong><span>Short answers about pricing, setup, industries and data.</span></span>
             </Link>

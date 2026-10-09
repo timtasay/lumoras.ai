@@ -2,18 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Icon } from "./Icons";
+import { THEME_COLORS, THEME_KEY as KEY } from "@/lib/theme";
 
 type Mode = "light" | "dark" | "auto";
-const KEY = "lumoras-theme";
 const ORDER: Mode[] = ["light", "dark", "auto"];
 const LABELS: Record<Mode, { label: string; title: string; icon: "sun" | "moon" | "auto" }> = {
   light: { label: "Light", title: "Light theme", icon: "sun" },
   dark: { label: "Dark", title: "Dark theme", icon: "moon" },
   auto: { label: "Auto", title: "Auto: match system", icon: "auto" },
 };
-
-/** Inline script for <head>: applies the saved choice before first paint. */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${KEY}');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
 function readMode(): Mode {
   try {
@@ -30,6 +27,11 @@ function writeAttr(m: Mode) {
   const root = document.documentElement;
   if (m === "auto") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", m);
+  // browser chrome follows a forced choice; Auto restores each meta's own colour
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((el) => {
+    const own = (el.getAttribute("media") || "").includes("dark") ? THEME_COLORS.dark : THEME_COLORS.light;
+    el.setAttribute("content", m === "auto" ? own : THEME_COLORS[m]);
+  });
 }
 
 /* Tiny external store for the chosen mode (localStorage-backed). */

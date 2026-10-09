@@ -1,31 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Hanken_Grotesk, Martian_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
 import "./globals.css";
 import { IconSprite } from "@/components/Icons";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
-import { THEME_INIT_SCRIPT } from "@/components/ThemeControl";
+import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
 import { InsightCard } from "@/components/InsightCard";
 import { JsonLd } from "@/components/JsonLd";
 import { getInsights } from "@/lib/content";
 import { organizationLd, websiteLd } from "@/lib/seo";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
-const display = Bricolage_Grotesque({
+/* Voice Core type: Sora (display), Geist (body), Geist Mono (labels and data). Self-hosted by next/font. */
+const display = Sora({
   subsets: ["latin"],
-  axes: ["opsz", "wdth"],
-  variable: "--font-display",
+  weight: ["500", "600", "700"],
+  variable: "--font-sora",
   display: "swap",
 });
-const body = Hanken_Grotesk({
+const body = Geist({
   subsets: ["latin"],
-  variable: "--font-body",
+  weight: ["400", "500", "600"],
+  variable: "--font-geist",
   display: "swap",
 });
-const mono = Martian_Mono({
+const mono = Geist_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
-  variable: "--font-mono",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -48,8 +50,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F2F3F8" },
-    { media: "(prefers-color-scheme: dark)", color: "#04060F" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
   colorScheme: "dark light",
 };

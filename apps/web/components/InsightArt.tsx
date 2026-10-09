@@ -2,19 +2,20 @@ import type { ArtKind } from "@/lib/content";
 
 /**
  * Illustration for insight cards and article headers: a small UI vignette in
- * the Spectrum palette with two floating chips. Pure HTML/CSS/inline SVG, so
+ * the Voice Core palette with two floating chips. Pure HTML/CSS/inline SVG, so
  * it follows the light and dark tokens and costs no image requests.
+ * --tone is the vignette accent, --tone-2 the corner glow.
  */
 
-const TONE: Record<ArtKind, string> = {
-  call: "var(--s1)",
-  people: "var(--s2)",
-  checklist: "var(--ok)",
-  ticket: "var(--s3)",
-  calendar: "var(--s2)",
-  music: "var(--s3)",
-  chart: "var(--s1)",
-  zones: "var(--s4)",
+const TONE: Record<ArtKind, [string, string]> = {
+  call: ["var(--v-salon)", "var(--v-restaurant)"],
+  people: ["var(--v-dental)", "var(--v-salon)"],
+  checklist: ["var(--v-salon)", "var(--v-dental)"],
+  ticket: ["var(--v-restaurant)", "var(--v-home)"],
+  calendar: ["var(--v-dental)", "var(--v-salon)"],
+  music: ["var(--v-retail)", "var(--v-restaurant)"],
+  chart: ["var(--v-salon)", "var(--v-dental)"],
+  zones: ["var(--v-restaurant)", "var(--v-dental)"],
 };
 
 function Bars({ n, seed = 1 }: { n: number; seed?: number }) {
@@ -183,7 +184,7 @@ export function InsightArt({
   return (
     <div
       className={`ia ia-${size}${className ? ` ${className}` : ""}`}
-      style={{ ["--tone" as string]: TONE[kind] }}
+      style={{ ["--tone" as string]: TONE[kind][0], ["--tone-2" as string]: TONE[kind][1] }}
       aria-hidden="true"
       data-kind={kind}
     >

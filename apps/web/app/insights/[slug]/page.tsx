@@ -46,7 +46,7 @@ export default async function InsightPage({ params }: { params: Promise<Params> 
         <Breadcrumbs items={[{ name: "Insights", path: "/insights" }, { name: i.title, path }]} />
         <article className="art art-insight">
           <header className="art-head">
-            {i.tags.length > 0 ? <p className="eyebrow mono">{i.tags.map(tagLabel).join(" · ")}</p> : null}
+            {i.tags.length > 0 ? <p className="eyebrow">{i.tags.map(tagLabel).join(" · ")}</p> : null}
             <h1 className="art-title">{i.title}</h1>
             {i.description ? <p className="art-lede">{i.description}</p> : null}
             <p className="byline">
@@ -66,7 +66,7 @@ export default async function InsightPage({ params }: { params: Promise<Params> 
 
         {related.length > 0 ? (
           <section className="pg-sec" aria-labelledby="rel-h">
-            <div className="sec-head">
+            <div className="pg-head">
               <h2 id="rel-h" className="sec-title">Related insights</h2>
               <Link href="/insights" className="sec-link">
                 All insights <Icon name="arrow" />

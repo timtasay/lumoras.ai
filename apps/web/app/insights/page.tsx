@@ -35,9 +35,9 @@ export default function InsightsPage() {
         ) : (
           <>
             <section className="pg-sec" aria-labelledby="latest-h">
-              <div className="sec-head">
+              <div className="pg-head">
                 <h2 id="latest-h" className="sec-title">Latest</h2>
-                <p className="sec-meta mono">{all.length} {all.length === 1 ? "article" : "articles"}</p>
+                <p className="sec-meta">{all.length} {all.length === 1 ? "article" : "articles"}</p>
               </div>
               <div className="ins-featured">
                 {featured.map((i, n) => (
@@ -48,7 +48,7 @@ export default function InsightsPage() {
 
             {more.length > 0 ? (
               <section className="pg-sec" aria-labelledby="more-h">
-                <div className="sec-head">
+                <div className="pg-head">
                   <h2 id="more-h" className="sec-title">More insights</h2>
                 </div>
                 <div className="card-grid">
