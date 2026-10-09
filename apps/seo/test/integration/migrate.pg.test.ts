@@ -8,7 +8,7 @@
  */
 import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { appendFile, cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { appendFile, cp, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
@@ -38,6 +38,8 @@ async function reachable(url: string | undefined): Promise<string | null> {
 }
 
 const skipReason = await reachable(ADMIN_URL);
+/** The real migrations, in order (0001_bootstrap.sql, 0002_auth.sql, …). */
+const REAL = (await readdir(DEFAULT_MIGRATIONS_DIR)).filter((f) => f.endsWith(".sql")).sort();
 
 const suffix = () => randomBytes(4).toString("hex");
 const created: { dbs: string[]; roles: string[]; dirs: string[] } = { dbs: [], roles: [], dirs: [] };
@@ -107,12 +109,12 @@ describe("migrations runner (PostgreSQL)", { skip: skipReason ?? false }, () => 
   it("applies the real migrations as the owner and records filename, checksum and applied_at", async () => {
     const t = await freshDatabase();
     const r = await runMigrations({ connectionString: t.ownerUrl, dir: DEFAULT_MIGRATIONS_DIR });
-    assert.deepEqual(r.applied, ["0001_bootstrap.sql"]);
+    assert.deepEqual(r.applied, REAL);
     const rows = await query<{ filename: string; checksum: string; applied_by: string; applied_at: Date }>(
       t.ownerUrl,
       "SELECT filename, checksum, applied_by, applied_at FROM schema_migrations ORDER BY version",
     );
-    assert.equal(rows.length, 1);
+    assert.equal(rows.length, REAL.length);
     assert.equal(rows[0].filename, "0001_bootstrap.sql");
     assert.match(rows[0].checksum, /^[0-9a-f]{64}$/);
     assert.equal(rows[0].applied_by, t.owner);
@@ -124,9 +126,9 @@ describe("migrations runner (PostgreSQL)", { skip: skipReason ?? false }, () => 
     await runMigrations({ connectionString: t.ownerUrl, dir: DEFAULT_MIGRATIONS_DIR });
     const again = await runMigrations({ connectionString: t.ownerUrl, dir: DEFAULT_MIGRATIONS_DIR });
     assert.deepEqual(again.applied, []);
-    assert.equal(again.upToDate, 1);
+    assert.equal(again.upToDate, REAL.length);
     const [{ n }] = await query<{ n: string }>(t.ownerUrl, "SELECT count(*) AS n FROM schema_migrations");
-    assert.equal(Number(n), 1);
+    assert.equal(Number(n), REAL.length);
   });
 
   it("bootstrap leaves the app role unable to create objects", async () => {
@@ -138,12 +140,12 @@ describe("migrations runner (PostgreSQL)", { skip: skipReason ?? false }, () => 
   it("applies files in numeric order", async () => {
     const t = await freshDatabase();
     const dir = await tempMigrations({
-      "0010_ten.sql": "INSERT INTO seq_probe VALUES (10);",
-      "0002_probe.sql": "CREATE TABLE seq_probe (n int, at timestamptz DEFAULT clock_timestamp());",
-      "0003_three.sql": "INSERT INTO seq_probe VALUES (3);",
+      "0910_ten.sql": "INSERT INTO seq_probe VALUES (10);",
+      "0902_probe.sql": "CREATE TABLE seq_probe (n int, at timestamptz DEFAULT clock_timestamp());",
+      "0903_three.sql": "INSERT INTO seq_probe VALUES (3);",
     });
     const r = await runMigrations({ connectionString: t.ownerUrl, dir });
-    assert.deepEqual(r.applied, ["0001_bootstrap.sql", "0002_probe.sql", "0003_three.sql", "0010_ten.sql"]);
+    assert.deepEqual(r.applied, [...REAL, "0902_probe.sql", "0903_three.sql", "0910_ten.sql"]);
     const rows = await query<{ n: number }>(t.ownerUrl, "SELECT n FROM seq_probe ORDER BY at");
     assert.deepEqual(rows.map((x) => x.n), [3, 10]);
   });
@@ -151,35 +153,35 @@ describe("migrations runner (PostgreSQL)", { skip: skipReason ?? false }, () => 
   it("rolls back a failing file completely and names it; earlier files stay applied", async () => {
     const t = await freshDatabase();
     const dir = await tempMigrations({
-      "0002_half.sql": "CREATE TABLE half_done (id int);\nSELECT this_is_not_sql;",
-      "0003_never.sql": "CREATE TABLE never_runs (id int);",
+      "0902_half.sql": "CREATE TABLE half_done (id int);\nSELECT this_is_not_sql;",
+      "0903_never.sql": "CREATE TABLE never_runs (id int);",
     });
     await assert.rejects(
       runMigrations({ connectionString: t.ownerUrl, dir }),
-      (e: unknown) => e instanceof MigrationError && e.filename === "0002_half.sql" && /rolled back/.test(e.message),
+      (e: unknown) => e instanceof MigrationError && e.filename === "0902_half.sql" && /rolled back/.test(e.message),
     );
     const tables = await query<{ t: string }>(t.ownerUrl, "SELECT to_regclass('half_done')::text AS t UNION ALL SELECT to_regclass('never_runs')::text");
     assert.deepEqual(tables.map((x) => x.t), [null, null]);
-    const applied = await query<{ filename: string }>(t.ownerUrl, "SELECT filename FROM schema_migrations");
-    assert.deepEqual(applied.map((x) => x.filename), ["0001_bootstrap.sql"]);
+    const applied = await query<{ filename: string }>(t.ownerUrl, "SELECT filename FROM schema_migrations ORDER BY version");
+    assert.deepEqual(applied.map((x) => x.filename), REAL);
   });
 
   it("refuses to continue when an applied file's checksum changed, naming the file", async () => {
     const t = await freshDatabase();
-    const dir = await tempMigrations({ "0002_table.sql": "CREATE TABLE guarded (id int);" });
+    const dir = await tempMigrations({ "0902_table.sql": "CREATE TABLE guarded (id int);" });
     await runMigrations({ connectionString: t.ownerUrl, dir });
     // edit an applied file and add a new pending one
     const [{ checksum: recorded }] = await query<{ checksum: string }>(
       t.ownerUrl,
-      "SELECT checksum FROM schema_migrations WHERE filename = '0002_table.sql'",
+      "SELECT checksum FROM schema_migrations WHERE filename = '0902_table.sql'",
     );
-    await appendFile(path.join(dir, "0002_table.sql"), "\n-- sneaky edit\n");
-    await writeFile(path.join(dir, "0003_pending.sql"), "CREATE TABLE must_not_exist (id int);");
-    const onDisk = checksumOf(await readFile(path.join(dir, "0002_table.sql"), "utf8"));
+    await appendFile(path.join(dir, "0902_table.sql"), "\n-- sneaky edit\n");
+    await writeFile(path.join(dir, "0903_pending.sql"), "CREATE TABLE must_not_exist (id int);");
+    const onDisk = checksumOf(await readFile(path.join(dir, "0902_table.sql"), "utf8"));
     await assert.rejects(
       runMigrations({ connectionString: t.ownerUrl, dir }),
-      (e: unknown) => e instanceof MigrationChecksumError && e.filename === "0002_table.sql",
-      `${path.join(dir, "0002_table.sql")} was edited after it was applied (recorded checksum ${recorded.slice(0, 12)}…, ` +
+      (e: unknown) => e instanceof MigrationChecksumError && e.filename === "0902_table.sql",
+      `${path.join(dir, "0902_table.sql")} was edited after it was applied (recorded checksum ${recorded.slice(0, 12)}…, ` +
         `on disk ${onDisk.slice(0, 12)}…): the runner must refuse to continue`,
     );
     const [{ t: pending }] = await query<{ t: string | null }>(t.ownerUrl, "SELECT to_regclass('must_not_exist')::text AS t");
@@ -189,7 +191,7 @@ describe("migrations runner (PostgreSQL)", { skip: skipReason ?? false }, () => 
   it("serialises concurrent runners with the advisory lock: each file applies once", async () => {
     const t = await freshDatabase();
     const dir = await tempMigrations({
-      "0002_slow.sql": "SELECT pg_sleep(0.4); CREATE TABLE slow_once (id int);",
+      "0902_slow.sql": "SELECT pg_sleep(0.4); CREATE TABLE slow_once (id int);",
     });
     const results = await Promise.all([
       runMigrations({ connectionString: t.ownerUrl, dir }),
@@ -197,8 +199,8 @@ describe("migrations runner (PostgreSQL)", { skip: skipReason ?? false }, () => 
       runMigrations({ connectionString: t.ownerUrl, dir }),
     ]);
     const all = results.flatMap((r) => r.applied).sort();
-    assert.deepEqual(all, ["0001_bootstrap.sql", "0002_slow.sql"]);
+    assert.deepEqual(all, [...REAL, "0902_slow.sql"].sort());
     const [{ n }] = await query<{ n: string }>(t.ownerUrl, "SELECT count(*) AS n FROM schema_migrations");
-    assert.equal(Number(n), 2);
+    assert.equal(Number(n), REAL.length + 1);
   });
 });

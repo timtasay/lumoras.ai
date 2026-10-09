@@ -110,7 +110,7 @@ test.describe("reduced motion", () => {
     await expect(page.locator(".morph-card")).toHaveCount(3);
     // the particle field draws a still frame
     await page.locator("#signin").scrollIntoViewIfNeeded();
-    await expect(page.locator(".signin canvas")).toHaveCount(1);
+    await expect(page.locator("#signin .stage canvas")).toHaveCount(1);
     expect(await noHorizontalOverflow(page)).toBeLessThanOrEqual(0);
     expect(errors).toEqual([]);
   });

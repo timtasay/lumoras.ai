@@ -15,10 +15,29 @@ import {
 } from "@lumoras/ui-tokens/theme";
 import { BrandMark, Icon } from "@/components/Icons";
 import { CommandPaletteProvider, useCommandPalette, type Command } from "@/components/ui/CommandPalette";
-import { ToastProvider, useToast } from "@/components/ui/Toast";
-import { DESIGN_NAV, NAV, PRODUCT_NAME, type NavItem } from "./nav";
+import { Popover } from "@/components/ui/Popover";
+import { useToast } from "@/components/ui/Toast";
+import { buildNav, PRODUCT_NAME, type NavItem, type ShellWorkspace } from "./nav";
 
-const SITES = ["sonorch.ai", "seasonx.ai", "lumoras.ai"];
+export type ShellNotification = { id: string; title: string; body: string; href: string | null; read: boolean; at: string; workspace: string };
+
+export type ShellData = {
+  user: { name: string; email: string } | null;
+  platformAdmin: boolean;
+  /** Set while a platform admin is impersonating the signed-in user. */
+  impersonation: { adminEmail: string } | null;
+  workspaces: ShellWorkspace[];
+  notifications: ShellNotification[];
+  designEnabled: boolean;
+  /** Sample-data mode (the /design route): actions are inert. */
+  demo?: boolean;
+};
+
+export type ShellActions = {
+  signOut?: () => Promise<void>;
+  stopImpersonating?: () => Promise<void>;
+  markNotificationsRead?: () => Promise<void>;
+};
 
 function setTheme(m: ThemeMode) {
   const before = resolveMode((document.documentElement.getAttribute("data-theme") as ThemeMode) || "auto");
@@ -28,6 +47,19 @@ function setTheme(m: ThemeMode) {
     writeThemeAttr(m);
     dispatchThemeChange({ mode: m, resolved: resolveMode(m) });
   });
+}
+
+const initials = (s: string) =>
+  s
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((x) => x[0]!.toUpperCase())
+    .join("") || "?";
+
+function isActive(item: NavItem, path: string) {
+  if (!item.href) return false;
+  return path === item.href || (!!item.prefix && path.startsWith(item.href + "/"));
 }
 
 function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate: () => void }) {
@@ -50,7 +82,151 @@ function NavLink({ item, active, onNavigate }: { item: NavItem; active: boolean;
   );
 }
 
-function TopBar({ title, onMenu, menuOpen }: { title: string; onMenu: () => void; menuOpen: boolean }) {
+function WorkspaceSwitcher({ data, current }: { data: ShellData; current: ShellWorkspace | null }) {
+  const label = current ? current.name : data.platformAdmin ? "Agency" : "No workspace";
+  const sub = current ? `${current.sites.length} site${current.sites.length === 1 ? "" : "s"} · ${current.role}` : data.platformAdmin ? "Every workspace" : "Create one to start";
+  return (
+    <Popover
+      label={`Workspace: ${label}. Switch workspace`}
+      className="ws-pop"
+      buttonClassName="ws-switch"
+      button={
+        <>
+          <span className="ws-mark" aria-hidden="true">
+            {label[0]?.toUpperCase()}
+          </span>
+          <span className="ws-text">
+            <strong>{label}</strong>
+            <span>{sub}</span>
+          </span>
+          <Icon name="chev" />
+        </>
+      }
+    >
+      {(close) => (
+        <div className="menu">
+          <p className="label menu-label">Workspaces</p>
+          {data.workspaces.length ? (
+            data.workspaces.map((w) => (
+              <Link key={w.id} href={`/w/${w.slug}`} className="menu-item" aria-current={w.id === current?.id ? "true" : undefined} onClick={close}>
+                <span className="ws-mark sm" aria-hidden="true">
+                  {w.name[0]?.toUpperCase()}
+                </span>
+                <span className="menu-text">
+                  {w.name}
+                  <small>
+                    {w.sites.length} site{w.sites.length === 1 ? "" : "s"} · {w.role}
+                  </small>
+                </span>
+                {w.id === current?.id ? <Icon name="check" /> : null}
+              </Link>
+            ))
+          ) : (
+            <p className="menu-empty">You are not a member of any workspace yet.</p>
+          )}
+          <div className="menu-sep" />
+          {data.platformAdmin ? (
+            <Link href="/agency" className="menu-item" onClick={close}>
+              <Icon name="building" />
+              <span className="menu-text">Agency home</span>
+            </Link>
+          ) : null}
+          <Link href="/onboarding" className="menu-item" onClick={close}>
+            <Icon name="plus" />
+            <span className="menu-text">New workspace</span>
+          </Link>
+        </div>
+      )}
+    </Popover>
+  );
+}
+
+function Notifications({ items, onOpen }: { items: ShellNotification[]; onOpen?: () => void }) {
+  const unread = items.filter((n) => !n.read).length;
+  return (
+    <Popover
+      label={unread ? `Notifications, ${unread} unread` : "Notifications"}
+      align="end"
+      className="bell-pop"
+      buttonClassName="icon-btn bell"
+      onOpen={unread ? onOpen : undefined}
+      button={
+        <>
+          <Icon name="bell" />
+          {unread ? (
+            <span className="bell-n" aria-hidden="true">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          ) : null}
+        </>
+      }
+    >
+      {(close) => (
+        <div className="menu notes">
+          <p className="label menu-label">Notifications</p>
+          {items.length ? (
+            items.map((n) =>
+              n.href ? (
+                <Link key={n.id} href={n.href} className="note" data-unread={n.read ? undefined : ""} onClick={close}>
+                  <span className="note-title">{n.title}</span>
+                  {n.body ? <span className="note-body">{n.body}</span> : null}
+                  <span className="note-meta mono">
+                    {n.workspace} · {n.at}
+                  </span>
+                </Link>
+              ) : (
+                <div key={n.id} className="note" data-unread={n.read ? undefined : ""}>
+                  <span className="note-title">{n.title}</span>
+                  {n.body ? <span className="note-body">{n.body}</span> : null}
+                  <span className="note-meta mono">
+                    {n.workspace} · {n.at}
+                  </span>
+                </div>
+              ),
+            )
+          ) : (
+            <p className="menu-empty">Nothing new. Crawls and new members show up here.</p>
+          )}
+        </div>
+      )}
+    </Popover>
+  );
+}
+
+function UserMenu({ user, onSignOut }: { user: NonNullable<ShellData["user"]>; onSignOut?: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Popover
+      label={`Account: ${user.email}`}
+      align="end"
+      className="user-pop"
+      buttonClassName="avatar"
+      button={<span aria-hidden="true">{initials(user.name || user.email)}</span>}
+    >
+      <div className="menu">
+        <div className="menu-who">
+          <strong>{user.name || user.email}</strong>
+          <span>{user.email}</span>
+        </div>
+        <div className="menu-sep" />
+        <button
+          type="button"
+          className="menu-item"
+          disabled={busy || !onSignOut}
+          onClick={async () => {
+            setBusy(true);
+            await onSignOut?.();
+          }}
+        >
+          <Icon name="logout" />
+          <span className="menu-text">{busy ? "Signing out…" : "Sign out"}</span>
+        </button>
+      </div>
+    </Popover>
+  );
+}
+
+function TopBar({ title, onMenu, menuOpen, data, actions }: { title: string; onMenu: () => void; menuOpen: boolean; data: ShellData; actions: ShellActions }) {
   const palette = useCommandPalette();
   return (
     <header className="top">
@@ -66,15 +242,39 @@ function TopBar({ title, onMenu, menuOpen }: { title: string; onMenu: () => void
           <kbd>K</kbd>
         </span>
       </button>
+      {data.user ? <Notifications items={data.notifications} onOpen={actions.markNotificationsRead} /> : null}
       <ThemeControl renderIcon={(n) => <Icon name={n} />} />
-      <span className="avatar" aria-label="Signed in as Lumoras staff (placeholder)" role="img">
-        LS
-      </span>
+      {data.user ? <UserMenu user={data.user} onSignOut={actions.signOut} /> : null}
     </header>
   );
 }
 
-function Shell({ children, designEnabled }: { children: ReactNode; designEnabled: boolean }) {
+function ImpersonationBanner({ data, actions }: { data: ShellData; actions: ShellActions }) {
+  const [busy, setBusy] = useState(false);
+  if (!data.impersonation || !data.user) return null;
+  return (
+    <div className="imp-banner" role="status">
+      <Icon name="eye" />
+      <p>
+        <strong>Viewing as {data.user.email}.</strong> You are {data.impersonation.adminEmail}, impersonating. Everything you do is recorded in the
+        audit log under both names.
+      </p>
+      <button
+        type="button"
+        className="btn btn-sm imp-stop"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          await actions.stopImpersonating?.();
+        }}
+      >
+        <span className="btn-label">{busy ? "Stopping…" : "Stop impersonating"}</span>
+      </button>
+    </div>
+  );
+}
+
+function Shell({ children, data, actions }: { children: ReactNode; data: ShellData; actions: ShellActions }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [lastPath, setLastPath] = useState(pathname);
@@ -89,11 +289,15 @@ function Shell({ children, designEnabled }: { children: ReactNode; designEnabled
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  const all = [...NAV.flatMap((g) => g.items), DESIGN_NAV];
-  const title = all.find((i) => i.href === pathname)?.label ?? PRODUCT_NAME;
+  const slug = /^\/w\/([^/]+)/.exec(pathname)?.[1];
+  const current = data.workspaces.find((w) => w.slug === slug) ?? null;
+  const nav = buildNav(current, { platformAdmin: data.platformAdmin, designEnabled: data.designEnabled });
+  const flat = nav.flatMap((g) => g.items);
+  const activeItem = flat.filter((i) => isActive(i, pathname)).sort((a, b) => (b.href?.length ?? 0) - (a.href?.length ?? 0))[0];
+  const title = activeItem?.label ?? current?.name ?? PRODUCT_NAME;
 
   return (
-    <div className="app" data-menu={open ? "open" : undefined}>
+    <div className="app" data-menu={open ? "open" : undefined} data-impersonating={data.impersonation ? "" : undefined}>
       <aside id="side" className="side" aria-label="Sidebar">
         <Link href="/" className="side-brand">
           <BrandMark size={28} />
@@ -102,47 +306,31 @@ function Shell({ children, designEnabled }: { children: ReactNode; designEnabled
             <small>working name</small>
           </span>
         </Link>
-        <button type="button" className="ws-switch" aria-label="Workspace: Lumoras, 3 sites (switching arrives in Phase 1)">
-          <span className="ws-mark" aria-hidden="true">L</span>
-          <span className="ws-text">
-            <strong>Lumoras</strong>
-            <span>{SITES.length} sites</span>
-          </span>
-          <Icon name="chev" />
-        </button>
+        <WorkspaceSwitcher data={data} current={current} />
         <nav className="side-nav" aria-label="Main navigation">
-          {NAV.map((g) => (
+          {nav.map((g) => (
             <div key={g.group} className="side-group">
               <p className="label side-label">{g.group}</p>
               <ul>
                 {g.items.map((it) => (
                   <li key={it.key}>
-                    <NavLink item={it} active={pathname === it.href} onNavigate={() => setOpen(false)} />
+                    <NavLink item={it} active={activeItem?.key === it.key} onNavigate={() => setOpen(false)} />
                   </li>
                 ))}
               </ul>
             </div>
           ))}
-          {designEnabled ? (
-            <div className="side-group">
-              <p className="label side-label">Build</p>
-              <ul>
-                <li>
-                  <NavLink item={DESIGN_NAV} active={pathname === "/design"} onNavigate={() => setOpen(false)} />
-                </li>
-              </ul>
-            </div>
-          ) : null}
         </nav>
         <div className="side-foot">
           <span className="side-env">
-            <span className="light-dot" aria-hidden="true" /> Phase 0 · foundations
+            <span className="light-dot" aria-hidden="true" /> Phase 1 · tenancy
           </span>
         </div>
       </aside>
       <button type="button" className="side-scrim" aria-hidden="true" tabIndex={-1} onClick={() => setOpen(false)} />
       <div className="main-col">
-        <TopBar title={title} onMenu={() => setOpen((o) => !o)} menuOpen={open} />
+        <ImpersonationBanner data={data} actions={actions} />
+        <TopBar title={title} onMenu={() => setOpen((o) => !o)} menuOpen={open} data={data} actions={actions} />
         <main id="main" tabIndex={-1} className="main">
           {children}
         </main>
@@ -151,40 +339,53 @@ function Shell({ children, designEnabled }: { children: ReactNode; designEnabled
   );
 }
 
-function CommandsAndShell({ children, designEnabled }: { children: ReactNode; designEnabled: boolean }) {
+function CommandsAndShell({ children, data, actions }: { children: ReactNode; data: ShellData; actions: ShellActions }) {
   const router = useRouter();
   const toast = useToast();
   const commands = useMemo<Command[]>(() => {
-    const soon = (what: string, phase: number) => () =>
-      toast.push({ tone: "info", title: `${what} arrives in Phase ${phase}`, body: "Phase 0 is the foundations and the design system." });
-    const cmds: Command[] = [
-      ...SITES.map((s) => ({ id: `site-${s}`, label: s, group: "Sites", icon: "globe" as const, hint: "Open site dashboard", run: soon("Site dashboards", 4) })),
-      { id: "go-home", label: "Overview", group: "Pages", icon: "home", run: () => router.push("/") },
-      ...NAV.flatMap((g) => g.items)
-        .filter((i) => i.phase)
-        .map((i) => ({ id: `go-${i.key}`, label: i.label, group: "Pages", icon: i.icon, hint: `Phase ${i.phase}`, run: soon(i.label, i.phase!) })),
-      { id: "act-run", label: "Start a pipeline run", group: "Actions", icon: "bolt", hint: "Preview", run: () => router.push("/design#pipeline") },
-      { id: "act-site", label: "Add a site", group: "Actions", icon: "plus", run: soon("Onboarding", 1) },
+    const go = (href: string) => () => (data.demo ? toast.push({ tone: "info", title: "Sample data", body: "The design page does not navigate." }) : router.push(href));
+    const cmds: Command[] = [];
+    for (const w of data.workspaces) {
+      cmds.push({ id: `ws-${w.id}`, label: w.name, group: "Workspaces", icon: "building", hint: `${w.sites.length} sites · ${w.role}`, keywords: w.slug, run: go(`/w/${w.slug}`) });
+    }
+    for (const w of data.workspaces) {
+      for (const s of w.sites) {
+        cmds.push({ id: `site-${s.id}`, label: s.domain, group: "Sites", icon: "globe", hint: w.name, keywords: `${s.name} ${w.name}`, run: go(`/w/${w.slug}/sites/${s.id}`) });
+      }
+    }
+    for (const w of data.workspaces) {
+      cmds.push({ id: `members-${w.id}`, label: `Members and roles · ${w.name}`, group: "Pages", icon: "users", run: go(`/w/${w.slug}/settings`) });
+      cmds.push({ id: `audit-${w.id}`, label: `Audit log · ${w.name}`, group: "Pages", icon: "history", run: go(`/w/${w.slug}/audit`) });
+      if (w.role !== "viewer") cmds.push({ id: `add-${w.id}`, label: `Add a site to ${w.name}`, group: "Actions", icon: "plus", run: go(`/w/${w.slug}/sites/new`) });
+    }
+    if (data.platformAdmin) {
+      cmds.push({ id: "agency", label: "Agency home", group: "Pages", icon: "building", keywords: "staff all workspaces", run: go("/agency") });
+      cmds.push({ id: "platform-audit", label: "Platform audit log", group: "Pages", icon: "shield", run: go("/agency/audit") });
+    }
+    cmds.push({ id: "new-ws", label: "New workspace", group: "Actions", icon: "plus", keywords: "create client onboarding", run: go("/onboarding") });
+    if (data.designEnabled) cmds.push({ id: "go-design", label: "Design system", group: "Pages", icon: "swatch", run: () => router.push("/design") });
+    cmds.push(
       { id: "theme-light", label: "Theme: Light", group: "Preferences", icon: "sun", keywords: "appearance clean room", run: () => setTheme("light") },
       { id: "theme-dark", label: "Theme: Dark", group: "Preferences", icon: "moon", keywords: "appearance control room", run: () => setTheme("dark") },
       { id: "theme-auto", label: "Theme: Auto (match system)", group: "Preferences", icon: "auto", keywords: "appearance system", run: () => setTheme("auto") },
-    ];
-    if (designEnabled) cmds.splice(SITES.length + 1, 0, { id: "go-design", label: "Design system", group: "Pages", icon: "swatch", run: () => router.push("/design") });
+    );
     return cmds;
-  }, [router, toast, designEnabled]);
+  }, [router, toast, data]);
 
   return (
     <CommandPaletteProvider commands={commands}>
-      <Shell designEnabled={designEnabled}>{children}</Shell>
+      <Shell data={data} actions={actions}>
+        {children}
+      </Shell>
     </CommandPaletteProvider>
   );
 }
 
-/** App frame: sidebar navigation (drawer on phones), top bar with ⌘K and the theme control, toasts. */
-export function AppShell({ children, designEnabled }: { children: ReactNode; designEnabled: boolean }) {
+/** App frame: sidebar (drawer on phones), workspace switcher, top bar with ⌘K, notifications, theme and account. */
+export function AppShell({ children, data, actions = {} }: { children: ReactNode; data: ShellData; actions?: ShellActions }) {
   return (
-    <ToastProvider>
-      <CommandsAndShell designEnabled={designEnabled}>{children}</CommandsAndShell>
-    </ToastProvider>
+    <CommandsAndShell data={data} actions={actions}>
+      {children}
+    </CommandsAndShell>
   );
 }

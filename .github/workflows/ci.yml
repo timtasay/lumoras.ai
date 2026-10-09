@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
-      # throwaway PostgreSQL 16 for the migrations runner integration test
+      # throwaway PostgreSQL 16: migrations runner, RLS isolation, Better Auth, seed and audit tests
       postgres:
         image: postgres:16
         env:
@@ -46,16 +46,35 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # the integration tests create databases with deploy/postgres/10-seo-database.sh, which uses psql
+      - run: psql --version
       - run: pnpm typecheck
       - run: pnpm lint
+      # unit + integration (the integration suites fail loudly here rather than skip: TEST_DATABASE_URL is set)
       - run: pnpm test
       - run: pnpm build
 
   e2e:
-    name: End-to-end smoke (Playwright)
+    name: End-to-end (Playwright)
     needs: check
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
+    services:
+      # e2e/serve.ts creates a fresh database here, seeds it and runs the production build against it
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      SCREENSHOT_DIR: ${{ github.workspace }}/screenshots
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -67,8 +86,17 @@ jobs:
       # the browser matching the pinned @playwright/test
       - run: pnpm --filter seo exec playwright install --with-deps chromium
       - run: pnpm build
-      # apps/seo: /design in both themes at 375 and 1440, reduced motion, shell; apps/web: homepage smoke
+      - run: mkdir -p "$SCREENSHOT_DIR"
+      # apps/seo: sign-in via captured magic link, onboarding against a fake site, invitations,
+      # viewer limits, impersonation in the audit log, every screen in both themes at 375 and 1440,
+      # reduced motion, /design; apps/web: homepage smoke
       - run: pnpm test:e2e
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-screenshots
+          path: screenshots
+          retention-days: 14
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

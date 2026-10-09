@@ -13,6 +13,7 @@ import { RevealGroup } from "@/components/ui/Reveal";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
 import { Badge, Chip, StatusLight } from "@/components/ui/Status";
 import { Tabs } from "@/components/ui/Tabs";
+import { SiteCard, type SiteCardData } from "@/components/sites/SiteCard";
 import { useToast } from "@/components/ui/Toast";
 
 export function Buttons() {
@@ -144,37 +145,17 @@ export function Kpis({ replay }: { replay: number }) {
 }
 
 export function Cards({ replay }: { replay: number }) {
-  const sites = [
-    { d: "sonorch.ai", ind: "Salons", run: 14, state: "ok" as const, pub: 6 },
-    { d: "seasonx.ai", ind: "Restaurants", run: 6, state: "warn" as const, pub: 3 },
-    { d: "lumoras.ai", ind: "Company", run: 0, state: "error" as const, pub: 0 },
-    { d: "kitchenspot.ai", ind: "Kitchens", run: 21, state: "ok" as const, pub: 4 },
+  // the real site card (components/sites/SiteCard), with sample numbers
+  const sites: SiteCardData[] = [
+    { id: "d1", domain: "sonorch.ai", name: "Sonorch", industry: "Salons", routes: 214, authors: 2, brandFilled: 5, lastCrawl: "2 min ago", crawlStatus: "ok", failingConnections: 0 },
+    { id: "d2", domain: "seasonx.ai", name: "SeasonX", industry: "Restaurants", routes: 96, authors: 1, brandFilled: 3, lastCrawl: "Yesterday", crawlStatus: "partial", failingConnections: 0 },
+    { id: "d3", domain: "lumoras.ai", name: "Lumoras", industry: "Company", routes: 41, authors: 0, brandFilled: 4, lastCrawl: "3 h ago", crawlStatus: "ok", failingConnections: 1 },
+    { id: "d4", domain: "kitchenspot.ai", name: "KitchenSpot", industry: "Restaurant discovery", routes: 0, authors: 0, brandFilled: 0, lastCrawl: null, crawlStatus: null, failingConnections: 0 },
   ];
   return (
     <RevealGroup className="site-grid" replay={replay}>
       {sites.map((s) => (
-        <article key={s.d} className="panel site-card">
-          <header>
-            <span className="site-fav" aria-hidden="true">{s.d[0].toUpperCase()}</span>
-            <div>
-              <h3>{s.d}</h3>
-              <p className="muted small">{s.ind}</p>
-            </div>
-          </header>
-          <dl className="site-stats">
-            <div>
-              <dt className="label">Runway</dt>
-              <dd data-state={s.state}>{s.run === 0 ? "Empty" : `${s.run} days`}</dd>
-            </div>
-            <div>
-              <dt className="label">Published</dt>
-              <dd>{s.pub} this month</dd>
-            </div>
-          </dl>
-          <StatusLight state={s.state === "ok" ? "ok" : s.state === "warn" ? "warn" : "error"}>
-            {s.state === "ok" ? "On schedule" : s.state === "warn" ? "Runway below threshold" : "Queue empty"}
-          </StatusLight>
-        </article>
+        <SiteCard key={s.id} site={s} />
       ))}
     </RevealGroup>
   );

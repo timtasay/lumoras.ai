@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { EnvError, isDesignRouteEnabled, readMigrateEnv, readWorkerEnv } from "../../lib/env.ts";
+import { EnvError, isDesignRouteEnabled, readMigrateEnv, readWebEnv, readWorkerEnv } from "../../lib/env.ts";
 import { redactUrl } from "../../lib/log.ts";
 
 const OWNER = "postgres://seo_owner:o-secret@db:5432/seo";
@@ -53,5 +53,59 @@ describe("isDesignRouteEnabled", () => {
 describe("redactUrl", () => {
   it("hides the password", () => {
     assert.equal(redactUrl(OWNER), "postgres://seo_owner:***@db:5432/seo");
+  });
+});
+
+describe("readWebEnv", () => {
+  const PROD = {
+    NODE_ENV: "production",
+    DATABASE_URL: APP,
+    BETTER_AUTH_URL: "https://growth.lumoras.ai",
+    BETTER_AUTH_SECRET: "s".repeat(40),
+    RESEND_API_KEY: "re_x",
+    EMAIL_FROM: "growth@lumoras.ai",
+  };
+  it("accepts a complete production configuration; Google stays off without its keys", () => {
+    const e = readWebEnv(PROD);
+    assert.equal(e.baseUrl, "https://growth.lumoras.ai");
+    assert.equal(e.secure, true);
+    assert.equal(e.google, null);
+    assert.equal(e.email?.from, "growth@lumoras.ai");
+  });
+  it("requires the auth URL, a long secret and email in production", () => {
+    assert.throws(
+      () => readWebEnv({ NODE_ENV: "production", DATABASE_URL: APP }),
+      (e: unknown) => e instanceof EnvError && e.problems.some((p) => p.includes("BETTER_AUTH_URL")) && e.problems.some((p) => p.includes("BETTER_AUTH_SECRET")) && e.problems.some((p) => p.includes("RESEND_API_KEY")),
+    );
+    assert.throws(() => readWebEnv({ ...PROD, BETTER_AUTH_SECRET: "short" }), /at least 32/);
+    assert.throws(() => readWebEnv({ ...PROD, BETTER_AUTH_URL: "http://growth.lumoras.ai" }), /must use https/);
+  });
+  it("Google needs both halves", () => {
+    assert.throws(() => readWebEnv({ ...PROD, GOOGLE_CLIENT_ID: "id" }), /must be set together/);
+    assert.deepEqual(readWebEnv({ ...PROD, GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "sec" }).google, { clientId: "id", clientSecret: "sec" });
+  });
+  it("test-only knobs are refused next to a real https origin", () => {
+    for (const [k, v] of [["EMAIL_OUTBOX_DIR", "/tmp/x"], ["CRAWLER_TEST_ORIGINS", "a.test=http://127.0.0.1:4000"], ["RATE_LIMIT_SCALE", "50"]]) {
+      assert.throws(() => readWebEnv({ ...PROD, [k]: v }), new RegExp(`${k} is for tests only`), k);
+    }
+  });
+  it("allows the test knobs on a loopback origin (e2e against the production build)", () => {
+    const e = readWebEnv({
+      NODE_ENV: "production",
+      DATABASE_URL: APP,
+      BETTER_AUTH_URL: "http://127.0.0.1:3107",
+      BETTER_AUTH_SECRET: "s".repeat(40),
+      EMAIL_OUTBOX_DIR: "/tmp/outbox",
+      CRAWLER_TEST_ORIGINS: "northwind-dental.test=http://127.0.0.1:4555",
+      RATE_LIMIT_SCALE: "50",
+    });
+    assert.equal(e.secure, false);
+    assert.deepEqual([...e.crawlerTestOrigins], [["northwind-dental.test", { address: "127.0.0.1", origin: "http://northwind-dental.test:4555" }]]);
+    assert.throws(() => readWebEnv({ ...PROD, BETTER_AUTH_URL: "http://127.0.0.1:3107", RESEND_API_KEY: "", EMAIL_FROM: "", CRAWLER_TEST_ORIGINS: "evil.com=http://10.0.0.1:80" }), /must look like/);
+  });
+  it("defaults to localhost in development", () => {
+    const e = readWebEnv({ NODE_ENV: "development", DATABASE_URL: APP });
+    assert.equal(e.baseUrl, "http://localhost:3007");
+    assert.equal(e.email, null);
   });
 });

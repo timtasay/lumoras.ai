@@ -1,7 +1,7 @@
 # Open work (Lumoras Growth)
 
 Things deferred, worked around, or waiting on someone. Each item says what it stands in for.
-Phase 0, 9 October 2026.
+Phase 0 and Phase 1, 9 October 2026.
 
 ## Waiting on the owner
 
@@ -14,14 +14,33 @@ Phase 0, 9 October 2026.
   password handling and style before running it on VPS3.
 - **Server env file.** `deploy/docker-compose.yml` expects `/opt/lumoras/env/lumoras-seo.env`
   (by analogy with `lumoras-web.env`). It does not exist; the owner creates it from `.env.example`.
+  Phase 1 adds required production variables: `BETTER_AUTH_URL` (https), `BETTER_AUTH_SECRET`,
+  `RESEND_API_KEY` + `EMAIL_FROM` (a Resend-verified sender), `ENCRYPTION_KEYS` +
+  `ENCRYPTION_KEY_CURRENT`. Without them the web container refuses to start with a list of what is
+  missing. Google sign-in stays off until `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` exist (an OAuth
+  client with redirect URI `<BETTER_AUTH_URL>/api/auth/callback/google`).
+- **First platform admin.** After the first deploy, a Lumoras staff member signs in once and the
+  owner runs `docker exec lumoras-seo node --import tsx scripts/grant-admin.ts <email>`
+  (recorded in the audit log as `system:cli`).
+- **Phase 1 decisions** listed under "Questions for the owner" in `docs/phase-1-summary.md`
+  (self-serve sign-up and workspace creation, client-reviewer approval rights, invitation and
+  session lifetimes).
 
 ## Deferred to a later phase
 
-- **Content Security Policy.** `next.config.ts` sets baseline headers only. A strict, nonce-based
-  CSP (the pre-paint theme script is inline) lands with auth in Phase 1, together with CSRF
-  protection and rate limits.
-- **Tenant tables, RLS, seed data.** Phase 0 creates only `schema_migrations` and locks down
-  `CREATE` on `public`. Two demo workspaces arrive with the tenant tables in Phase 1.
+- **Daily sitemap refresh.** The crawler runs on demand (onboarding, "Scan again" on the site
+  page). A pg-boss cron job that refreshes every active site daily arrives with the worker's queues
+  in Phase 3 (`TODO(Phase 3)` in `lib/crawl/crawler.ts`).
+- **Connection tests.** Connections store encrypted credentials and show a status light; the
+  "Test" buttons are disabled until each connector's phase (Git and webhook: 3, Search Console
+  and GA4: 2, WordPress and social: 5).
+- **Domain overview, health metrics.** Designed locked/placeholder states only: domain overview
+  (Phase 2, paid data), agency health (runway and articles Phase 3, clicks Phase 4, budget Phase 2).
+- **Key rotation runner.** `rotateConnectionKeys()` re-seals a workspace's secrets under the
+  current key (tested); there is no CLI for it yet. Add `scripts/rotate-keys.ts` before the first
+  real rotation.
+- **Notifications** are minimal: in-app only (crawl finished, member joined). Email alerts arrive
+  with the runway monitor in Phase 3.
 - **pg-boss.** Not installed. `worker/index.ts` has a `TODO(Phase 3)` where the boss starts and
   stops; the worker currently only validates env, logs a heartbeat and exits cleanly on SIGTERM.
 - **Non-transactional migrations.** Every file runs inside a transaction, so
@@ -37,6 +56,18 @@ Phase 0, 9 October 2026.
   package.
 
 ## Workarounds and environment notes
+
+- **Better Auth schema warning.** `getMigrations` logs that `auth_rate_limit.last_request` "has a
+  different type in the database. Expected number but got int8". Better Auth's own generator makes
+  this column `bigint`; its type check knows the name `bigint` but not PostgreSQL's `int8`. Cosmetic:
+  the rate limiter works on it (integration-tested). Recorded in `docs/external-apis.md`.
+- **Style attributes in the CSP.** `style-src-attr 'unsafe-inline'` is allowed because components
+  pass CSS custom properties (`--i`, `--n`) and view-transition names through `style=""`. Scripts are
+  nonce-only; style *elements* need the nonce. Moving those properties into classes would let us
+  drop it.
+- **Test-only settings.** `EMAIL_OUTBOX_DIR`, `CRAWLER_TEST_ORIGINS` and `RATE_LIMIT_SCALE` exist so
+  e2e can run the production build without a mail provider, the internet or many IPs. Each one is
+  refused at start-up next to an https `BETTER_AUTH_URL`, and logs a warning when set.
 
 - **Docker image not built here.** The Docker daemon was not running in the build session, so
   neither `Dockerfile` (root, web) nor `apps/seo/Dockerfile` was built with `docker build`.

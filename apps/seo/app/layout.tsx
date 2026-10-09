@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { connection } from "next/server";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
 import "@lumoras/ui-tokens/tokens.css";
@@ -8,11 +9,11 @@ import "./styles/shell.css";
 import "./styles/components.css";
 import "./styles/charts.css";
 import "./styles/pipeline.css";
+import "./styles/screens.css";
 import { THEME_COLORS, THEME_INIT_SCRIPT } from "@lumoras/ui-tokens/theme";
 import { IconSprite } from "@/components/Icons";
-import { AppShell } from "@/components/shell/AppShell";
+import { ToastProvider } from "@/components/ui/Toast";
 import { PRODUCT_NAME } from "@/components/shell/nav";
-import { isDesignRouteEnabled } from "@/lib/env";
 
 /* Voice Core type, same as lumoras.ai: Sora (display), Geist (body), Geist Mono (labels and data). */
 const display = Sora({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-sora", display: "swap" });
@@ -39,19 +40,21 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Every page is per-request (env flags now, signed-in sessions from Phase 1).
+  // Every page is per-request: signed-in sessions, and a fresh CSP nonce (proxy.ts).
   await connection();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* pre-paint theme: allowed by the per-request CSP nonce, not by 'unsafe-inline' */}
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         <a className="skip" href="#main">
           Skip to content
         </a>
         <IconSprite />
-        <AppShell designEnabled={isDesignRouteEnabled()}>{children}</AppShell>
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );
