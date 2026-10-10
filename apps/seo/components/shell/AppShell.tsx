@@ -360,6 +360,7 @@ function CommandsAndShell({ children, data, actions }: { children: ReactNode; da
     }
     if (data.platformAdmin) {
       cmds.push({ id: "agency", label: "Agency home", group: "Pages", icon: "building", keywords: "staff all workspaces", run: go("/agency") });
+      cmds.push({ id: "models", label: "Models (which model writes)", group: "Pages", icon: "sparkle", keywords: "llm openrouter ai model", run: go("/agency/models") });
       cmds.push({ id: "platform-audit", label: "Platform audit log", group: "Pages", icon: "shield", run: go("/agency/audit") });
     }
     cmds.push({ id: "new-ws", label: "New workspace", group: "Actions", icon: "plus", keywords: "create client onboarding", run: go("/onboarding") });

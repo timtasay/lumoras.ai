@@ -46,9 +46,14 @@ export default async function AgencyHome() {
           <h1>Every workspace</h1>
           <p className="lede">Health at a glance for each client. Opening this page was recorded in the platform audit log; entering a workspace means impersonating a member, which is recorded too.</p>
         </div>
-        <Link href="/agency/audit" className={buttonClass("secondary")}>
-          <Icon name="shield" /> Platform audit
-        </Link>
+        <div className="pg-acts">
+          <Link href="/agency/models" className={buttonClass("secondary")}>
+            <Icon name="sparkle" /> Models
+          </Link>
+          <Link href="/agency/audit" className={buttonClass("secondary")}>
+            <Icon name="shield" /> Platform audit
+          </Link>
+        </div>
       </header>
       <RevealGroup className="kpi-grid">
         {[

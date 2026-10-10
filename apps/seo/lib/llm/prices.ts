@@ -19,7 +19,8 @@ import type { BilledUsage, LlmRequest, LlmUsage } from "./types.ts";
 export type ModelPrice = { input: number; output: number; cacheRead: number; cacheWrite: number };
 export type PriceTable = Record<string, ModelPrice>;
 
-const usd = (input: number, output: number, cacheRead: number, cacheWrite = input * 1.25): ModelPrice => ({
+/** USD per million tokens → our µUSD price row. */
+export const usd = (input: number, output: number, cacheRead: number, cacheWrite = input * 1.25): ModelPrice => ({
   input: Math.round(input * 1e6),
   output: Math.round(output * 1e6),
   cacheRead: Math.round(cacheRead * 1e6),

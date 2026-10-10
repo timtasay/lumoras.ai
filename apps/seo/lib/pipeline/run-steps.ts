@@ -15,7 +15,8 @@ import { linkTargetsOn, normPath, pagePath } from "../content/links.ts";
 import { analyzeMarkdown, isExternal } from "../content/markdown.ts";
 import { AUTOPILOT_WARNING, localParts, publishDateFor } from "../content/schedule.ts";
 import { runToolLoop, type LoopResult, type ToolImpl } from "../llm/loop.ts";
-import { modelFor } from "../llm/types.ts";
+import type { LlmPurpose } from "../llm/types.ts";
+import { chosenModel, loadModelChoice, pricesWith } from "../llm/model-settings.ts";
 import { meteredCall } from "../metering/metered.ts";
 import { quoteOnPage } from "../net/fetcher.ts";
 import { nextSeeds } from "../research/seeds.ts";
@@ -55,7 +56,14 @@ export type StepResult = {
 };
 
 const tx = <T>(s: StepContext, fn: (tx: Tx) => Promise<T>, readOnly = false) => withWorkspace(s.deps.db, s.ctx, fn, { readOnly });
-const llmDeps = (s: StepContext) => ({ db: s.deps.db, llm: s.deps.llm, prices: s.deps.prices, now: s.deps.now });
+/**
+ * The model a step uses and the deps to call it with: the platform admin's choice for this step
+ * (Agency → Models, read fresh each step), else the env default; its listed prices size the hold.
+ */
+async function llmFor(s: StepContext, purpose: LlmPurpose) {
+  const choice = await loadModelChoice(s.deps.db);
+  return { model: chosenModel(choice, purpose, s.deps.models), deps: { db: s.deps.db, llm: s.deps.llm, prices: pricesWith(s.deps.prices, choice), now: s.deps.now } };
+}
 const meterCtx = (s: StepContext) => ({ ...s.ctx, siteId: s.site.id });
 const fromLoop = <T>(r: LoopResult<T>): Pick<StepResult, "model" | "usage" | "costMicros"> => ({ model: r.model, usage: r.usage, costMicros: r.costMicros });
 
@@ -305,9 +313,9 @@ export async function stepTopic(s: StepContext): Promise<StepResult> {
       },
     });
   }
-  const model = modelFor("topic", s.deps.models);
+  const { model, deps: topicDeps } = await llmFor(s, "topic");
   const loop = await runToolLoop<TopicOutput>(
-    llmDeps(s),
+    topicDeps,
     meterCtx(s),
     { purpose: "topic", model, system: SYSTEM.topic, maxTokens: 4000, effort: "high", outputSchema: jsonSchemaOf(topicOutput), messages: [{ role: "user", content: taskMessage(input) }] },
     tools,
@@ -397,10 +405,11 @@ export async function stepBrief(s: StepContext): Promise<StepResult> {
     titleMax: rules.titleMax,
     existingTitles: titles.slice(0, 50),
   };
+  const briefLlm = await llmFor(s, "brief");
   const loop = await runToolLoop<BriefOutput>(
-    llmDeps(s),
+    briefLlm.deps,
     meterCtx(s),
-    { purpose: "brief", model: modelFor("brief", s.deps.models), system: SYSTEM.brief, maxTokens: 6000, effort: "medium", outputSchema: jsonSchemaOf(briefOutput), messages: [{ role: "user", content: taskMessage(input) }] },
+    { purpose: "brief", model: briefLlm.model, system: SYSTEM.brief, maxTokens: 6000, effort: "medium", outputSchema: jsonSchemaOf(briefOutput), messages: [{ role: "user", content: taskMessage(input) }] },
     [],
     briefOutput,
   );
@@ -456,10 +465,11 @@ export async function stepDraft(s: StepContext): Promise<StepResult> {
     brief: { ...brief, keyword: item.primary_keyword, secondary: item.secondary_keywords, places: ((item.topic ?? {}) as { places?: string[] }).places ?? [] },
     refreshOf: refreshOf ? { title: refreshOf.title, bodyMd: refreshOf.body_md } : null,
   };
+  const draftLlm = await llmFor(s, "draft");
   const loop = await runToolLoop(
-    llmDeps(s),
+    draftLlm.deps,
     meterCtx(s),
-    { purpose: "draft", model: modelFor("draft", s.deps.models), system: SYSTEM.draft, maxTokens: 12000, effort: "medium", outputSchema: jsonSchemaOf(draftOutput), messages: [{ role: "user", content: taskMessage(input) }] },
+    { purpose: "draft", model: draftLlm.model, system: SYSTEM.draft, maxTokens: 12000, effort: "medium", outputSchema: jsonSchemaOf(draftOutput), messages: [{ role: "user", content: taskMessage(input) }] },
     [],
     draftOutput,
   );
@@ -537,10 +547,11 @@ export async function stepFactcheck(s: StepContext): Promise<StepResult> {
     },
   };
   const input: FactInput = { site: { domain: s.site.domain, productFacts: brand.product_facts, forbiddenClaims: brand.forbidden_claims }, claimsToSource: brief.claimsToSource ?? [], title: item.title, bodyMd: item.body_md };
+  const factcheckLlm = await llmFor(s, "factcheck");
   const loop = await runToolLoop(
-    llmDeps(s),
+    factcheckLlm.deps,
     meterCtx(s),
-    { purpose: "factcheck", model: modelFor("factcheck", s.deps.models), system: SYSTEM.factcheck, maxTokens: 12000, effort: "high", outputSchema: jsonSchemaOf(factOutput), messages: [{ role: "user", content: taskMessage(input) }] },
+    { purpose: "factcheck", model: factcheckLlm.model, system: SYSTEM.factcheck, maxTokens: 12000, effort: "high", outputSchema: jsonSchemaOf(factOutput), messages: [{ role: "user", content: taskMessage(input) }] },
     [fetchTool],
     factOutput,
     { maxTurns: 10 },

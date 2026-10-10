@@ -10,6 +10,7 @@
 .pg-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;padding:clamp(8px,2vw,20px) 0 clamp(20px,3vw,28px)}
 .pg-head h1{font-size:clamp(28px,3.6vw,44px);letter-spacing:-.04em;margin-top:8px}
 .pg-head .lede{margin-top:10px}
+.pg-acts{display:flex;gap:8px;flex-wrap:wrap}
 .pad{padding:clamp(18px,2.4vw,26px)}
 .stack-lg{display:grid;gap:clamp(18px,2.4vw,28px)}
 .sub-h{font-size:18px;letter-spacing:-.02em;margin-bottom:14px;display:flex;align-items:center;gap:8px}

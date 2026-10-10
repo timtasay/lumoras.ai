@@ -62,4 +62,37 @@ test("non-admins cannot open the agency pages", async ({ page }) => {
   await signIn(page, "owner@lumoras.example");
   expect((await page.goto("/agency"))?.status()).toBe(404);
   expect((await page.goto("/agency/audit"))?.status()).toBe(404);
+  expect((await page.goto("/agency/models"))?.status()).toBe(404);
+});
+
+test("platform admin: choose the model for each pipeline step; the change is audited", async ({ page }) => {
+  const errors = watchConsole(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, "staff@lumoras.example");
+  await page.locator(".pg-head").getByRole("link", { name: "Models" }).click();
+  await expect(page).toHaveURL(/\/agency\/models$/);
+  await expect(page.getByRole("heading", { name: "Which model writes" })).toBeVisible();
+  // development runs the fake provider: Claude models from the price table, with prices
+  await expect(page.getByText("Development: the fake provider answers from recorded fixtures")).toBeVisible();
+  const draft = page.getByLabel("Draft");
+  await expect(draft).toHaveValue("");
+  await expect(draft.locator("option").first()).toHaveText("Default (claude-sonnet-5-5)");
+  await expect(page.getByLabel("Fact-check").locator("option").first()).toHaveText("Default (claude-opus-5-5)");
+  await draft.selectOption("claude-haiku-5-5");
+  await expect(draft.locator("option:checked")).toHaveText(/claude-haiku-5-5 · \$0\.1 in \/ \$0\.5 out per million tokens/);
+  await page.getByRole("button", { name: "Save models" }).click();
+  await expect(page.getByText("Saved. 1 step uses a chosen model")).toBeVisible();
+  await shot(page, "agency-models-dark-1440");
+  await page.reload();
+  await expect(page.getByLabel("Draft")).toHaveValue("claude-haiku-5-5");
+  const pool = await db();
+  const audit = (await pool.query<{ details: { after: Record<string, string> } }>("SELECT details FROM audit_log WHERE action = 'platform.llm_models.set' ORDER BY id DESC LIMIT 1")).rows[0];
+  expect(audit.details.after).toEqual({ draft: "claude-haiku-5-5" });
+  // back to the defaults, so other tests see the seeded state
+  await page.getByLabel("Draft").selectOption("");
+  await page.getByRole("button", { name: "Save models" }).click();
+  await expect(page.getByText("Saved. Every step uses the default models.")).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  expect(errors).toEqual([]);
 });

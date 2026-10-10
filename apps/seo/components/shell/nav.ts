@@ -72,6 +72,7 @@ export function buildNav(ws: ShellWorkspace | null, opts: { platformAdmin: boole
       group: "Lumoras staff",
       items: [
         { key: "agency", label: "Agency home", icon: "building", href: "/agency" },
+        { key: "models", label: "Models", icon: "sparkle", href: "/agency/models" },
         { key: "platform-audit", label: "Platform audit", icon: "shield", href: "/agency/audit" },
       ],
     });
