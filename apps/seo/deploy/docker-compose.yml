@@ -5,8 +5,14 @@
 # (where lumoras-postgres and the shared Caddy live). Port 3007 is internal only;
 # Caddy reaches it as lumoras-seo:3007 (see Caddyfile.snippet).
 #
-#   docker compose -f apps/seo/deploy/docker-compose.yml build
-#   docker compose -f apps/seo/deploy/docker-compose.yml up -d
+# Belongs in phonon-orchestration-hub as docker/vps3/lumoras-seo/docker-compose.yml, beside
+# lumoras.ai/. Like that stack it builds from the source ship-lumoras.sh unpacks to
+# /opt/lumoras/src/lumoras.ai (the whole workspace: apps/seo needs packages/*).
+#
+#   docker compose -f docker/vps3/lumoras-seo/docker-compose.yml build
+#   docker compose -f docker/vps3/lumoras-seo/docker-compose.yml up -d
+#
+# Database: run deploy/postgres/10-seo-database.sh once first (see its header).
 #
 # Environment: /opt/lumoras/env/lumoras-seo.env on the server, created by the
 # owner from apps/seo/.env.example (DATABASE_URL, DATABASE_URL_OWNER, …).
@@ -15,7 +21,7 @@ name: lumoras-seo
 services:
   lumoras-seo:
     build:
-      context: ../../..
+      context: /opt/lumoras/src/lumoras.ai
       dockerfile: apps/seo/Dockerfile
     image: lumoras-seo:latest
     container_name: lumoras-seo

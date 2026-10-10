@@ -70,8 +70,8 @@ export async function createTestDatabase(opts: { migrate?: boolean; jobs?: boole
       SEO_DB_NAME: name,
       SEO_OWNER_ROLE: owner,
       SEO_APP_ROLE: app,
-      SEO_OWNER_PASSWORD: pw,
-      SEO_APP_PASSWORD: pw,
+      SEO_DB_PASSWORD: pw,
+      SEO_APP_DB_PASSWORD: pw,
     } as unknown as NodeJS.ProcessEnv,
   });
   const at = (role: string) => {

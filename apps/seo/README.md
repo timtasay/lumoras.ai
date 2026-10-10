@@ -170,14 +170,14 @@ With Docker:
 ```bash
 docker run -d --name seo-pg -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:16
 # create the seo database, the owner role and the app role (same script as production)
-docker exec -i -e SEO_OWNER_PASSWORD=owner-dev -e SEO_APP_PASSWORD=app-dev seo-pg \
+docker exec -i -e SEO_DB_PASSWORD=owner-dev -e SEO_APP_DB_PASSWORD=app-dev seo-pg \
   bash -s < apps/seo/deploy/postgres/10-seo-database.sh
 ```
 
 Without Docker (any local PostgreSQL 16 where you are a superuser):
 
 ```bash
-PGHOST=localhost PGUSER=postgres SEO_OWNER_PASSWORD=owner-dev SEO_APP_PASSWORD=app-dev \
+PGHOST=localhost PGUSER=postgres SEO_DB_PASSWORD=owner-dev SEO_APP_DB_PASSWORD=app-dev \
   bash apps/seo/deploy/postgres/10-seo-database.sh
 ```
 
@@ -185,7 +185,7 @@ Then in `apps/seo/.env.local`:
 
 ```
 DATABASE_URL=postgres://seo_app:app-dev@localhost:5432/seo
-DATABASE_URL_OWNER=postgres://seo_owner:owner-dev@localhost:5432/seo
+DATABASE_URL_OWNER=postgres://seo:owner-dev@localhost:5432/seo
 ENCRYPTION_KEY=<openssl rand -base64 32>
 ```
 

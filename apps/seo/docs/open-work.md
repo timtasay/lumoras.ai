@@ -7,11 +7,16 @@ Phases 0 to 4 and the owner decisions of 10 October 2026 (`owner-decisions.md`).
 
 - **Product name and host name** (decision #1). "Lumoras Growth" and `growth.lumoras.ai` are
   placeholders in `components/shell/nav.ts`, `deploy/Caddyfile.snippet` and the docs.
-- **Postgres init style.** The prompt asks for the database to be created "the same way as"
-  `phonon-orchestration-hub/docker/vps3/postgres/init/01-databases.sh`. That repository was not
-  accessible to this session, so `deploy/postgres/10-seo-database.sh` is self-contained (roles
-  `seo_owner` / `seo_app`, database `seo`). Compare it with `01-databases.sh` and align names,
-  password handling and style before running it on VPS3.
+- **Create the database on VPS3.** `deploy/postgres/10-seo-database.sh` now follows the hub's
+  `docker/vps3/postgres/init/01-databases.sh` (branch `marketing-split`): database `seo` owned by
+  a role named `seo`, CONNECT revoked from PUBLIC, passwords in `/opt/lumoras/env/postgres.env`
+  as `SEO_DB_PASSWORD` (owner) and `SEO_APP_DB_PASSWORD` (the extra restricted app role
+  `seo_app`, which row-level security needs). The init script only runs on a fresh data
+  directory, so the owner runs this one once with `docker exec` (command in the script header).
+- **Hub changes (phonon-orchestration-hub).** Add `seo` to the database list in
+  `docker/vps3/scripts/backup-postgres.sh`; optionally add `seo`/`seo_app` to
+  `postgres/init/01-databases.sh` for fresh installs; copy `deploy/docker-compose.yml` to
+  `docker/vps3/lumoras-seo/docker-compose.yml` beside `lumoras.ai/`.
 - **Server env file.** `deploy/docker-compose.yml` expects `/opt/lumoras/env/lumoras-seo.env`
   (by analogy with `lumoras-web.env`). It does not exist; the owner creates it from `.env.example`.
   Phase 1 adds required production variables: `BETTER_AUTH_URL` (https), `BETTER_AUTH_SECRET`,

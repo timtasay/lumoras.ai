@@ -83,7 +83,7 @@ DataForSEO SERP results also give the non-organic item types (SERP features), st
   `localConcurrency`/`pollingIntervalSeconds`, `schedule` (cron with `tz`), maintenance/supervision,
   migrations).
 - **How we use it:** schema `pgboss` in the `seo` database, created by `deploy/postgres/10-seo-database.sh`
-  (owned by `seo_owner`, usage and DML granted to `seo_app` with default privileges) and installed or
+  (owned by the owner role `seo`, usage and DML granted to `seo_app` with default privileges) and installed or
   migrated by `scripts/migrate.ts` as the owner role. The web process only sends (`supervise`/`schedule`
   off); the worker works the queues and owns the cron clock; neither runs DDL (`migrate: false`,
   `createSchema: false`, `reindex: false`). Verified as the app role against PostgreSQL 16:
