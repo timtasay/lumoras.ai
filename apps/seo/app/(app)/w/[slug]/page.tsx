@@ -17,13 +17,15 @@ import { RunwayBanner, type RunwayAlert } from "@/components/content/RunwayBanne
 import { getWorkspaceRow, listMembers } from "@/lib/data/workspaces";
 import { STEPS, stepIndex } from "@/lib/onboarding";
 import { relativeTime } from "@/lib/ui/time";
+import { siteSearchCards } from "@/lib/measure/dashboard";
+import { periodOf } from "@/lib/providers/operations";
 
 export const metadata: Metadata = { title: "Overview" };
 
 export default async function WorkspaceOverview({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const now = new Date();
-  const { a, sites, ws, runways, review } = await readWorkspace(slug, async (tx, a) => {
+  const { a, sites, ws, runways, review, search, live, credits } = await readWorkspace(slug, async (tx, a) => {
     const settings = await listSiteSettings(tx);
     const runways = new Map<string, { days: number; level: "ok" | "low" | "empty"; threshold: number; reason: string; active: boolean }>();
     for (const s of settings) {
@@ -31,7 +33,12 @@ export default async function WorkspaceOverview({ params }: { params: Promise<{ 
       const r = (await siteRunway(tx, s, now)).runway;
       runways.set(s.id, { days: r.days, level: r.level, threshold: s.runway_threshold_days, reason: r.reason, active: s.schedule_active });
     }
-    return { a, sites: await listSites(tx), ws: await getWorkspaceRow(tx), runways, review: (await listReviewQueue(tx)).filter((i) => i.status === "awaiting_review").length };
+    const live = (await tx.one<{ n: number }>("SELECT count(*)::int AS n FROM content_items WHERE status = 'published'")).n;
+    const credits = await tx.one<{ used: string; ceiling: string | null }>(
+      "SELECT coalesce((SELECT sum(cost_micros) FROM usage_ledger WHERE category = 'seo_credits' AND period = $1 AND status IN ('held', 'settled')), 0)::text AS used, (SELECT monthly_ceiling::text FROM budgets WHERE category = 'seo_credits') AS ceiling",
+      [periodOf(now)],
+    );
+    return { a, sites: await listSites(tx), ws: await getWorkspaceRow(tx), runways, review: (await listReviewQueue(tx)).filter((i) => i.status === "awaiting_review").length, search: await siteSearchCards(tx, now), live, credits };
   });
   const alerts: RunwayAlert[] = sites.flatMap((s) => {
     const r = runways.get(s.id);
@@ -39,8 +46,13 @@ export default async function WorkspaceOverview({ params }: { params: Promise<{ 
   });
   const members = await listMembers(pool(), a.workspace.id);
   const canAdd = can(a.role, "site:create");
-  const routes = sites.reduce((n, s) => n + s.routes, 0);
   const authors = sites.reduce((n, s) => n + s.authors, 0);
+  const connected = sites.filter((s) => (search.get(s.id)?.weekly ?? []).some((x) => x > 0));
+  const clicks = connected.reduce((n, s) => n + (search.get(s.id)?.clicks ?? 0), 0);
+  const clicksPrev = connected.reduce((n, s) => n + (search.get(s.id)?.clicksPrev ?? 0), 0);
+  const impressions = connected.reduce((n, s) => n + (search.get(s.id)?.impressions ?? 0), 0);
+  const weekly = Array.from({ length: 12 }, (_, i) => connected.reduce((n, s) => n + (search.get(s.id)?.weekly[i] ?? 0), 0));
+  const used = Number(credits.used) / 1_000_000, ceiling = credits.ceiling ? Number(credits.ceiling) / 1_000_000 : 0;
   const onboarding = ws.status === "onboarding" && canAdd;
 
   return (
@@ -73,13 +85,14 @@ export default async function WorkspaceOverview({ params }: { params: Promise<{ 
 
       <RunwayBanner slug={slug} alerts={alerts} />
 
-      <RevealGroup className="kpi-grid">
+      <RevealGroup className="kpi-grid kpi-6">
         {[
-          <KpiTile key="s" label="Sites" value={sites.length} note={sites.length === 1 ? "1 website" : `${sites.length} websites`} />,
-          <KpiTile key="r" label="Routes in inventory" value={routes} format="compact" note="From each site's sitemaps" />,
-          <KpiTile key="a" label="Authors" value={authors} note={authors ? "Real people only" : "Nothing is written without one"} tone={authors ? undefined : "amber"} />,
+          <KpiTile key="c" label="Organic clicks" value={clicks} format="compact" delta={clicksPrev ? Math.round(((clicks - clicksPrev) / clicksPrev) * 1000) / 10 : undefined} trend={connected.length ? weekly : undefined} note={connected.length ? undefined : "Connect Search Console on a site"} />,
+          <KpiTile key="i" label="Impressions" value={impressions} format="compact" note={connected.length ? `Last 28 days, ${connected.length} of ${sites.length} site${sites.length === 1 ? "" : "s"} connected` : "No site connected yet"} />,
+          <KpiTile key="l" label="Articles live" value={live} note="Published by the pipeline" />,
           <KpiTile key="q" label="Awaiting review" value={review} note={review ? "Open the review queue" : "Nothing waiting"} tone={review ? "amber" : undefined} />,
-          <KpiTile key="m" label="Members" value={members.length} note={`${members.filter((m) => m.role === "owner").length} owner${members.filter((m) => m.role === "owner").length === 1 ? "" : "s"}`} />,
+          <KpiTile key="m" label="Credits this month" value={used} format="usd" note={ceiling ? `of $${ceiling.toFixed(2)} for SEO data` : "No SEO data budget set"} />,
+          <KpiTile key="s" label="Sites" value={sites.length} note={`${authors} author${authors === 1 ? "" : "s"} · ${members.length} member${members.length === 1 ? "" : "s"}`} />,
         ]}
       </RevealGroup>
 
@@ -107,6 +120,7 @@ export default async function WorkspaceOverview({ params }: { params: Promise<{ 
                     crawlStatus: s.last_crawl_status,
                     failingConnections: s.failing_connections,
                     runway: runways.get(s.id) ?? null,
+                    search: (search.get(s.id)?.weekly ?? []).some((x) => x > 0) ? search.get(s.id) : null,
                   }}
                 />
               )),

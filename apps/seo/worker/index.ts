@@ -44,7 +44,7 @@ function startWorker(env: WorkerEnv, log: Logger): WorkerHandle {
         const deps = workerDeps(env, db, log, enqueueWith(b));
         await registerWorkers(b, deps, env);
         boss = b;
-        log.info("worker ready", { queues: 8, concurrency: env.concurrency, llm: deps.llm.label });
+        log.info("worker ready", { queues: 17, concurrency: env.concurrency, llm: deps.llm.label });
         return;
       } catch (e) {
         await b.stop({ graceful: false, close: true }).catch(() => {});

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { formatDay, formatNumber, type NumberFormat } from "@/lib/ui/format";
-import { ChartFigure, Tooltip, linePath, linear, niceTicks, useWidth } from "./chart-kit";
+import { timeTickIndices, valueTicks } from "@/lib/ui/chart-math";
+import { ChartFigure, Tooltip, linePath, linear, useWidth } from "./chart-kit";
 
 /**
  * Single-series area over time (e.g. organic clicks, 90 days). Crosshair
@@ -18,6 +19,8 @@ export function AreaChart({
   format = "int",
   height = 240,
   replay = 0,
+  provisionalFrom,
+  color = "ion",
 }: {
   title: string;
   summary: string;
@@ -27,18 +30,23 @@ export function AreaChart({
   format?: NumberFormat;
   height?: number;
   replay?: number;
+  /** Index of the first day the source may still revise (Search Console's data lag): drawn as a hatched band. */
+  provisionalFrom?: number | null;
+  /** Series hue: ion (clicks, sessions) or ice (impressions). */
+  color?: "ion" | "ice";
 }) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const m = { l: 46, r: 14, t: 12, b: 28 };
-  const ticks = niceTicks(0, Math.max(...values), 4);
+  const ticks = valueTicks(values, 4);
   const x = linear([0, values.length - 1], [m.l, width - m.r]);
   const y = linear([0, ticks[ticks.length - 1]], [height - m.b, m.t]);
   const pts = values.map((v, i) => ({ x: x(i), y: y(v) }));
   const line = linePath(pts);
   const area = `${line}L${x(values.length - 1)},${y(0)}L${x(0)},${y(0)}Z`;
-  const xTickFr = width < 520 ? [0, 0.5, 1] : [0, 0.25, 0.5, 0.75, 1];
-  const xTickIdx = xTickFr.map((f) => Math.round(f * (values.length - 1)));
+  const xTickIdx = timeTickIndices(values.length, width);
+  const step = values.length > 1 ? (width - m.l - m.r) / (values.length - 1) : 0;
+  const prov = provisionalFrom !== undefined && provisionalFrom !== null && provisionalFrom < values.length ? provisionalFrom : null;
 
   const nearest = (clientX: number, el: Element) => {
     const r = el.getBoundingClientRect();
@@ -53,7 +61,7 @@ export function AreaChart({
       table={{
         caption: `${title}: ${seriesLabel} per day`,
         head: ["Date", seriesLabel],
-        rows: values.map((v, i) => [formatDay(dates[i]), formatNumber(v, format)]),
+        rows: values.map((v, i) => [formatDay(dates[i]), `${formatNumber(v, format)}${prov !== null && i >= prov ? " (provisional)" : ""}`]),
       }}
     >
       <div
@@ -89,13 +97,21 @@ export function AreaChart({
               {formatDay(dates[i])}
             </text>
           ))}
-          <path className="area-fill" d={area} />
-          <path className="series-line draw" d={line} pathLength={1} />
-          <circle className="end-dot" cx={x(values.length - 1)} cy={y(values[values.length - 1])} r={4} />
+          {prov !== null ? (
+            <g className="prov">
+              <rect className="prov-band" x={x(prov) - step / 2} y={m.t} width={Math.max(0, width - m.r - (x(prov) - step / 2))} height={height - m.t - m.b} />
+              <text className="zone-label" x={width - m.r - 4} y={m.t + 10} textAnchor="end">
+                Provisional
+              </text>
+            </g>
+          ) : null}
+          <path className="area-fill" data-color={color} d={area} />
+          <path className="series-line draw" data-color={color} d={line} pathLength={1} />
+          <circle className="end-dot" data-color={color} cx={x(values.length - 1)} cy={y(values[values.length - 1])} r={4} />
           {hover !== null ? (
             <g>
               <line className="crosshair" x1={x(hover)} x2={x(hover)} y1={m.t} y2={height - m.b} />
-              <circle className="end-dot" cx={x(hover)} cy={y(values[hover])} r={4} />
+              <circle className="end-dot" data-color={color} cx={x(hover)} cy={y(values[hover])} r={4} />
             </g>
           ) : null}
         </svg>
@@ -105,7 +121,7 @@ export function AreaChart({
             y={y(values[hover])}
             width={width}
             title={formatDay(dates[hover])}
-            rows={[{ label: seriesLabel, value: formatNumber(values[hover], format), color: "var(--ion-fill)" }]}
+            rows={[{ label: prov !== null && hover >= prov ? `${seriesLabel} (provisional)` : seriesLabel, value: formatNumber(values[hover], format), color: color === "ice" ? "var(--ice)" : "var(--ion-fill)" }]}
           />
         ) : null}
         <p className="sr-only" aria-live="polite">

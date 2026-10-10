@@ -320,3 +320,17 @@ export const editInput = z.object({
   coverChips: z.string().max(400).default(""),
   note: z.string().trim().max(500).default(""),
 });
+
+/** Phase 4: a site's measurement cadences (site settings). */
+export const measureSettingsInput = z.object({
+  rankCadence: z.enum(["off", "daily", "weekly", "fortnightly", "monthly"]).default("weekly"),
+  rankDevice: z.enum(["desktop", "mobile"]).default("desktop"),
+  rankDepth: z.coerce.number().int().refine((n) => [10, 20, 30, 50, 100].includes(n), "Choose 10, 20, 30, 50 or 100").default(30),
+  rankMaxKeywords: z.coerce.number().int().min(1, "1 to 1,000 keywords").max(1000, "1 to 1,000 keywords").default(100),
+  auditCadence: z.enum(["off", "monthly", "quarterly"]).default("monthly"),
+  auditMaxPages: z.coerce.number().int().min(10, "10 to 10,000 pages").max(10_000, "10 to 10,000 pages").default(200),
+  backlinksCadence: z.enum(["off", "monthly", "quarterly"]).default("quarterly"),
+  searchSync: flag.default(false),
+  inspectDailyCap: z.coerce.number().int().min(0, "0 to 200 a day").max(200, "0 to 200 a day").default(20),
+});
+export type MeasureSettingsInput = z.infer<typeof measureSettingsInput>;

@@ -177,7 +177,8 @@ test("connect Search Console and GA4 through Google OAuth (state + PKCE), then s
   const errors = watchConsole(page);
   await setTheme(page, "dark");
   await page.setViewportSize({ width: 1440, height: 900 });
-  const s = (await siteIds())["sonorch.ai"];
+  // lumoras.ai: sonorch.ai is already connected and synced by the Phase 4 seed (its dashboard is the acceptance screen)
+  const s = (await siteIds())["lumoras.ai"];
   const base = `/w/lumoras/sites/${s.id}`;
   await signIn(page, "editor@lumoras.example", `${base}/connections`);
   const gsc = page.getByRole("region", { name: "Google Search Console" });
@@ -196,9 +197,9 @@ test("connect Search Console and GA4 through Google OAuth (state + PKCE), then s
   await gsc.getByRole("button", { name: "Connect Search Console" }).click();
   await expect(page).toHaveURL(new RegExp(`${base}/connections\\?google=connected&kind=search_console$`));
   await expect(gsc.getByText("Working")).toBeVisible();
-  await expect(gsc).toContainText("sc-domain:sonorch.ai");
+  await expect(gsc).toContainText("https://lumoras.ai/");
   await gsc.getByRole("button", { name: "Test" }).click();
-  await expect(page.getByText(/Reading sc-domain:sonorch\.ai/).first()).toBeVisible();
+  await expect(page.getByText(/Reading https:\/\/lumoras\.ai\//).first()).toBeVisible();
 
   await ga.getByRole("button", { name: "Connect GA4" }).click();
   await expect(page).toHaveURL(new RegExp(`${base}/connections\\?google=connected&kind=ga4$`));
@@ -227,11 +228,11 @@ test("connect Search Console and GA4 through Google OAuth (state + PKCE), then s
   await shot(page, "connections-google-states-dark-375", P2);
   await page.setViewportSize({ width: 1440, height: 900 });
 
-  // the site overview shows striking-distance queries (positions 4–20) from Search Console
+  // the site dashboard shows striking-distance queries (positions 4–20) from Search Console (live until the first sync lands, then stored)
   await page.goto(base);
   const opp = page.getByRole("region", { name: "Striking-distance queries" });
-  await expect(opp.getByRole("rowheader", { name: /salon no show policy/ })).toBeVisible();
-  await expect(opp.getByRole("rowheader", { name: /salon software/ })).toHaveCount(0); // position 34: not striking distance
+  await expect(opp.getByRole("rowheader", { name: /missed calls small business/ })).toBeVisible();
+  await expect(opp.getByRole("rowheader", { name: /pos for service business/ })).toHaveCount(0); // position ~25: not striking distance
   await shot(page, "site-overview-opportunities-dark-1440", P2);
 
   // disconnect revokes and removes

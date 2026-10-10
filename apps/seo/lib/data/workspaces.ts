@@ -207,3 +207,20 @@ export const platformAudit = (tx: Tx, opts: { workspaceId?: string | null; befor
      FROM platform_audit_log($1, $2, $3)`,
     [opts.workspaceId ?? null, opts.before ?? null, opts.limit ?? 50],
   );
+
+/** Phase 4 agency home: each workspace's health (audited platform read, 0008 platform_workspace_health). */
+export type WorkspaceHealth = {
+  workspace_id: string;
+  runway_days: number | null;
+  runway_level: "ok" | "low" | "empty" | null;
+  scheduled_sites: number;
+  published_month: number;
+  awaiting_review: number;
+  clicks_28d: string;
+  clicks_prev_28d: string;
+  clicks_weekly: string[] | null;
+  gsc_sites: number;
+  failing: number;
+  measure_failed: number;
+};
+export const platformHealth = (tx: Tx) => tx.many<WorkspaceHealth>("SELECT * FROM platform_workspace_health()");

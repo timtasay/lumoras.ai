@@ -20,6 +20,7 @@ import { membershipBySlug } from "@/lib/data/workspaces";
 import { googleDeps, googleRedirectUri } from "@/lib/google/app";
 import { exchangeCode, GoogleAuthError, OAUTH_COOKIE, OAUTH_COOKIE_PATH, verifyCallback, type FlowState } from "@/lib/google/oauth";
 import { chooseProperty, listProperties, saveGoogleGrant, testConnection } from "@/lib/google/service";
+import { queueFirstSync } from "@/lib/measure/web";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
     if (props.suggested) {
       await chooseProperty(deps, ctx, site, flow.kind, props.suggested);
       await testConnection(deps, ctx, site.id, flow.kind);
+      await queueFirstSync(flow.workspaceId, site.id, flow.kind);
     }
     return back(flow, { google: "connected", kind: flow.kind });
   } catch (e) {

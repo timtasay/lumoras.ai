@@ -88,6 +88,8 @@ test("⌘K jumps between workspaces and sites", async ({ page }) => {
   await input.fill("seasonx");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 1, name: "seasonx.ai" })).toBeVisible();
+  // the palette animates closed; typing into it before it is gone would land in a closing dialog
+  await expect(page.locator("dialog.palette")).toBeHidden();
   await open();
   await input.fill("audit log");
   await page.keyboard.press("Enter");
@@ -112,10 +114,14 @@ test.describe("reduced motion", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     const errors = watchConsole(page);
     await signIn(page, "owner@lumoras.example");
-    await expect(page.locator(".kpi").first().locator(".kpi-value [aria-hidden]")).toHaveText("3");
+    // the count-up is skipped: the visible value is the final value from the first frame
+    const first = page.locator(".kpi").first();
+    await expect(first.locator(".kpi-value [aria-hidden]")).toHaveText((await first.locator(".kpi-value .sr-only").textContent()) ?? "");
+    await expect(page.locator(".kpi").filter({ has: page.locator(".kpi-label", { hasText: /^Sites$/ }) }).locator(".kpi-value [aria-hidden]")).toHaveText("3");
     const ids = await sites();
     await page.locator(".site-card").filter({ hasText: "lumoras.ai" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "lumoras.ai" })).toBeVisible();
+    await page.getByRole("navigation", { name: "Site sections" }).getByRole("link", { name: "Routes" }).click();
     await expect(page.locator(".scan-radar")).toBeVisible();
     // the sweep only turns while a scan is live, and never under reduced motion
     expect(await page.locator(".scan-sweep").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");

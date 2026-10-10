@@ -238,7 +238,8 @@ export class DataForSeoProvider implements SeoDataProvider {
         const r = await this.serp({ keyword, market: p.market, depth: p.depth });
         cost += r.costMicros ?? 0;
         const hit = r.data.find((i) => i.type === "organic" && (i.domain === p.domain || i.domain.endsWith(`.${p.domain}`)));
-        positions.push({ keyword: normalizeKeyword(keyword), position: hit?.rank ?? null, url: hit?.url ?? null });
+        const serpFeatures = [...new Set(r.data.filter((i) => i.type && i.type !== "organic").map((i) => i.type))].slice(0, 12);
+        positions.push({ keyword: normalizeKeyword(keyword), position: hit?.rank ?? null, url: hit?.url ?? null, serpFeatures });
       }
       return { data: { runId: null, positions }, costMicros: cost, units: p.keywords.length * Math.ceil(p.depth / 10) };
     },

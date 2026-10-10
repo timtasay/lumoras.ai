@@ -265,3 +265,38 @@ export async function inspectUrl(deps: GoogleDeps, ctx: TenantContext, siteId: s
   if (!conn?.property || conn.status === "error") return null;
   return withAccessToken(deps, ctx, conn, (token) => gscInspectUrl(deps.endpoints, token, conn.property, url, deps.fetch));
 }
+
+export class GoogleNotReadyError extends Error {
+  constructor(public readonly kind: GoogleKind, public readonly reason: "not_connected" | "no_property" | "failing") {
+    super(reason === "not_connected" ? `${KIND_LABEL[kind]} is not connected` : reason === "no_property" ? `${KIND_LABEL[kind]} is connected but no property is chosen` : `${KIND_LABEL[kind]} is failing; connect again`);
+    this.name = "GoogleNotReadyError";
+  }
+}
+
+/**
+ * Phase 4: runs fn with a fresh access token and the connection's property,
+ * for the daily syncs. Refuses (GoogleNotReadyError) when the site is not
+ * connected, has no property, or the connection is failing (unless `retry`:
+ * the sync is how a failing connection recovers after the grant is fixed).
+ */
+export async function withGoogle<T>(deps: GoogleDeps, ctx: TenantContext, siteId: string, kind: GoogleKind, fn: (token: string, conn: GoogleConnection) => Promise<T>, opts: { retryFailing?: boolean } = {}): Promise<T> {
+  const conn = await getConn(deps, ctx, siteId, kind);
+  if (!conn) throw new GoogleNotReadyError(kind, "not_connected");
+  if (!conn.property) throw new GoogleNotReadyError(kind, "no_property");
+  if (conn.status === "error" && !opts.retryFailing) throw new GoogleNotReadyError(kind, "failing");
+  return withAccessToken(deps, ctx, conn, (token) => fn(token, conn));
+}
+
+/**
+ * Stores a grant and its property in one go (the seed and tests: a demo site
+ * connected to a local fake Google without a browser round trip). The same
+ * sealed storage as the OAuth callback.
+ */
+export async function saveGrantWithProperty(tx: Tx, ring: Keyring, workspaceId: string, siteId: string, kind: GoogleKind, refreshToken: string, property: string, connectedBy: string, now = new Date()): Promise<string> {
+  const id = await saveGoogleGrant(tx, ring, workspaceId, siteId, kind, { accessToken: "", refreshToken, expiresAt: 0, scope: [SCOPES[kind]] }, connectedBy, now);
+  await tx.exec(
+    "UPDATE connections SET config = config || jsonb_build_object('property', $2::text, 'propertyLabel', $2::text), status = 'ok', status_detail = 'Connected.', last_tested_at = $3 WHERE id = $1",
+    [id, property, now],
+  );
+  return id;
+}

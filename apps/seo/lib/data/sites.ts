@@ -48,11 +48,22 @@ export type SiteSettings = Site & {
   publish_connection_id: string | null;
   feed_enabled: boolean;
   feed_token: string;
+  /** Phase 4: measurement cadences (lib/measure/cadence.ts). */
+  rank_cadence: "off" | "daily" | "weekly" | "fortnightly" | "monthly";
+  rank_device: "desktop" | "mobile";
+  rank_depth: number;
+  rank_max_keywords: number;
+  audit_cadence: "off" | "monthly" | "quarterly";
+  audit_max_pages: number;
+  backlinks_cadence: "off" | "monthly" | "quarterly";
+  search_sync: boolean;
+  inspect_daily_cap: number;
 };
 
 const SETTINGS_COLS = `schedule_days, to_char(schedule_time, 'HH24:MI') AS schedule_time, schedule_active, generation_mode, lead_days, batch_size, horizon_days,
   review_mode, autopilot_acknowledged_by, autopilot_acknowledged_at, allow_backdating, runway_threshold_days, runway_days, runway_level, runway_reason,
-  runway_checked_at, runway_alerted_level, runway_alerted_at, publish_connection_id, feed_enabled, feed_token`;
+  runway_checked_at, runway_alerted_level, runway_alerted_at, publish_connection_id, feed_enabled, feed_token,
+  rank_cadence, rank_device, rank_depth, rank_max_keywords, audit_cadence, audit_max_pages, backlinks_cadence, search_sync, inspect_daily_cap`;
 
 export function getSiteSettings(tx: Tx, id: string): Promise<SiteSettings> {
   return tx.one<SiteSettings>(`SELECT ${SITE_COLS}, ${SETTINGS_COLS} FROM sites WHERE id = $1`, [id], "site");

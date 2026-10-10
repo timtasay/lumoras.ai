@@ -8,8 +8,13 @@ import { Icon, type IconName } from "@/components/Icons";
 export function SiteTabs({ base }: { base: string }) {
   const path = usePathname();
   const tabs: [string, string, IconName][] = [
-    ["", "Overview", "radar"],
+    ["", "Dashboard", "grid"],
+    ["/rankings", "Rankings", "trend"],
+    ["/search", "Search", "search"],
+    ["/audit", "Audit", "audit"],
+    ["/backlinks", "Backlinks", "link"],
     ["/keywords", "Keywords", "key"],
+    ["/routes", "Routes", "radar"],
     ["/brand", "Brand profile", "sparkle"],
     ["/authors", "Authors", "users"],
     ["/connections", "Connections", "plug"],

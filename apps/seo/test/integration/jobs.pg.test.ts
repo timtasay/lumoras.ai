@@ -126,7 +126,7 @@ describe("worker and job queue (PostgreSQL)", { skip: skipReason ?? false }, () 
     const [r] = (await pool.query<{ rolsuper: boolean }>("SELECT rolsuper FROM pg_roles WHERE rolname = current_user")).rows;
     assert.equal(r.rolsuper, false);
     const scheduled = await adminQuery<{ name: string; cron: string }>("SELECT name, cron FROM pgboss.schedule ORDER BY name", [], db.name);
-    assert.deepEqual(scheduled.map((s) => s.name).sort(), [QUEUES.links, QUEUES.runway, QUEUES.sitemaps, QUEUES.tick].sort());
+    assert.deepEqual(scheduled.map((s) => s.name).sort(), [QUEUES.links, QUEUES.runway, QUEUES.sitemaps, QUEUES.tick, QUEUES.measureTick].sort());
   });
 
   it("a schedule tick lays out slots and wakes generation for the slot in its lead window; the worker writes it and stops at review", async () => {

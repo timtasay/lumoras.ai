@@ -57,6 +57,22 @@ const EXPECTED_TENANT_TABLES: Record<string, string> = {
   publications: "workspace_id",
   rank_tracking_queue: "workspace_id",
   link_checks: "workspace_id",
+  // Phase 4
+  measurement_runs: "workspace_id",
+  rank_trackers: "workspace_id",
+  rank_snapshots: "workspace_id",
+  search_sync_state: "workspace_id",
+  gsc_daily: "workspace_id",
+  gsc_page_daily: "workspace_id",
+  gsc_query_daily: "workspace_id",
+  ga4_daily: "workspace_id",
+  ga4_landing_daily: "workspace_id",
+  ga4_event_daily: "workspace_id",
+  url_inspections: "workspace_id",
+  audits: "workspace_id",
+  audit_issues: "workspace_id",
+  tasks: "workspace_id",
+  backlink_snapshots: "workspace_id",
 };
 
 /** Tables the app role may not UPDATE or DELETE at all (append-only): a write attempt must be refused outright. */
@@ -124,6 +140,24 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
       await tx.exec("INSERT INTO publications (workspace_id, site_id, item_id, publisher, mode, status, path) VALUES ($1, $2, $3, 'github', 'pr', 'open', $4)", [ws, site.id, item, `content/${slug}-secret.md`]);
       await tx.exec("INSERT INTO rank_tracking_queue (workspace_id, site_id, item_id, keyword) VALUES ($1, $2, $3, $4)", [ws, site.id, item, `${slug} secret keyword`]);
       await tx.exec("INSERT INTO link_checks (workspace_id, site_id, url, status_code, ok) VALUES ($1, $2, $3, 200, true)", [ws, site.id, `https://${slug}.example/private-source`]);
+      // Phase 4: a measurement run with a tracker and a snapshot, Search Console and GA4 rows, an inspection, an audit with an issue and a task, a backlinks snapshot
+      const mrun = (await tx.one<{ id: string }>("INSERT INTO measurement_runs (workspace_id, site_id, kind, window_key, created_by, status) VALUES ($1, $2, 'rank', 'w:2026-W41', $3, 'succeeded') RETURNING id", [ws, site.id, u.id])).id;
+      const tracker = (await tx.one<{ id: string }>("INSERT INTO rank_trackers (workspace_id, site_id, provider, provider_tracker_id, market, location_code, language_code) VALUES ($1, $2, 'fake', $3, 'United States', 2840, 'en') RETURNING id", [ws, site.id, `${slug}-tracker`])).id;
+      await tx.exec("INSERT INTO rank_snapshots (workspace_id, site_id, tracker_id, run_id, keyword, source, position, device, location, captured_at) VALUES ($1, $2, $3, $4, $5, 'saved', 4, 'desktop', 'United States', now())", [ws, site.id, tracker, mrun, `${slug} secret ranking`]);
+      await tx.exec("INSERT INTO search_sync_state (workspace_id, site_id, kind, property) VALUES ($1, $2, 'search_console', $3)", [ws, site.id, `sc-domain:${slug}.example`]);
+      await tx.exec("INSERT INTO gsc_daily (workspace_id, site_id, day, clicks, impressions, ctr, position, final) VALUES ($1, $2, '2026-10-01', 7, 100, 0.07, 5.5, true)", [ws, site.id]);
+      await tx.exec("INSERT INTO gsc_page_daily (workspace_id, site_id, day, page, clicks, impressions, position) VALUES ($1, $2, '2026-10-01', $3, 7, 100, 5.5)", [ws, site.id, `https://${slug}.example/secret-page`]);
+      await tx.exec("INSERT INTO gsc_query_daily (workspace_id, site_id, day, query, page, clicks, impressions, position) VALUES ($1, $2, '2026-10-01', $3, $4, 7, 100, 5.5)", [ws, site.id, `${slug} secret query`, `https://${slug}.example/secret-page`]);
+      await tx.exec("INSERT INTO ga4_daily (workspace_id, site_id, day, sessions, key_events, organic_sessions, organic_key_events, final) VALUES ($1, $2, '2026-10-01', 50, 2, 30, 1, true)", [ws, site.id]);
+      await tx.exec("INSERT INTO ga4_landing_daily (workspace_id, site_id, day, landing_page, sessions, key_events) VALUES ($1, $2, '2026-10-01', $3, 30, 1)", [ws, site.id, `/${slug}-secret-landing`]);
+      await tx.exec("INSERT INTO ga4_event_daily (workspace_id, site_id, day, event_name, key_events) VALUES ($1, $2, '2026-10-01', $3, 1)", [ws, site.id, `${slug}_secret_event`]);
+      await tx.exec("INSERT INTO url_inspections (workspace_id, site_id, url, verdict) VALUES ($1, $2, $3, 'PASS')", [ws, site.id, `https://${slug}.example/secret-page`]);
+      const arun = (await tx.one<{ id: string }>("INSERT INTO measurement_runs (workspace_id, site_id, kind, window_key, created_by, status) VALUES ($1, $2, 'audit', 'm:2026-10', $3, 'succeeded') RETURNING id", [ws, site.id, u.id])).id;
+      const audit = (await tx.one<{ id: string }>("INSERT INTO audits (workspace_id, site_id, run_id, provider, provider_audit_id, max_pages, status) VALUES ($1, $2, $3, 'fake', 'a1', 50, 'done') RETURNING id", [ws, site.id, arun])).id;
+      const task = (await tx.one<{ id: string }>("INSERT INTO tasks (workspace_id, site_id, title, source, issue_type, created_by) VALUES ($1, $2, $3, 'audit', 'title_too_long', $4) RETURNING id", [ws, site.id, `${slug} secret task`, u.id])).id;
+      await tx.exec("INSERT INTO audit_issues (workspace_id, site_id, audit_id, issue_type, severity, count, title, task_id) VALUES ($1, $2, $3, 'title_too_long', 'warning', 3, $4, $5)", [ws, site.id, audit, `${slug} secret issue`, task]);
+      const brun = (await tx.one<{ id: string }>("INSERT INTO measurement_runs (workspace_id, site_id, kind, window_key, created_by, status) VALUES ($1, $2, 'backlinks', 'q:2026-Q4', $3, 'succeeded') RETURNING id", [ws, site.id, u.id])).id;
+      await tx.exec("INSERT INTO backlink_snapshots (workspace_id, site_id, run_id, domain, is_competitor, backlinks, referring_domains, referring_sample, captured_at) VALUES ($1, $2, $3, $4, false, 10, 3, $5, now())", [ws, site.id, brun, `${slug}.example`, [`${slug}-secret-ref.example`]]);
       return { item, run };
     });
     return { ws, user: u.id, site: site.id, ...content };
@@ -234,6 +268,21 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
       ["publications", "INSERT INTO publications (workspace_id, site_id, item_id, publisher, mode) VALUES ($1, $2, $3, 'webhook', 'webhook')", [B.ws, B.site, B.item]],
       ["rank_tracking_queue", "INSERT INTO rank_tracking_queue (workspace_id, site_id, keyword) VALUES ($1, $2, 'planted')", [B.ws, B.site]],
       ["link_checks", "INSERT INTO link_checks (workspace_id, site_id, url, ok) VALUES ($1, $2, 'https://planted.example/', true)", [B.ws, B.site]],
+      ["measurement_runs", "INSERT INTO measurement_runs (workspace_id, site_id, kind, window_key, created_by) VALUES ($1, $2, 'rank', 'planted', 'system:test')", [B.ws, B.site]],
+      ["rank_trackers", "INSERT INTO rank_trackers (workspace_id, site_id, provider, provider_tracker_id, market, location_code, language_code, device) VALUES ($1, $2, 'fake', 'planted', 'Planted', 2840, 'en', 'mobile')", [B.ws, B.site]],
+      ["rank_snapshots", "INSERT INTO rank_snapshots (workspace_id, site_id, tracker_id, run_id, keyword, source, device, location, captured_at) VALUES ($1, $2, gen_random_uuid(), gen_random_uuid(), 'planted', 'saved', 'desktop', 'x', now())", [B.ws, B.site]],
+      ["search_sync_state", "INSERT INTO search_sync_state (workspace_id, site_id, kind, property) VALUES ($1, $2, 'ga4', 'properties/1')", [B.ws, B.site]],
+      ["gsc_daily", "INSERT INTO gsc_daily (workspace_id, site_id, day, clicks, impressions, ctr, position, final) VALUES ($1, $2, '2026-09-01', 1, 1, 1, 1, true)", [B.ws, B.site]],
+      ["gsc_page_daily", "INSERT INTO gsc_page_daily (workspace_id, site_id, day, page, clicks, impressions, position) VALUES ($1, $2, '2026-09-01', 'planted', 1, 1, 1)", [B.ws, B.site]],
+      ["gsc_query_daily", "INSERT INTO gsc_query_daily (workspace_id, site_id, day, query, page, clicks, impressions, position) VALUES ($1, $2, '2026-09-01', 'planted', 'planted', 1, 1, 1)", [B.ws, B.site]],
+      ["ga4_daily", "INSERT INTO ga4_daily (workspace_id, site_id, day, sessions, key_events, organic_sessions, organic_key_events, final) VALUES ($1, $2, '2026-09-01', 1, 0, 1, 0, true)", [B.ws, B.site]],
+      ["ga4_landing_daily", "INSERT INTO ga4_landing_daily (workspace_id, site_id, day, landing_page, sessions, key_events) VALUES ($1, $2, '2026-09-01', '/planted', 1, 0)", [B.ws, B.site]],
+      ["ga4_event_daily", "INSERT INTO ga4_event_daily (workspace_id, site_id, day, event_name, key_events) VALUES ($1, $2, '2026-09-01', 'planted', 1)", [B.ws, B.site]],
+      ["url_inspections", "INSERT INTO url_inspections (workspace_id, site_id, url, verdict) VALUES ($1, $2, 'https://planted.example/', 'PASS')", [B.ws, B.site]],
+      ["audits", "INSERT INTO audits (workspace_id, site_id, run_id, provider, provider_audit_id, max_pages) VALUES ($1, $2, gen_random_uuid(), 'fake', 'planted', 10)", [B.ws, B.site]],
+      ["audit_issues", "INSERT INTO audit_issues (workspace_id, site_id, audit_id, issue_type, severity, count, title) VALUES ($1, $2, gen_random_uuid(), 'planted', 'info', 1, 'planted')", [B.ws, B.site]],
+      ["tasks", "INSERT INTO tasks (workspace_id, site_id, title, created_by) VALUES ($1, $2, 'planted', 'system:test')", [B.ws, B.site]],
+      ["backlink_snapshots", "INSERT INTO backlink_snapshots (workspace_id, site_id, run_id, domain, is_competitor, captured_at) VALUES ($1, $2, gen_random_uuid(), 'planted.example', true, now())", [B.ws, B.site]],
     ];
     for (const [table, sql, params] of attempts) {
       await assert.rejects(asA((tx) => tx.exec(sql, params)), /row-level security|violates/, `${table}: workspace A inserted a row with workspace_id ${B.ws}`);
@@ -344,6 +393,19 @@ describe("row-level security isolates workspaces", { skip: skipReason ?? false }
       assert.ok(!JSON.stringify(r).includes(ct.c));
     }
     assert.ok(encryptSecret("x", "y", RING).ciphertext.startsWith("v1."));
+  });
+
+  it("bulk sync tables are audited per statement (row count and day range), and a backlinks sample is fingerprinted", async () => {
+    const rows = await adminQuery<{ entity_type: string; details: Record<string, unknown> }>(
+      "SELECT entity_type, details FROM audit_log WHERE entity_type IN ('gsc_daily', 'gsc_query_daily', 'ga4_landing_daily', 'rank_snapshots') AND workspace_id = $1",
+      [A.ws],
+      db.name,
+    );
+    assert.deepEqual([...new Set(rows.map((r) => r.entity_type))].sort(), ["ga4_landing_daily", "gsc_daily", "gsc_query_daily", "rank_snapshots"]);
+    for (const r of rows) assert.equal(r.details.rows, 1);
+    assert.ok(!JSON.stringify(rows).includes("secret query"), "a search query was copied into the audit log");
+    const [b] = await adminQuery<{ after: Record<string, unknown> }>("SELECT after FROM audit_log WHERE entity_type = 'backlink_snapshots' AND workspace_id = $1", [A.ws], db.name);
+    assert.match(String(b.after.referring_sample), /^\[redacted [0-9a-f]{8}\]$/);
   });
 
   it("tenant writes without an actor are refused (every write says who)", async () => {

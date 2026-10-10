@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ViewTransition } from "react";
 import { Icon } from "@/components/Icons";
 import { StatusLight, type LightState } from "@/components/ui/Status";
+import { Sparkline } from "@/components/charts/Sparkline";
+import { formatNumber } from "@/lib/ui/format";
 
 export type SiteCardData = {
   id: string;
@@ -16,6 +18,8 @@ export type SiteCardData = {
   failingConnections: number;
   /** Null when the site has no active schedule. */
   runway?: { days: number; level: "ok" | "low" | "empty"; threshold: number } | null;
+  /** Phase 4: organic clicks from Search Console (28 days, the 28 before, 12 weekly sums); null when not connected. */
+  search?: { clicks: number; clicksPrev: number; weekly: number[] } | null;
 };
 
 const CRAWL: Record<string, [LightState, string]> = {
@@ -72,6 +76,21 @@ export function SiteCard({ site, href }: { site: SiteCardData; href?: string }) 
           <dd className="small">{site.lastCrawl ?? "Never"}</dd>
         </div>
       </dl>
+      {site.search ? (
+        <div className="site-clicks">
+          <span className="label">Clicks, 28 days</span>
+          <span className="sc-val">
+            {formatNumber(site.search.clicks, "compact")}
+            {site.search.clicksPrev ? (
+              <span className="sc-delta" data-good={site.search.clicks >= site.search.clicksPrev ? "good" : "bad"}>
+                {site.search.clicks >= site.search.clicksPrev ? "+" : "−"}
+                {Math.abs(Math.round(((site.search.clicks - site.search.clicksPrev) / site.search.clicksPrev) * 100))}%
+              </span>
+            ) : null}
+          </span>
+          <Sparkline data={site.search.weekly} label={`${site.domain} organic clicks, last 12 weeks`} width={88} height={26} />
+        </div>
+      ) : null}
       {site.runway ? (
         <div className="site-runway" data-level={site.runway.level}>
           <span className="label">Runway</span>

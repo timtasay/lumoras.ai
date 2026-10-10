@@ -15,16 +15,23 @@ import { webEnv } from "@/lib/config";
 import { localParts } from "@/lib/content/schedule";
 import Link from "next/link";
 import { Icon } from "@/components/Icons";
+import { MeasureSettingsForm } from "@/components/measure/MeasureSettingsForm";
+import { saveMeasureSettingsAction } from "../../../measure-actions";
+import { trackedKeywords } from "@/lib/measure/rank";
+import { dataForSeoPrice } from "@/lib/providers/operations";
+import { formatMicros } from "@/lib/research/money";
+import { marketFor } from "@/lib/research/market";
 
 export const metadata: Metadata = { title: "Site settings" };
 
 export default async function SiteSettingsPage({ params }: { params: Promise<{ slug: string; siteId: string }> }) {
   const { slug, siteId } = await params;
-  const { site, a, settings, publish } = await loadSite(slug, siteId, async (tx, s) => {
+  const { site, a, settings, publish, tracked } = await loadSite(slug, siteId, async (tx, s) => {
     const settings = await getSiteSettings(tx, s.id);
     const publish = settings.publish_connection_id ? await loadPublishConnection(tx, settings.publish_connection_id).catch(() => null) : null;
-    return { settings, publish };
+    return { settings, publish, tracked: await trackedKeywords(tx, s.id, settings.rank_max_keywords) };
   });
+  const rankPrice = tracked.length ? formatMicros(dataForSeoPrice({ op: "rankTracker.run", params: { trackerId: "-", domain: site.domain, market: marketFor(settings), keywords: tracked.map((t) => t.keyword), depth: settings.rank_depth } }).micros) : null;
   const base = webEnv().baseUrl;
   const canEdit = can(a.role, "site:update");
   return (
@@ -82,6 +89,27 @@ export default async function SiteSettingsPage({ params }: { params: Promise<{ s
           </Link>
         </p>
         <FeedPanel enabled={settings.feed_enabled} canEdit={canEdit} jsonUrl={`${base}/api/feeds/${settings.feed_token}/feed.json`} rssUrl={`${base}/api/feeds/${settings.feed_token}/rss.xml`} toggle={setFeedAction.bind(null, slug, site.id)} />
+      </section>
+      <section className="panel pad" aria-labelledby="measure-h" id="measurement">
+        <h2 id="measure-h" className="sub-h">
+          Measurement
+        </h2>
+        <MeasureSettingsForm
+          action={saveMeasureSettingsAction.bind(null, slug, site.id)}
+          readOnly={!canEdit}
+          estimate={rankPrice}
+          defaults={{
+            rankCadence: settings.rank_cadence,
+            rankDevice: settings.rank_device,
+            rankDepth: settings.rank_depth,
+            rankMaxKeywords: settings.rank_max_keywords,
+            auditCadence: settings.audit_cadence,
+            auditMaxPages: settings.audit_max_pages,
+            backlinksCadence: settings.backlinks_cadence,
+            searchSync: settings.search_sync,
+            inspectDailyCap: settings.inspect_daily_cap,
+          }}
+        />
       </section>
       {can(a.role, "site:delete") ? <DeleteSite domain={site.domain} action={deleteSiteAction.bind(null, slug, site.id)} /> : null}
     </div>

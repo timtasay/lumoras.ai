@@ -14,29 +14,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
  * scale transforms on bars: paint and composite only, never layout.
  */
 
-export type Scale = ((v: number) => number) & { domain: [number, number]; range: [number, number] };
-
-export function linear(domain: [number, number], range: [number, number]): Scale {
-  const [d0, d1] = domain, [r0, r1] = range;
-  const k = d1 === d0 ? 0 : (r1 - r0) / (d1 - d0);
-  const f = ((v: number) => r0 + (v - d0) * k) as Scale;
-  f.domain = domain;
-  f.range = range;
-  return f;
-}
-
-/** "Nice" tick values (1, 2, 2.5, 5 × 10^n steps) covering [min, max]. */
-export function niceTicks(min: number, max: number, count = 4): number[] {
-  if (max <= min) return [min];
-  const raw = (max - min) / count;
-  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? 10 * mag;
-  const start = Math.floor(min / step) * step;
-  const out: number[] = [];
-  for (let v = start; v <= max + step * 0.001; v += step) out.push(Math.round(v * 1e6) / 1e6);
-  if (out[out.length - 1] < max) out.push(out[out.length - 1] + step);
-  return out;
-}
+export { linear, niceTicks, type Scale } from "@/lib/ui/chart-math";
 
 /** Observes an element's content width (falls back until measured). */
 export function useWidth<T extends HTMLElement>(fallback = 640): [RefObject<T | null>, number] {
@@ -55,27 +33,7 @@ export function useWidth<T extends HTMLElement>(fallback = 640): [RefObject<T | 
   return [ref, w];
 }
 
-/** Polyline path through points; null values break the line. */
-export function linePath(points: ({ x: number; y: number } | null)[]): string {
-  let d = "", pen = false;
-  for (const p of points) {
-    if (!p) {
-      pen = false;
-      continue;
-    }
-    d += `${pen ? "L" : "M"}${p.x.toFixed(1)},${p.y.toFixed(1)}`;
-    pen = true;
-  }
-  return d;
-}
-
-/** Column with a 4px rounded data end and a square baseline. */
-export function columnPath(x: number, y: number, w: number, base: number, r = 4): string {
-  const h = base - y;
-  if (h <= 0) return "";
-  const rr = Math.min(r, w / 2, h);
-  return `M${x},${base}V${y + rr}Q${x},${y} ${x + rr},${y}H${x + w - rr}Q${x + w},${y} ${x + w},${y + rr}V${base}Z`;
-}
+export { linePath, columnPath } from "@/lib/ui/chart-math";
 
 /**
  * The figure every chart sits in: title and summary (the accessible name),

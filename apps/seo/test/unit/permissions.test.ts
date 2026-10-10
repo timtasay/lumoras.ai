@@ -24,7 +24,7 @@ describe("permission map", () => {
     const allowed = new Set<string>(["content:approve", "comment:create"]);
     for (const p of WRITES.filter((x) => !allowed.has(x))) assert.equal(can("reviewer", p), false, `reviewer can ${p}`);
     // the owner decision spelled out: no editing, no paid calls, no connections, members, budget or settings
-    for (const p of ["content:edit", "pipeline:run", "research:run", "crawl:run", "content:schedule", "connection:manage", "member:manage", "invitation:manage", "budget:manage", "site:update", "brand:update"] as const) {
+    for (const p of ["content:edit", "pipeline:run", "research:run", "crawl:run", "content:schedule", "connection:manage", "member:manage", "invitation:manage", "budget:manage", "site:update", "brand:update", "measure:run", "task:manage"] as const) {
       assert.throws(() => assertCan("reviewer", p), ForbiddenError, `reviewer may ${p}`);
     }
   });
@@ -40,7 +40,7 @@ describe("permission map", () => {
     for (const p of ["member:manage", "invitation:manage", "billing:manage", "workspace:update", "workspace:delete"] as const) {
       assert.equal(can("editor", p), false, `editor can ${p}`);
     }
-    for (const p of ["site:create", "site:update", "brand:update", "author:manage", "connection:manage", "crawl:run", "content:edit", "content:approve"] as const) {
+    for (const p of ["site:create", "site:update", "brand:update", "author:manage", "connection:manage", "crawl:run", "content:edit", "content:approve", "measure:run", "task:manage"] as const) {
       assert.equal(can("editor", p), true, `editor cannot ${p}`);
     }
   });

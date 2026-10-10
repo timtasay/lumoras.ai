@@ -30,6 +30,25 @@ export const QUEUES = {
   runway: "runway-check",
   /** After publishing: PR merged? live URL 200? Search Console inspection. */
   postPublish: "post-publish-check",
+  // Phase 4: measurement
+  /** Hourly: for every site, enqueue the measurement work that is due (cadences, daily syncs). */
+  measureTick: "measure-tick",
+  /** One rank check of a site (priced first, metered). */
+  rank: "rank-run",
+  /** Asynchronous providers: read the positions of a waiting rank check. */
+  rankPoll: "rank-poll",
+  /** Search Console daily sync (and backfill steps). */
+  gscSync: "gsc-sync",
+  /** GA4 daily sync and measurement health. */
+  ga4Sync: "ga4-sync",
+  /** URL Inspection of new publications (read-only, rate-limited). */
+  inspect: "url-inspect",
+  /** Start a site audit (priced first, metered). */
+  audit: "site-audit",
+  /** Poll a running audit; read its issues when done. */
+  auditPoll: "site-audit-poll",
+  /** Backlinks baseline / quarterly snapshot for the site and its competitors. */
+  backlinks: "backlinks-run",
 } as const;
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 

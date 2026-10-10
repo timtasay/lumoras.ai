@@ -138,6 +138,9 @@ for (const [theme, width] of [["dark", 1440], ["light", 375]] as const) {
     await expect(card).toContainText("7");
     await card.click();
     await expect(page.getByRole("heading", { level: 1, name: E2E.fakeDomain })).toBeVisible();
+    // Phase 4: the site opens on its dashboard; the route inventory has its own tab
+    await expect(page.getByRole("heading", { name: "Connect Search Console" })).toBeVisible();
+    await page.getByRole("navigation", { name: "Site sections" }).getByRole("link", { name: "Routes" }).click();
     await expect(page.getByRole("region", { name: "Routes found in the sitemaps" })).toContainText("/services/invisalign");
 
     // the data and its audit trail are in the database, under this workspace only
@@ -161,6 +164,7 @@ test("a scan of a domain that does not resolve fails cleanly and says why", asyn
   // the seeded Northwind site is on a reserved .example domain: DNS fails before anything is fetched
   await signIn(page, "editor@northwind-dental.example");
   await page.getByRole("link", { name: "northwind-dental.example: open site" }).click();
+  await page.getByRole("navigation", { name: "Site sections" }).getByRole("link", { name: "Routes" }).click();
   await page.getByRole("button", { name: "Scan the sitemap" }).click();
   await expect(page.locator(".scan")).toHaveAttribute("data-state", "failed", { timeout: 30_000 });
   await expect(page.locator(".scan-log")).toContainText(/could not resolve|refusing|ENOTFOUND|EAI_AGAIN/);

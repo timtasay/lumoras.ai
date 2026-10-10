@@ -769,7 +769,7 @@ export async function stepAfter(s: StepContext): Promise<StepResult> {
   const item = await tx(s, (t) => getItem(t, s.item.id), true);
   const market = marketFor(s.site);
   const pub = await tx(s, (t) => t.maybe<{ id: string; status: string; mode: string; pr_url: string | null }>("SELECT id, status, mode, pr_url FROM publications WHERE item_id = $1 ORDER BY created_at DESC LIMIT 1", [item.id]), true);
-  // rule 12: the target keyword goes into rank tracking (Phase 4 runs the queue)
+  // rule 12: the target keyword goes into rank tracking (checked on the site's rank cadence, lib/measure/rank.ts)
   await tx(s, async (t) => {
     await t.action("content.after_publish");
     if (item.primary_keyword) {
@@ -806,7 +806,7 @@ export async function stepAfter(s: StepContext): Promise<StepResult> {
   await s.deps.enqueue(QUEUES.plan, { workspaceId: s.ctx.workspaceId, siteId: s.site.id }, { singletonKey: `plan:${s.site.id}` });
   return {
     output: {
-      rankTracking: item.primary_keyword ? `“${item.primary_keyword}” queued for rank tracking (${market.label}); Phase 4 runs it.` : "No keyword to track.",
+      rankTracking: item.primary_keyword ? `“${item.primary_keyword}” queued for rank tracking (${market.label}); checked on the site's rank cadence, priced first.` : "No keyword to track.",
       liveUrl: item.live_url,
       live,
       searchConsole: inspection ?? (s.deps.google ? "Inspected once the URL is live." : "Search Console is not configured: no URL inspection."),

@@ -36,6 +36,8 @@ export const LIMITS = {
   pipelinePerUser: { name: "pipeline:user", max: 30, windowSec: 60 * 60 },
   /** publishing-connection tests per site (each one calls the client's Git host or webhook) */
   publishTestPerSite: { name: "publish-test:site", max: 30, windowSec: 60 * 60 },
+  /** "Run now" for measurement (paid rank checks, audits, backlinks; Google syncs), per site */
+  measurePerSite: { name: "measure:site", max: 12, windowSec: 60 * 60 },
 } as const satisfies Record<string, Limit>;
 
 export class RateLimitedError extends Error {

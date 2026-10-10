@@ -147,3 +147,6 @@
 .runway-note strong{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
 .rw-key{width:22px;height:4px;border-radius:999px;margin-top:9px;flex:none;background:var(--rc);box-shadow:0 0 8px color-mix(in srgb,var(--rc) 45%,transparent)}
 .rw-key[data-kind="gap"]{background:repeating-linear-gradient(135deg,var(--danger) 0 3px,transparent 3px 6px);box-shadow:none}
+.ds-stack{display:grid;gap:14px}
+.ds-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.ds-grid-2{grid-template-columns:minmax(0,1fr)}}

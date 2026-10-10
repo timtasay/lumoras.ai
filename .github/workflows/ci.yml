@@ -27,6 +27,9 @@ jobs:
       # throwaway PostgreSQL 16: migrations runner, RLS isolation (incl. the Phase 2 and Phase 3 tables), Better Auth,
       # seed and audit tests, the metered call path (cache, budget and reserve, concurrency), Google connections,
       # Phase 3: the content pipeline (FakeLlm, fake GitHub, signed webhooks), the pg-boss worker process end to end
+      # Phase 4: measurement (rank priced first / refused below reserve, Search Console sync idempotency and backfill
+      # against a fake Google, GA4 health, audits -> tasks, backlinks, RLS on every new table, the audited agency
+      # health function, the `gsc:sync` CLI) plus the static "no Indexing API" guard
       postgres:
         image: postgres:16
         env:
@@ -97,6 +100,8 @@ jobs:
       # refusal, Budget and usage + CSV, Search Console / GA4 OAuth against a fake Google;
       # Phase 3 (the worker runs too): review gate by role, editor lint/diff, calendar drag + keyboard,
       # live run view, runway banner, publishing connector Test, onboarding steps 7-8;
+      # Phase 4: site dashboard count-up + 90-day chart, rankings chart and filters, audit Fix -> task,
+      # backlinks, agency home (admin only), GA4 health warning, empty / not-connected states;
       # apps/web: homepage smoke
       - run: pnpm test:e2e
       - if: always()

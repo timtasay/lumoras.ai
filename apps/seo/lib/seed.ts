@@ -22,6 +22,7 @@ import type { WorkspaceRole } from "./auth/permissions.ts";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { parseSitemap } from "./crawl/parse.ts";
+import { pauseFictionalMeasurement, seedMeasurement, type SeedMeasureOptions } from "./seed-measure.ts";
 import { seedContent, type SeedContentOptions } from "./seed-content.ts";
 import { DEFAULT_SEO_RULES } from "./validation.ts";
 import { addSeeds, saveKeywords, setBudget, setKeywordCluster, setKeywordStatus } from "./data/research.ts";
@@ -200,7 +201,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
 
 export type SeedResult = { users: Record<string, string>; workspaces: Record<string, { id: string; sites: Record<string, string> }> };
 
-export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; research?: boolean; content?: false | SeedContentOptions } = {}): Promise<SeedResult> {
+export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; research?: boolean; content?: false | SeedContentOptions; measure?: false | SeedMeasureOptions } = {}): Promise<SeedResult> {
   const users: Record<string, string> = {};
   // auth tables are not tenant tables; the audit trigger records them with the seed as actor
   const c = await db.connect();
@@ -279,6 +280,10 @@ export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; resear
     if (opts.research !== false && w.slug === "lumoras") await seedResearch(db, wsId, sites["sonorch.ai"], w.sites[0]);
   }
   if (opts.content !== false) await seedContent(db, out, { keyring: opts.keyring ?? null, ...(opts.content ?? {}) });
+  // Phase 4: Northwind's domain is fictional, so its paid measurement is off; then the demo measurement
+  const nw = out.workspaces["northwind-dental"];
+  if (nw) await pauseFictionalMeasurement(db, nw.id, nw.sites["northwind-dental.example"]);
+  if (opts.measure !== false) await seedMeasurement(db, out.workspaces, { keyring: opts.keyring ?? null, ...(opts.measure ?? {}) });
   return out;
 }
 

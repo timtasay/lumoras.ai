@@ -37,7 +37,7 @@ export async function createSiteAction(slug: string, onboarding: boolean, _prev:
     return toActionError(e);
   }
   revalidatePath(`/w/${slug}`, "layout");
-  redirect(onboarding ? `/w/${slug}/onboarding/scan` : `/w/${slug}/sites/${siteId}?crawl=1`);
+  redirect(onboarding ? `/w/${slug}/onboarding/scan` : `/w/${slug}/sites/${siteId}/routes?crawl=1`);
 }
 
 export async function updateSiteAction(slug: string, siteId: string, _prev: ActionState, fd: FormData): Promise<ActionState> {

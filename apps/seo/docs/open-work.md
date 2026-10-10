@@ -1,7 +1,7 @@
 # Open work (Lumoras Growth)
 
 Things deferred, worked around, or waiting on someone. Each item says what it stands in for.
-Phases 0 to 3, 9 October 2026.
+Phases 0 to 4, 10 October 2026.
 
 ## Waiting on the owner
 
@@ -59,10 +59,8 @@ Phases 0 to 3, 9 October 2026.
 
 - **Connection tests.** Search Console and GA4 (Phase 2), Git and webhook (Phase 3) have live tests.
   WordPress and social arrive in Phase 5; those buttons stay disabled.
-- **Agency health metrics.** Budget (Phase 2) and runway per site (Phase 3, on the workspace overview)
-  are live; the agency home does not show runway across workspaces yet; clicks are Phase 4.
-- **After publishing, Phase 4 and 5 hooks.** The keyword is queued in `rank_tracking_queue` (Phase 4
-  consumes it), the live URL is checked for a 200 and inspected once with Search Console's URL
+- **After publishing, Phase 5 hooks.** The keyword is queued in `rank_tracking_queue` (rank tracking
+  picks it up at the next check, Phase 4), the live URL is checked for a 200 and inspected once with Search Console's URL
   Inspection API when connected; the social hook (`AFTER_PUBLISH_HOOKS` in `lib/pipeline/run-steps.ts`)
   records "social: Phase 5" and does nothing else.
 - **Live run view transport.** `/api/w/:slug/runs/:id/events` is a server-sent-events stream that polls the
@@ -78,13 +76,13 @@ Phases 0 to 3, 9 October 2026.
   is no "new address" button yet (rotate with SQL if a token leaks).
 - **Review-request email.** Reviewers get an in-app notification when an article waits for them; the
   email (kind `review-request`) is sent only when Resend is configured, like every other email.
-- **Rank tracking and site audits in the product.** The `SeoDataProvider` has `rankTracker.*` and
-  `siteAudit.*` (implemented for all three providers, tested against fakes), but no screen or job uses
-  them yet: `rank_trackers`/`rank_snapshots` and `audits`/`audit_issues` tables and their screens are
-  Phase 4. With DataForSEO direct, tracker state lives in our tables, so `rankTracker.get` is
-  unsupported at the provider by design.
-- **Keyword metrics refresh, SERP competitors, backlinks screens.** Operations exist and are metered;
-  their screens are Phase 3–5. Full topic selection (rule 5, head-term collisions against published
+- **Rank tracking with DataForSEO direct.** DataForSEO has no tracker object: each check is one SERP task
+  per keyword and the history lives in `rank_snapshots`, so `rankTracker.get` is unsupported at the
+  provider by design. With a provider that keeps trackers (OpenSEO, the fake), a tracker the provider no
+  longer knows is replaced automatically.
+- **Keyword metrics refresh, SERP competitors.** Operations exist and are metered; the periodic refresh
+  is not scheduled. Backlinks for link prospecting and outreach are Phase 5 (Phase 4 stores baselines and
+  quarterly snapshots, new/lost referring domains, for the site and up to five brand-profile competitors). Full topic selection (rule 5, head-term collisions against published
   and scheduled items) is Phase 3; Phase 2 ships the normalisation, variant collapse (rule 6) and
   sells/does-not-sell filter (rule 7) it builds on.
 - **Stale holds and settle failures.** A hold whose settle never ran (a crash between the provider or
@@ -102,9 +100,25 @@ Phases 0 to 3, 9 October 2026.
   wants rotation without a redeploy.
 - **Month boundaries in UTC.** Budgets reset on the first of the month, UTC, for every workspace.
   Per-workspace time zones for billing periods are a Phase 6 (billing) question.
-- **Search Console / GA4 dashboards.** Phase 2 reads striking-distance queries, zero-click pages, organic
-  landing pages and measurement health on demand (cached 10 minutes in memory per process). Daily
-  snapshots into the database and the dashboards are Phase 4.
+- **Measurement limits chosen without the owner** (Phase 4, all per-site settings or constants, easy to change):
+  rank checks weekly, top 30, desktop, at most 100 keywords; audits monthly, 200 pages; backlinks quarterly;
+  URL Inspection at most 20 URLs a day per site (Google allows 2,000); GA4 backfills 90 days (Search
+  Console backfills its full 16 months, 30 days per job). Paid cadences are refused below the budget's
+  reserve and retried a day later.
+- **Search Console row caps.** Detail rows (query+page, page) are read per day up to Google's 50,000-row
+  daily cap; anonymised queries never appear in query rows, so query totals are lower than date totals by
+  design (the dashboard's KPIs use the date totals). Search type is web only (no image, video, news,
+  Discover or country/device splits yet).
+- **Measurement failures** notify owners and editors in the app (and mark the connection failing on the
+  Connections tab and the agency home); there is no email for them yet, and no per-person notification
+  settings.
+- **Tasks** are created by an audit issue's Fix action (assignable, status open / in progress / done). There
+  is no workspace-wide task list yet; tasks are on each site's Audit tab.
+- **Phase 2's on-demand Google reads** (`lib/google/service.ts` insights, cached 10 minutes in memory) are
+  still the fallback while a site's first sync has not finished; after it, screens read the stored days.
+- **Real Search Console acceptance (Phase 4) is pending the owner's Google setup.** The sync, the lag
+  handling and the dashboards were built and tested against a local fake Google with the documented
+  shapes; the runbook to run it on sonorch.ai is in `docs/phase-4-summary.md`.
 - **Unconfirmed live behaviour.** PKCE on Google's web-server flow, DataForSEO response shapes and
   OpenSEO's live MCP answers were verified against documentation, source and local fakes only (no keys
   in the build environment, no real calls by design). Do one supervised real call per operation on the
@@ -144,6 +158,12 @@ Phases 0 to 3, 9 October 2026.
   reserved `.example` names so no real company gets invented rankings. Screens say "Demo data". Replace
   with scrubbed recorded responses after the first real calls. The dev/e2e seed buys demo research for
   sonorch.ai through the metered path with this provider.
+- **`GOOGLE_PACE_MS=0`** (no pause between Google requests) is what the e2e worker uses against the local
+  fake; it is a valid setting, not refused in production, so leave it unset (200 ms) on the server.
+- **Fake Google data is synthetic.** `test/helpers/fake-google-data.ts` generates 16 months of plausible,
+  deterministic Search Console rows (weekday rhythm, growth, Pacific dates, provisional last two days, 18%
+  anonymised clicks) and GA4 reports for the seeded sites, plus one property whose tag is broken. The seed
+  uses it in development when the fakes run; nothing in it describes real traffic.
 - **FakeLlm fixtures are synthetic.** No model key existed, so `lib/llm/fixtures.ts` writes plausible,
   rule-following articles from the brief's own data (topic, outline, product facts), and the recorded
   source pages (`RECORDED_PAGES`) are invented on reserved `.example` hosts plus the brand's own facts.
@@ -158,7 +178,9 @@ Phases 0 to 3, 9 October 2026.
 - **The Phase 1 ⌘K e2e flake** (`⌘K jumps between workspaces and sites`) failed again once in Phase 3: the
   second Control+K landed while the previous client-side navigation was still settling. The test now
   retries the shortcut until the palette's input has focus (passed 4/4 repeated and in the full runs);
-  the shortcut itself was never broken.
+  the shortcut itself was never broken. It failed once more in Phase 4's final run for a different reason:
+  the test typed into the palette while it was still animating closed after the first jump (the heavier
+  site dashboard made that window wider); it now waits for the dialog to be gone (6/6 repeated).
 - **Metering test hook.** `MeterDeps.afterBudgetRead` lets the concurrency test widen the race window
   inside the reservation; production never sets it. `CACHE_TEST_SABOTAGE` (metering test) and
   `RLS_TEST_SABOTAGE` (RLS test) break guards on purpose for red runs and are read only by tests.
@@ -183,6 +205,8 @@ Phases 0 to 3, 9 October 2026.
   Drawing a line along its path needs `stroke-dashoffset` on a `pathLength=1` path; it is a
   paint-only property (no layout, no shift). Bars grow with `transform: scaleY` as the rule
   asks.
+- **`/favicon.ico` is rewritten to `/icon.svg`** (`next.config.ts`): Chromium occasionally probes
+  `/favicon.ico` despite the icon link, and the 404 surfaced as a console error in one e2e run.
 - **`pnpm approve-builds`.** pnpm 10 skips install scripts for `esbuild` and `unrs-resolver`.
   Neither needs them here (tsx resolves the platform esbuild binary from its optional
   dependency), and everything built and ran without them. If a future install fails on this,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDay } from "@/lib/ui/format";
+import { rankTicks } from "@/lib/ui/chart-math";
 import { ChartFigure, Legend, Tooltip, linePath, linear, useWidth } from "./chart-kit";
 
 const COLORS = ["var(--viz-1)", "var(--viz-2)", "var(--viz-3)", "var(--viz-4)"];
@@ -35,8 +36,8 @@ export function RankChart({
   const n = dates.length;
   const x = linear([0, n - 1], [m.l, width - m.r]);
   const y = linear([1, maxPos], [m.t, height - m.b]);
-  const ticks = [1, 10, 20, 30, 40].filter((t) => t <= maxPos);
-  const xTicks = [0, Math.round((n - 1) / 2), n - 1];
+  const ticks = rankTicks(maxPos);
+  const xTicks = n > 1 ? [0, Math.round((n - 1) / 2), n - 1] : [0];
   const nearest = (clientX: number, el: Element) => {
     const r = el.getBoundingClientRect();
     return Math.max(0, Math.min(n - 1, Math.round(((clientX - r.left - m.l) / (width - m.l - m.r)) * (n - 1))));
@@ -85,7 +86,7 @@ export function RankChart({
             Page one ↑
           </text>
           {xTicks.map((i, k) => (
-            <text key={k} className="axis" x={x(i)} y={height - 8} textAnchor={k === 0 ? "start" : k === 2 ? "end" : "middle"}>
+            <text key={k} className="axis" x={x(i)} y={height - 8} textAnchor={xTicks.length === 1 ? "middle" : k === 0 ? "start" : k === xTicks.length - 1 ? "end" : "middle"}>
               {formatDay(dates[i])}
             </text>
           ))}

@@ -65,7 +65,13 @@ export type FakeOptions = {
   balanceMicros?: number | null;
   /** Hold every call open this long (concurrency tests). */
   delayMs?: number;
+  /** The provider's clock: rank positions and backlink counts drift with it (seeds replay past weeks). */
+  now?: () => Date;
 };
+
+const FEATURES = ["featured_snippet", "people_also_ask", "local_pack", "video", "images", "top_stories"];
+const WEEK_MS = 7 * 86_400_000;
+const EPOCH = Date.UTC(2026, 0, 5);
 
 export class FakeProvider implements SeoDataProvider {
   readonly name = "fake" as const;
@@ -74,6 +80,7 @@ export class FakeProvider implements SeoDataProvider {
   readonly calls = new Map<OperationName, number>();
   balanceMicros: number | null;
   delayMs: number;
+  now: () => Date;
   /** The next calls fail with this (cleared by setting undefined). */
   failWith: ProviderError | undefined;
   private trackers = new Map<string, { domain: string; keywords: Set<string>; last: RankPosition[]; lastCheckedAt: string | null }>();
@@ -83,6 +90,24 @@ export class FakeProvider implements SeoDataProvider {
   constructor(opts: FakeOptions = {}) {
     this.balanceMicros = opts.balanceMicros === undefined ? 50_000_000 : opts.balanceMicros;
     this.delayMs = opts.delayMs ?? 0;
+    this.now = opts.now ?? (() => new Date());
+  }
+
+  /**
+   * A keyword's position for a domain at the provider's clock: a stable base,
+   * a slow weekly drift (some keywords climb, some slip) and a little weekly
+   * noise; about one in seven never ranks in the tracked depth.
+   */
+  position(domain: string, keyword: string, depth: number): { position: number | null; serpFeatures: string[] } {
+    const r = rng(`rank:${domain}:${normalizeKeyword(keyword)}`);
+    const base = r(), slope = r(), noiseSeed = r();
+    const weeks = Math.max(0, Math.floor((this.now().getTime() - EPOCH) / WEEK_MS));
+    const features = FEATURES.filter(() => r() < 0.28);
+    if (base < 0.14) return { position: null, serpFeatures: features };
+    const noise = (rng(`rank:${domain}:${keyword}:${weeks}:${noiseSeed}`)() - 0.5) * 3;
+    const p = Math.round(3 + base * 38 - weeks * (slope - 0.3) * 0.9 + noise);
+    const position = Math.max(1, Math.min(90, p));
+    return { position: position > depth ? null : position, serpFeatures: features };
   }
 
   totalCalls(): number {
@@ -165,14 +190,21 @@ export class FakeProvider implements SeoDataProvider {
   backlinksOverview = async (p: OperationParams["backlinksOverview"]): Promise<ProviderResponse<OperationResults["backlinksOverview"]>> => {
     await this.begin("backlinksOverview");
     const r = rng(`backlinks:${p.domain}`);
-    const data = { backlinks: Math.round(r() * 3000), referringDomains: Math.round(r() * 300), rank: Math.round(r() * 400), brokenBacklinks: Math.round(r() * 20) };
+    // slow growth with the provider's clock (about 3% a month), so quarterly snapshots move
+    const months = Math.max(0, (this.now().getTime() - EPOCH) / (30 * 86_400_000));
+    const g = 1 + months * 0.03;
+    const data = { backlinks: Math.round(r() * 3000 * g), referringDomains: Math.round(r() * 300 * g), rank: Math.round(r() * 400), brokenBacklinks: Math.round(r() * 20) };
     return this.charged({ op: "backlinksOverview", params: p }, data, 1, DFS_PRICES.backlinksTask + DFS_PRICES.backlinksRow);
   };
 
   backlinksProfile = async (p: OperationParams["backlinksProfile"]): Promise<ProviderResponse<OperationResults["backlinksProfile"]>> => {
     await this.begin("backlinksProfile");
     const r = rng(`profile:${p.domain}`);
-    const data = SERP_DOMAINS.slice(0, Math.min(p.limit, 8)).map((domainFrom, i) => ({
+    // the referring domains change a little each quarter: a few appear, one is lost
+    const quarter = Math.floor(Math.max(0, this.now().getTime() - EPOCH) / (91 * 86_400_000));
+    const pool = [...SERP_DOMAINS, ...Array.from({ length: 12 }, (_, i) => `ref-${i + 1}.example`)];
+    const from = pool.filter((d, i) => i < 8 + quarter * 3 && rng(`keep:${p.domain}:${d}:${quarter}`)() > 0.12);
+    const data = from.slice(0, Math.min(p.limit, 40)).map((domainFrom, i) => ({
       urlFrom: `https://${domainFrom}/resources`, domainFrom, urlTo: `https://${p.domain}/`, anchor: i % 2 ? p.domain : "salon software", dofollow: r() > 0.3, domainRank: Math.round(r() * 500), firstSeen: "2026-0" + (1 + (i % 9)) + "-15", lost: false,
     }));
     return this.charged({ op: "backlinksProfile", params: p }, data, data.length, DFS_PRICES.backlinksTask + data.length * DFS_PRICES.backlinksRow);
@@ -198,10 +230,11 @@ export class FakeProvider implements SeoDataProvider {
       const t = this.trackers.get(p.trackerId);
       const keywords = p.keywords.length ? p.keywords : [...(t?.keywords ?? [])];
       const positions = keywords.map((keyword) => {
-        const v = rng(`rank:${p.domain}:${keyword}`)();
-        return { keyword, position: v < 0.2 ? null : 1 + Math.floor(v * 40), url: v < 0.2 ? null : `https://${p.domain}/` };
+        const x = this.position(p.domain, keyword, p.depth);
+        const slug = normalizeKeyword(keyword).replace(/[^a-z0-9]+/g, "-");
+        return { keyword: normalizeKeyword(keyword), position: x.position, url: x.position === null ? null : `https://${p.domain}/${x.position <= 12 ? `insights/${slug}` : ""}`, serpFeatures: x.serpFeatures };
       });
-      if (t) Object.assign(t, { last: positions, lastCheckedAt: new Date().toISOString() });
+      if (t) Object.assign(t, { last: positions, lastCheckedAt: this.now().toISOString() });
       const pages = keywords.length * Math.ceil(p.depth / 10);
       return this.charged({ op: "rankTracker.run", params: p }, { runId: null, positions }, pages, pages * DFS_PRICES.serpLivePer10);
     },

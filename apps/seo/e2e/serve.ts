@@ -6,7 +6,8 @@
  *   CRAWLER_TEST_ORIGINS   northwind-dental.test → the fake site on 127.0.0.1
  *   RATE_LIMIT_SCALE       the suite signs in many times from one IP
  *   SEO_PROVIDER=fake      research answers from fixtures (no network, no real money)
- *   GOOGLE_API_TEST_ORIGIN Search Console / GA4 OAuth and APIs point at a local fake Google
+ *   GOOGLE_API_TEST_ORIGIN Search Console / GA4 OAuth and APIs point at a local fake Google (realistic
+ *                          Search Analytics, URL Inspection and GA4 data; the seed syncs sonorch.ai from it)
  *   LLM_PROVIDER=fake      articles are written by FakeLlm (no model call, no real money)
  *   OUTBOUND_TEST_HOSTS    github.test and webhook.test → the local fake GitHub and webhook receiver
  *   OUTBOUND_FETCH         recorded: fact-check sources come from recorded pages
@@ -25,6 +26,7 @@ import { startFakeSite } from "../test/helpers/fake-site.ts";
 import { FAKE_GOOGLE_CLIENT, startFakeGoogle } from "../test/helpers/fake-google.ts";
 import { startFakeGit } from "../test/helpers/fake-git.ts";
 import { startFakeWebhook } from "../test/helpers/fake-webhook.ts";
+import { googleEndpoints } from "../lib/google/oauth.ts";
 import { E2E } from "./config.ts";
 
 async function main() {
@@ -41,13 +43,15 @@ async function main() {
   const hookSecret = randomBytes(24).toString("hex");
   const webhook = await startFakeWebhook(hookSecret, { hostName: "webhook.test" });
   const policy = { testResolve: new Map([["github.test", "127.0.0.1"], ["webhook.test", "127.0.0.1"]]) };
+  // the fake Google first: the seed connects sonorch.ai's Search Console and GA4 (and Northwind's broken GA4) to it and syncs them
+  const google = await startFakeGoogle();
   await seed(pool, {
     keyring: readKeyring({ ENCRYPTION_KEY: encryptionKey }),
     content: { github: { apiBase: github.apiBase, token: github.token, reachable: true }, webhook: { endpoint: `${webhook.origin}/hook`, secret: hookSecret }, policy, mail: async () => {} },
+    measure: { google: { endpoints: googleEndpoints(google.origin), client: FAKE_GOOGLE_CLIENT, issue: async (kind) => google.issueRefreshToken(kind) } },
   });
   await pool.end();
   const site = await startFakeSite(E2E.fakeDomain);
-  const google = await startFakeGoogle();
   await writeFile(E2E.stateFile, JSON.stringify({ adminUrl: db.adminUrl, appUrl: db.appUrl, fakeSitePort: site.port, fakeGoogle: google.origin, github: github.apiBase, webhook: webhook.origin, webhookSecret: hookSecret }, null, 2));
 
   const env: NodeJS.ProcessEnv = {
@@ -82,7 +86,7 @@ async function main() {
     OUTBOUND_FETCH: "recorded",
   };
   const next = spawn(path.resolve("node_modules/.bin/next"), ["start", "-p", String(E2E.port), "-H", "127.0.0.1"], { stdio: "inherit", env });
-  const worker = spawn(process.execPath, ["--import", "tsx", "worker/index.ts"], { stdio: "inherit", env: { ...env, FAKE_LLM_LATENCY_MS: "450", WORKER_CONCURRENCY: "4", WORKER_HEARTBEAT_MS: "600000" } });
+  const worker = spawn(process.execPath, ["--import", "tsx", "worker/index.ts"], { stdio: "inherit", env: { ...env, FAKE_LLM_LATENCY_MS: "450", WORKER_CONCURRENCY: "4", WORKER_HEARTBEAT_MS: "600000", GOOGLE_PACE_MS: "0" } });
   let stopping = false;
   const stop = async (code = 0) => {
     if (stopping) return;

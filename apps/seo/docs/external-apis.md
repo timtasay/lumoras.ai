@@ -3,6 +3,41 @@
 Build prompt section 17: read the documentation of every external API before integrating it,
 and record the version and the date. Newest first.
 
+## Google Search Console, GA4 Data and Admin APIs (Phase 4 measurement, `lib/google/`, `lib/measure/`)
+
+All read 10 October 2026 on developers.google.com / support.google.com; "updated" is the page's own
+last-updated date. Scopes stay the Phase 2 read-only pair: `webmasters.readonly`, `analytics.readonly`.
+
+| API, version | Method / page (updated) | What we rely on |
+| --- | --- | --- |
+| Search Console API **v3** (`www.googleapis.com/webmasters/v3`) | `searchanalytics.query` (2026-08-11) | `dimensions` date / query / page; `dataState: "all"` includes fresh data and the response then carries `metadata.first_incomplete_date` (snake_case) when grouped by date; `rowLimit` ≤ 25,000 with `startRow` paging; dates are Pacific (PT) calendar days |
+| Search Console help | "Getting all your data" how-to (2025-08-28) | at most 50,000 rows per day per search type: query one day at a time to get them all; data is typically 2–3 days behind; 16 months retained |
+| Search Console API usage limits | (2025-08-28) | Search Analytics 1,200 QPM per site and per user; URL Inspection 2,000 QPD and 600 QPM per site |
+| URL Inspection API **v1** (`searchconsole.googleapis.com/v1`) | `urlInspection.index.inspect` (2024-07-23), `UrlInspectionResult` (2025-01-21) | `inspectionResult.indexStatusResult` verdict, coverageState, lastCrawlTime, googleCanonical / userCanonical, pageFetchState, robotsTxtState; `inspectionResultLink`. Read-only: it never requests indexing |
+| GA4 Data API **v1beta** (`analyticsdata.googleapis.com`) | `properties.runReport` (2026-04-23) | `dateRanges` with relative dates (`NdaysAgo`, `yesterday`) in the property's time zone; `limit` ≤ 250,000 with `offset`; `rowCount`; `metadata.timeZone`, `dataLossFromOtherRow`, `emptyReason`; `dimensionFilter` on `sessionDefaultChannelGroup` = "Organic Search"; metric `keyEvents` |
+| GA4 Admin API **v1beta** (`analyticsadmin.googleapis.com`) | `properties.dataStreams.list` (2025-04-02), `properties.keyEvents.list` (2026-04-14) | web streams and their `defaultUri` (tag on the right domain?), whether any key event is defined |
+| GA4 help | Data freshness (support page, read same day) | intraday 2–6 h, daily ~12 h, events up to 7 days late: we re-read the last 7 days on every sync |
+
+- **Indexing API: never.** `lib/google/allowlist.ts` lists every Google host and path the app may call
+  (OAuth, Search Console sites / searchAnalytics, URL Inspection, Admin accountSummaries / dataStreams /
+  keyEvents, Data runReport); `assertGoogleUrl()` runs before every Google request, and
+  `indexing.googleapis.com`, `urlNotifications` and the `auth/indexing` scope are refused outright.
+  `test/unit/google-guard.test.ts` also scans the source tree for them.
+- **Not called by any test or by this build session** (no Google credentials exist here).
+  `test/helpers/fake-google.ts` + `fake-google-data.ts` answer in the documented shapes with deterministic
+  synthetic data (16 months, Pacific dates, `first_incomplete_date` = today − 2, paging, a GA4 property
+  whose tag is broken). **Before go-live:** the owner runbook in `docs/phase-4-summary.md` (connect
+  sonorch.ai, run `gsc:sync`, compare the dashboard's 28-day clicks with Search Console's own Performance
+  report for the same Pacific dates).
+
+## SEO data provider operations used by measurement (Phase 4)
+
+No new provider endpoints: rank checks (`rankTracker.create/add/run`; DataForSEO SERP
+`google/organic/live/advanced`, one task per keyword), site audits (`siteAudit.run/status/issues`;
+On-Page `task_post` / `summary`) and backlinks (`backlinks.overview/profile`; Backlinks
+`summary/live`, `backlinks/live`) are the Phase 2 operations and prices above, now called on a cadence.
+DataForSEO SERP results also give the non-organic item types (SERP features), stored per rank snapshot.
+
 ## Anthropic Messages API, `@anthropic-ai/sdk` 0.133.0 (Phase 3, `lib/llm/anthropic.ts`)
 
 - **Version:** `@anthropic-ai/sdk` **0.133.0**, pinned exactly. Models from env: `LLM_MODEL_DRAFT`

@@ -20,6 +20,7 @@ import { createProvider } from "../providers/registry.ts";
 import { QUEUES, type Enqueue, type PipelineDeps } from "../pipeline/deps.ts";
 import { handleCrawl, handleLinks, handlePlan, handlePostPublish, handleRun, handleRunway, handleSitemaps, handleTick } from "./handlers.ts";
 import { JOB_SCHEMA, SCHEDULES } from "./queues.ts";
+import { handleAudit, handleAuditPoll, handleBacklinks, handleGa4Sync, handleGscSync, handleInspect, handleMeasureTick, handleRank, handleRankPoll, type MeasureJob } from "./measure.ts";
 
 /** The SSRF policy for outbound calls: test hosts resolve to loopback only when configured (tests). */
 export function outboundPolicy(o: OutboundEnv, crawlerOrigins: Map<string, { address: string }> = new Map()): SafeFetchPolicy {
@@ -102,7 +103,7 @@ export const enqueueWith =
   };
 
 /** Registers every queue's handler and the recurring schedules. */
-export async function registerWorkers(boss: PgBoss, deps: PipelineDeps, env: Pick<WorkerEnv, "concurrency" | "crawlerTestOrigins">): Promise<void> {
+export async function registerWorkers(boss: PgBoss, deps: PipelineDeps, env: Pick<WorkerEnv, "concurrency" | "crawlerTestOrigins"> & { googlePauseMs?: number }): Promise<void> {
   const each = <T>(fn: (data: T) => Promise<unknown>) => async (jobs: { data: T }[]) => {
     for (const j of jobs) await fn(j.data);
   };
@@ -115,5 +116,16 @@ export async function registerWorkers(boss: PgBoss, deps: PipelineDeps, env: Pic
   await boss.work(QUEUES.links, poll, each(() => handleLinks(deps)));
   await boss.work(QUEUES.runway, poll, each(() => handleRunway(deps)));
   await boss.work(QUEUES.postPublish, poll, each((d: { workspaceId: string; siteId: string; itemId: string }) => handlePostPublish(deps, d)));
+  // Phase 4: measurement
+  const m = { ...deps, googlePauseMs: env.googlePauseMs };
+  await boss.work(QUEUES.measureTick, poll, each(() => handleMeasureTick(m)));
+  await boss.work(QUEUES.rank, { ...poll, localConcurrency: 2 }, each((d: MeasureJob) => handleRank(m, d)));
+  await boss.work(QUEUES.rankPoll, poll, each((d: MeasureJob & { runId: string; attempt?: number }) => handleRankPoll(m, d)));
+  await boss.work(QUEUES.gscSync, { ...poll, localConcurrency: 2 }, each((d: MeasureJob) => handleGscSync(m, d)));
+  await boss.work(QUEUES.ga4Sync, { ...poll, localConcurrency: 2 }, each((d: MeasureJob) => handleGa4Sync(m, d)));
+  await boss.work(QUEUES.inspect, poll, each((d: MeasureJob) => handleInspect(m, d)));
+  await boss.work(QUEUES.audit, poll, each((d: MeasureJob) => handleAudit(m, d)));
+  await boss.work(QUEUES.auditPoll, poll, each((d: MeasureJob & { runId: string; attempt?: number }) => handleAuditPoll(m, d)));
+  await boss.work(QUEUES.backlinks, poll, each((d: MeasureJob) => handleBacklinks(m, d)));
   for (const s of SCHEDULES) await boss.schedule(s.queue, s.cron, {}, { tz: "UTC" });
 }

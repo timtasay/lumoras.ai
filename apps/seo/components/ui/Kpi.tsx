@@ -22,6 +22,7 @@ export function KpiTile({
   tone,
   note,
   replay = 0,
+  missing = false,
 }: {
   label: string;
   value: number;
@@ -36,9 +37,11 @@ export function KpiTile({
   tone?: "warn" | "amber" | "danger";
   note?: string;
   replay?: number;
+  /** No data source yet (not connected): shows a dash, never a zero that reads like a real zero. */
+  missing?: boolean;
 }) {
   const shown = useCountUp(value, 1100, replay);
-  const finalText = formatNumber(value, format) + (suffix ?? "");
+  const finalText = missing ? "No data yet" : formatNumber(value, format) + (suffix ?? "");
   const dir = delta === undefined || delta === 0 ? "flat" : delta > 0 ? "up" : "down";
   const good = dir === "flat" ? "neutral" : (dir === goodWhen) ? "good" : "bad";
   return (
@@ -47,8 +50,8 @@ export function KpiTile({
       <div className="kpi-main">
         <p className="kpi-value">
           <span aria-hidden="true">
-            {formatNumber(format === "dec1" || format === "usd" ? shown : Math.round(shown), format)}
-            {suffix ? <span className="kpi-suffix">{suffix}</span> : null}
+            {missing ? "–" : formatNumber(format === "dec1" || format === "usd" ? shown : Math.round(shown), format)}
+            {suffix && !missing ? <span className="kpi-suffix">{suffix}</span> : null}
           </span>
           <span className="sr-only">{finalText}</span>
         </p>

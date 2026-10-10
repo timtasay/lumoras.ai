@@ -19,9 +19,7 @@ export const PRODUCT_NAME_PENDING = true;
 
 /** Screens that arrive with later phases, listed so the shape of the product is visible. */
 export const LATER: NavItem[] = [
-  { key: "rankings", label: "Rankings", icon: "trend", phase: 4 },
-  { key: "audit-site", label: "Site audit", icon: "audit", phase: 4 },
-  { key: "backlinks", label: "Backlinks", icon: "link", phase: 5 },
+  { key: "prospects", label: "Link prospects", icon: "link", phase: 5 },
   { key: "social", label: "Social", icon: "share", phase: 5 },
 ];
 
@@ -47,6 +45,16 @@ export function buildNav(ws: ShellWorkspace | null, opts: { platformAdmin: boole
         { key: "calendar", label: "Content calendar", icon: "calendar", href: `${base}/content`, prefix: true },
         { key: "review", label: "Review queue", icon: "gate", href: `${base}/review` },
         { key: "runs", label: "Pipeline runs", icon: "flow", href: `${base}/runs`, prefix: true },
+      ],
+    });
+    // Phase 4: measurement; each opens the first site's tab (the site's own tabs switch between them)
+    groups.push({
+      group: "Measure",
+      items: [
+        { key: "rankings", label: "Rankings", icon: "trend", href: `${base}/rankings` },
+        { key: "search", label: "Search Console and GA4", icon: "search", href: `${base}/search` },
+        { key: "site-audit", label: "Site audit", icon: "audit", href: `${base}/site-audit` },
+        { key: "backlinks", label: "Backlinks", icon: "link", href: `${base}/backlinks` },
       ],
     });
     groups.push({ group: "Coming next", items: LATER });

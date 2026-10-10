@@ -5,8 +5,9 @@ and has research, writing, fact-checking, publishing and measurement run from on
 "Lumoras Growth" is a working name (owner decision #1). The full brief is
 [`docs/seo-platform-build-prompt.md`](../../docs/seo-platform-build-prompt.md).
 
-**Status: Phase 3 (content pipeline).** What exists, what was verified and what is open:
-[`docs/phase-3-summary.md`](docs/phase-3-summary.md) (Phase 2: [`docs/phase-2-summary.md`](docs/phase-2-summary.md),
+**Status: Phase 4 (measurement).** What exists, what was verified and what is open:
+[`docs/phase-4-summary.md`](docs/phase-4-summary.md) (real Search Console acceptance is **pending the owner's
+Google setup**; the runbook is in that file). Phase 3: [`docs/phase-3-summary.md`](docs/phase-3-summary.md), Phase 2: [`docs/phase-2-summary.md`](docs/phase-2-summary.md),
 Phase 1: [`docs/phase-1-summary.md`](docs/phase-1-summary.md), Phase 0: [`docs/phase-0-summary.md`](docs/phase-0-summary.md)). The SEO data provider choice (owner
 decision #3) is argued in [`docs/provider-decision.md`](docs/provider-decision.md); OpenSEO's real MCP
 tools are listed in [`docs/openseo-tools.md`](docs/openseo-tools.md).
@@ -23,8 +24,9 @@ apps/seo             this app
   proxy.ts           per-request CSP nonce, request id, optimistic sign-in redirect
   app/(auth)/        /sign-in, /accept-invitation/:id (field behind glass)
   app/(focus)/       /onboarding and /w/:slug/onboarding/:step (the guided setup)
-  app/(app)/         signed-in screens in the shell: /w/:slug (overview), /w/:slug/sites/… (overview,
-                     keywords, brand, authors, connections, settings), /w/:slug/keywords,
+  app/(app)/         signed-in screens in the shell: /w/:slug (overview), /w/:slug/sites/… (dashboard,
+                     rankings, search, audit, backlinks, keywords, routes, brand, authors, connections,
+                     settings), /w/:slug/keywords,
                      /w/:slug/content (calendar), /w/:slug/content/:id (article editor), /w/:slug/review,
                      /w/:slug/runs, /w/:slug/runs/:id (live run view),
                      /w/:slug/settings (members), /w/:slug/settings/budget, /w/:slug/audit, /agency, /agency/audit
@@ -36,7 +38,9 @@ apps/seo             this app
                      forms/ (site, brand, authors, connections, members), scan/, sites/, audit/,
                      research/ (research panel, cost confirm, keywords, log, backlog, domain overview),
                      budget/, google/ (connections, opportunities, provider status),
-                     content/ (calendar, article editor, schedule form, feed, runway banner), pipeline/ (graph, live run)
+                     content/ (calendar, article editor, schedule form, feed, runway banner), pipeline/ (graph, live run),
+                     measure/ (states, health panel, rankings view, audit actions, run-now, cadence settings),
+                     charts/ (area with provisional band, rank chart, new/lost, horizontal bars; hand-written SVG)
   lib/
     env.ts config.ts         validated environment (web, worker, migrate), read lazily
     db/                      migrate.ts (runner), pool.ts, tenant.ts (withWorkspace: the typed query layer)
@@ -59,13 +63,22 @@ apps/seo             this app
                              prices.ts, metered.ts (model usage on the ledger), loop.ts (tool loop, untrusted data)
     pipeline/                the ten steps (run-steps.ts), runner.ts (persisted, resumable), prompts.ts, view.ts
     publishers/              Publisher (types.ts), git.ts (GitHub + Gitea), webhook.ts (HMAC), feed.ts, frontmatter.ts
+    measure/                 Phase 4: cadence.ts (windows, due, next), search.ts (sync plan, lag, aggregation),
+                             gsc-sync.ts, ga4-sync.ts, health.ts (GA4 measurement health), inspect.ts (URL Inspection),
+                             rank.ts, audit.ts (+ tasks), backlinks.ts, runs.ts (measurement_runs, alerts),
+                             scheduler.ts (the hourly tick), dashboard.ts (screen queries), movement.ts, audit-groups.ts
+    ui/chart-math.ts         scales, ticks and paths for the SVG charts (pure, unit tested)
+    google/allowlist.ts      every Google endpoint the app may call; the Indexing API is refused
     jobs/                    pg-boss: queues.ts, install.ts (owner role), handlers.ts, wire.ts, client.ts (web producer)
     security/                csp.ts, origin.ts (CSRF check for route handlers)
     rate-limit.ts seed.ts validation.ts email.ts actions.ts
   migrations/        0001 bootstrap · 0002 auth · 0003 audit · 0004 tenancy · 0005 platform · 0006 research · 0007 content
-  scripts/           migrate.ts, seed.ts, grant-admin.ts, fakes.ts (dev fake GitHub + webhook receiver)
+                     · 0008 measurement
+  scripts/           migrate.ts, seed.ts, grant-admin.ts, fakes.ts (dev fake GitHub, webhook receiver, fake Google),
+                     gsc-sync.ts (`pnpm --filter seo gsc:sync -- --site <id>`)
   fixtures/          lumoras.ai/sitemap.xml (the seeded route inventory)
-  worker/index.ts    the worker: pg-boss queues (schedule tick, pipeline runs, sitemaps, link checks, runway, post-publish)
+  worker/index.ts    the worker: pg-boss queues (schedule tick, pipeline runs, sitemaps, link checks, runway, post-publish;
+                     Phase 4: measure tick, Search Console / GA4 sync, URL inspection, rank checks, audits, backlinks)
   test/unit, test/integration, test/helpers   node --test + tsx
   e2e/               Playwright (serve.ts builds a fresh database, seed and fake site per run)
   deploy/            docker-compose.yml, Caddyfile.snippet, postgres/10-seo-database.sh (files only)
@@ -121,6 +134,18 @@ apps/seo             this app
   they are in the conversation. Lint is code. Approval is required by default; autopilot needs an explicit,
   recorded acknowledgement and still holds anything that fails lint or fact-check. Unverifiable claims
   block approval and publishing (rule 8).
+- **Measurement (Phase 4)** runs in the worker. An hourly tick (`measure-tick`, cron `23 * * * *`) asks
+  each site what is due (`lib/measure/scheduler.ts`): Search Console daily (Pacific day), GA4 and URL Inspection
+  daily (site day), rank checks weekly, audits monthly and backlinks quarterly by default (site settings →
+  Measurement). Every run is a `measurement_runs` row unique on (site, kind, window): the window key is the
+  idempotency key and the pg-boss singleton key, so a double tick or a redelivered job does the work once.
+  Rank checks, audits and backlinks are paid: priced first with `estimateCost`, refused below the budget's
+  reserve (retried a day later, owners and editors notified once), then bought through `meteredCall()`.
+  Search Console sync reads totals by date for the whole 16-month window, then query+page and page detail
+  day by day (paginated, 25,000 rows a page), stores days as provisional until Google's
+  `first_incomplete_date` passes them, re-reads the last four days every time, and backfills 30 days per job.
+  Writes replace whole days, so a re-run never double counts. Google endpoints are allowlisted
+  (`lib/google/allowlist.ts`); the Indexing API is refused in code and by a static test.
 - **Roles:** owner, editor, reviewer (approves, rejects, requests changes; cannot edit or spend),
   viewer (reads and comments).
 - **Security headers:** strict nonce-based CSP from `proxy.ts`; CSRF: Better Auth's origin check
@@ -215,6 +240,17 @@ Without the worker nothing is written or published on schedule ("Run now" queues
 In development the worker writes with FakeLlm (`LLM_PROVIDER` unset) and serves fact-check sources
 from recorded pages (`OUTBOUND_FETCH` unset); no model or website is called.
 
+**Measurement in development.** `pnpm --filter seo fakes` also starts a **fake Google** on :4573 with
+16 months of synthetic Search Console data and GA4 properties (sonorch.ai healthy, Northwind's tag broken).
+Export the three variables it prints (`GOOGLE_API_TEST_ORIGIN=http://127.0.0.1:4573` and the fake OAuth client id and
+secret) before seeding and the seed connects sonorch.ai and Northwind and syncs them; without it, Phase 4 screens show
+their not-connected states. Rank checks, audits and backlinks run on the fake SEO provider (12 weekly rank checks,
+two audits and three backlink quarters for sonorch.ai). Sync one site by hand:
+
+```bash
+pnpm --filter seo gsc:sync -- --site <site id> [--ga4] [--inspect] [--no-backfill]
+```
+
 Next.js loads `.env.local` for `dev` and `start`; the `migrate` and `worker` scripts do not, so
 export the variables in your shell first (`set -a; . apps/seo/.env.local; set +a`).
 
@@ -242,7 +278,8 @@ pnpm --filter seo test:unit        # node --test + tsx: permissions, encryption,
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres \
   pnpm --filter seo test           # unit + integration: RLS isolation, Better Auth, audit, seed, migrations,
                                    # the metered path (cache, reserve, concurrency), Google connections,
-                                   # the content pipeline (FakeLlm, fake GitHub, webhooks), the worker + pg-boss
+                                   # the content pipeline (FakeLlm, fake GitHub, webhooks), the worker + pg-boss,
+                                   # measurement (rank pricing/refusal, GSC sync idempotency, agency health, CLI)
 pnpm --filter seo build && TEST_DATABASE_URL=… pnpm --filter seo test:e2e   # Playwright against the production build
 ```
 
@@ -250,7 +287,7 @@ pnpm --filter seo build && TEST_DATABASE_URL=… pnpm --filter seo test:e2e   # 
 create and drop their own databases and roles (with the real init script, so `psql` must be on
 PATH). Integration suites skip when it is unset locally and fail in CI. Playwright downloads its
 browser with `pnpm --filter seo exec playwright install chromium`, or uses
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE`; set `SCREENSHOT_DIR` to save `seo-p1-*.png` … `seo-p3-*.png` screenshots.
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE`; set `SCREENSHOT_DIR` to save `seo-p1-*.png` … `seo-p4-*.png` screenshots.
 No test ever calls DataForSEO, OpenSEO, Google, Anthropic, GitHub or Gitea: they are local fakes
 (`test/helpers/fake-*.ts`, `lib/llm/fake.ts`). The e2e server also starts the worker.
 
@@ -262,6 +299,10 @@ there (see `docs/phase-3-summary.md`).
 **Proving the Phase 3 guards red:** the link validator, the duplicate head term (code and database),
 unverifiable claims, autopilot defaults, webhook signatures and the reviewer/viewer split were each
 broken on purpose; the commands and outputs are in `docs/phase-3-summary.md`.
+
+**Proving the Phase 4 guards red:** rank pricing order, the reserve, Search Console idempotency, the
+agency path's admin check and audit row, the Indexing API guard, RLS on the new tables, the date-lag and
+cadence rules were each broken on purpose; the outputs are in `docs/phase-4-summary.md`.
 
 **Proving the metering guards red:** `CACHE_TEST_SABOTAGE=shared` with the metering suite makes the
 cache visible across workspaces; the reserve, cache-key and lock guards were broken by hand (see

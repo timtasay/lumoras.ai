@@ -20,6 +20,7 @@ import { GoogleApiError } from "@/lib/google/api";
 import { createAuthRequest, GOOGLE_KINDS, GoogleAuthError, OAUTH_COOKIE, OAUTH_COOKIE_PATH, OAUTH_TTL_MS, type GoogleKind } from "@/lib/google/oauth";
 import { chooseProperty, disconnect, listProperties, testConnection, type PropertyOption } from "@/lib/google/service";
 import { hit, LIMITS } from "@/lib/rate-limit";
+import { queueFirstSync } from "@/lib/measure/web";
 
 const kindOf = (k: string): GoogleKind => {
   if (!(GOOGLE_KINDS as readonly string[]).includes(k)) throw new NotFoundError("connection");
@@ -75,6 +76,7 @@ export async function chooseGooglePropertyAction(slug: string, siteId: string, k
     const { a, deps, site } = await scope(slug, siteId, LIMITS.googleTestPerSite);
     await chooseProperty(deps, a.ctx, site, k, property);
     const t = await testConnection(deps, a.ctx, site.id, k);
+    await queueFirstSync(a.workspace.id, site.id, k);
     revalidatePath(`/w/${slug}/sites/${siteId}`, "layout");
     return { ok: t.status === "ok", message: t.status === "ok" ? `Property saved. ${t.detail}` : undefined, error: t.status === "ok" ? undefined : t.detail, at: Date.now() };
   } catch (e) {

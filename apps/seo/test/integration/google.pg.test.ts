@@ -16,6 +16,7 @@ import { chooseProperty, disconnect, forgetGoogleCaches, ga4Insights, gscInsight
 import { createTestDatabase, dropAll, skipReason, adminQuery, type TestDb } from "../helpers/db.ts";
 import { FAKE_GOOGLE_CLIENT, startFakeGoogle } from "../helpers/fake-google.ts";
 import { makeWorkspace, type TestWorkspace } from "../helpers/workspace.ts";
+import { pacificToday, totalsBetween } from "../helpers/fake-google-data.ts";
 
 const ring = readKeyring({ ENCRYPTION_KEY: Buffer.alloc(32, 9).toString("base64") });
 const REDIRECT = "http://127.0.0.1:3107/api/google/callback";
@@ -86,7 +87,11 @@ describe("Search Console and GA4 connections", { skip: skipReason ?? false }, ()
     await chooseProperty(deps, ctx(A), site(), "search_console", "sc-domain:sonorch.ai");
     r = await testConnection(deps, ctx(A), A.site, "search_console");
     assert.equal(r.status, "ok", r.detail);
-    assert.match(r.detail, /84 clicks and 3,360 impressions/);
+    // the fake serves realistic daily data (test/helpers/fake-google-data.ts): the test's numbers are Search Console's for the same range
+    const now = new Date();
+    const day = (n: number) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - n)).toISOString().slice(0, 10);
+    const want = totalsBetween("sc-domain:sonorch.ai", day(30), day(2), pacificToday(now));
+    assert.match(r.detail, new RegExp(`${want.clicks.toLocaleString("en-US")} clicks and ${want.impressions.toLocaleString("en-US")} impressions`));
     const [row] = await adminQuery<{ status: string; last_tested_at: Date | null }>("SELECT status, last_tested_at FROM connections WHERE kind = 'search_console'", [], db.name);
     assert.equal(row.status, "ok");
     assert.ok(row.last_tested_at);
@@ -95,8 +100,15 @@ describe("Search Console and GA4 connections", { skip: skipReason ?? false }, ()
   it("reads striking-distance queries (positions 4–20) and pages with impressions but no clicks", async () => {
     const i = await gscInsights(deps, ctx(A), A.site);
     assert.ok(i);
-    assert.deepEqual(i.striking.map((s) => [s.query, s.position]), [["salon no show policy", 7.4], ["salon deposit policy", 11.8], ["walk in salon app", 18.6]]);
-    assert.deepEqual(i.zeroClick.map((z) => z.page), ["https://sonorch.ai/insights/ai-receptionist-cost"]);
+    assert.ok(i.striking.length >= 3, "striking-distance queries");
+    assert.ok(i.striking.every((s) => s.position >= 4 && s.position <= 20), JSON.stringify(i.striking.map((s) => [s.query, s.position])));
+    assert.ok(i.striking.some((s) => s.query === "salon no show policy"));
+    assert.ok(!i.striking.some((s) => s.query === "salon software"), "position 34 is not striking distance");
+    assert.ok(!i.striking.some((s) => s.query === "salon pos"), "position 2 is already on top");
+    // most impressions first
+    assert.deepEqual(i.striking.map((s) => s.impressions), [...i.striking.map((s) => s.impressions)].sort((a, b) => b - a));
+    assert.ok(i.zeroClick.some((z) => z.page === "https://sonorch.ai/insights/ai-receptionist-cost"));
+    assert.ok(i.zeroClick.every((z) => z.impressions >= 50));
   });
 
   it("GA4: organic landing pages and measurement health; a broken tag shows as an error", async () => {

@@ -56,6 +56,8 @@ test("a viewer sees everything but cannot change anything, in the UI or by calli
   await expect(page).toHaveURL(/\/w\/lumoras$/);
   await expect(page.getByRole("link", { name: "Add a site" })).toHaveCount(0);
   await page.getByRole("link", { name: "lumoras.ai: open site" }).click();
+  // the site opens on its dashboard; scans live on the Routes tab
+  await page.getByRole("navigation", { name: "Site sections" }).getByRole("link", { name: "Routes" }).click();
   // no scan button for viewers
   await expect(page.getByRole("button", { name: /Scan/ })).toHaveCount(0);
   await expect(page.getByText("Only editors and owners can run a scan.")).toBeVisible();

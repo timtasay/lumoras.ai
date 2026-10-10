@@ -25,7 +25,7 @@ for (const theme of ["dark", "light"] as const) {
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
 
       // every section of the design system is there
-      for (const id of ["color", "type", "space", "motion", "buttons", "forms", "status", "kpis", "cards", "loading", "empty", "table", "tabs", "overlays", "charts", "calendar", "pipeline", "morph", "signin"]) {
+      for (const id of ["color", "type", "space", "motion", "buttons", "forms", "status", "kpis", "cards", "loading", "empty", "table", "tabs", "overlays", "charts", "measure", "calendar", "pipeline", "morph", "signin"]) {
         await expect(page.locator(`section#${id}`)).toHaveCount(1);
       }
 
@@ -40,7 +40,7 @@ for (const theme of ["dark", "light"] as const) {
       expect(failing, `tokens failing contrast in ${theme}`).toEqual([]);
 
       // charts expose their data to assistive tech
-      await expect(page.locator("figure.chart")).toHaveCount(4);
+      await expect(page.locator("figure.chart")).toHaveCount(6);
       for (const fig of await page.locator("figure.chart").all()) {
         await expect(fig.locator("table caption")).toHaveCount(1);
         expect(await fig.locator("tbody tr").count()).toBeGreaterThan(0);

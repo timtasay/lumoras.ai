@@ -64,7 +64,8 @@ describe("DataForSeoProvider (against a fake DataForSEO)", () => {
 
   it("rank checks find the domain's organic position in live SERPs", async () => {
     const r = await p.rankTracker.run({ trackerId: "t", domain: "sonorch.ai", market: US, keywords: ["salon pos"], depth: 20 });
-    assert.deepEqual(r.data.positions, [{ keyword: "salon pos", position: 2, url: "https://sonorch.ai/pos" }]);
+    // SERP features come from the non-organic items on the same page (here, an ad block)
+    assert.deepEqual(r.data.positions, [{ keyword: "salon pos", position: 2, url: "https://sonorch.ai/pos", serpFeatures: ["paid"] }]);
     await assert.rejects(p.rankTracker.get({ trackerId: "t" }), ProviderUnsupportedError);
   });
 

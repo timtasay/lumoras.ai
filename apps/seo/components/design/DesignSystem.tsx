@@ -7,6 +7,7 @@ import { PipelineRun } from "@/components/pipeline/PipelineRun";
 import { Buttons, Cards, Empty, Forms, Kpis, Loading, Overlays, StatusSet, Table, TabsDemo } from "./ComponentSections";
 import { Calendar, Charts } from "./DataSections";
 import { MorphDemo } from "./MorphDemo";
+import { Measure } from "./MeasureSections";
 import { SignInMock } from "./SignInMock";
 import { MotionDemo, SpaceRadiiElevation, Swatches, TypeScale } from "./TokenSections";
 
@@ -26,6 +27,7 @@ export const SECTIONS = [
   ["tabs", "Tabs"],
   ["overlays", "Toasts and dialogs"],
   ["charts", "Charts"],
+  ["measure", "Measurement"],
   ["calendar", "Calendar"],
   ["pipeline", "Pipeline run"],
   ["morph", "List to detail"],
@@ -131,6 +133,9 @@ export function DesignSystem() {
       </Section>
       <Section id="charts" n={++n} title="Charts" text="Hand-written SVG that draws in along its path. Each has a hidden data table and keyboard readout." action={again}>
         <Charts replay={replay} />
+      </Section>
+      <Section id="measure" n={++n} title="Measurement" text="Phase 4: rank movement badges (arrow and sign, never colour alone), GA4 measurement health (a broken tag reads like zero traffic, so it is announced), the not-configured / not-connected / syncing / failing states with the next action as the primary button, gains and losses on one baseline, and a highlighted comparison." action={again}>
+        <Measure replay={replay} />
       </Section>
       <Section id="calendar" n={++n} title="Content calendar" text="The runway band: ion while healthy, amber below the threshold, red where nothing is scheduled.">
         <Calendar />

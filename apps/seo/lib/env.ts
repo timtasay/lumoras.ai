@@ -177,6 +177,8 @@ export type WorkerEnv = {
   crawlerTestOrigins: TestOrigins;
   /** Pipeline runs worked on at once (default 2). */
   concurrency: number;
+  /** Minimum milliseconds between two Google API requests for one property (GOOGLE_PACE_MS, default 200). */
+  googlePauseMs: number;
 };
 
 export function readWorkerEnv(env: Env = process.env): WorkerEnv {
@@ -197,6 +199,13 @@ export function readWorkerEnv(env: Env = process.env): WorkerEnv {
     const n = Number(cc);
     if (!Number.isInteger(n) || n < 1 || n > 16) problems.push("WORKER_CONCURRENCY must be an integer from 1 to 16");
     else concurrency = n;
+  }
+  let googlePauseMs = 200;
+  const gp = env.GOOGLE_PACE_MS?.trim();
+  if (gp) {
+    const n = Number(gp);
+    if (!Number.isInteger(n) || n < 0 || n > 60_000) problems.push("GOOGLE_PACE_MS must be an integer from 0 to 60000");
+    else googlePauseMs = n;
   }
   const { baseUrl, secure } = baseUrlOf(env, problems, production);
   const seoProvider = readSeoProviderEnv(env, problems, { production, secure });
@@ -224,6 +233,7 @@ export function readWorkerEnv(env: Env = process.env): WorkerEnv {
     googleApiTestOrigin: gto,
     crawlerTestOrigins,
     concurrency,
+    googlePauseMs,
   };
 }
 

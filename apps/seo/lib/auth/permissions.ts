@@ -13,7 +13,9 @@
  *   editor          runs research (paid, within the budget) and crawls, edits
  *                   and approves content, manages sites, brand profiles,
  *                   authors, keywords, the seed backlog and connections
- *                   (including Search Console and GA4)
+ *                   (including Search Console and GA4); runs measurement
+ *                   now (paid rank checks, audits and backlinks, within the
+ *                   budget) and assigns and works audit tasks
  *   reviewer        the client reviewer (owner decision, October 2026): sees
  *                   everything, comments, and approves, rejects or requests
  *                   changes on content awaiting review. Cannot edit content,
@@ -70,6 +72,9 @@ export const PERMISSIONS = [
   "keyword:manage",
   "budget:read",
   "budget:manage",
+  // Phase 4: run paid measurement now (rank check, audit, backlinks) or a Search Console / GA4 sync; act on audit tasks
+  "measure:run",
+  "task:manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -91,6 +96,8 @@ const EDITOR: Permission[] = [
   "content:schedule",
   "pipeline:run",
   "comment:create",
+  "measure:run",
+  "task:manage",
 ];
 
 export const PERMISSION_MAP: Record<WorkspaceRole, ReadonlySet<Permission>> = {

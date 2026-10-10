@@ -57,7 +57,8 @@ export type RankedKeyword = { keyword: string; position: number; url: string; vo
 export type Competitor = { domain: string; avgPosition: number | null; intersections: number | null; trafficEstimate: number | null };
 export type BacklinksOverview = { backlinks: number | null; referringDomains: number | null; rank: number | null; brokenBacklinks: number | null };
 export type Backlink = { urlFrom: string; domainFrom: string; urlTo: string; anchor: string; dofollow: boolean; domainRank: number | null; firstSeen: string | null; lost: boolean };
-export type RankPosition = { keyword: string; position: number | null; url: string | null };
+/** `serpFeatures`: SERP feature types on the page where the provider reports them (featured_snippet, people_also_ask, local_pack, …). */
+export type RankPosition = { keyword: string; position: number | null; url: string | null; serpFeatures?: string[] };
 export type AuditIssue = { type: string; severity: "critical" | "warning" | "info"; count: number; title: string };
 
 export type OperationResults = {

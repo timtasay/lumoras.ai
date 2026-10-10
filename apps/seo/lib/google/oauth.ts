@@ -19,6 +19,7 @@
  */
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { decryptSecret, encryptSecret, SecretDecryptError, type Keyring } from "../crypto/secrets.ts";
+import { assertGoogleUrl } from "./allowlist.ts";
 
 export const GOOGLE_KINDS = ["search_console", "ga4"] as const;
 export type GoogleKind = (typeof GOOGLE_KINDS)[number];
@@ -33,12 +34,13 @@ export const OAUTH_COOKIE_PATH = "/api/google";
 export const OAUTH_TTL_MS = 10 * 60 * 1000;
 const AAD = "google-oauth-state";
 
-export type GoogleEndpoints = { auth: string; token: string; revoke: string; gsc: string; admin: string; data: string; inspect: string };
+/** `test`: the loopback origin of a local fake Google (tests only); the allowlist guard accepts it. */
+export type GoogleEndpoints = { auth: string; token: string; revoke: string; gsc: string; admin: string; data: string; inspect: string; test?: string | null };
 
 /** Google's endpoints, or every one of them on a local fake (tests only). */
 export function googleEndpoints(testOrigin: string | null): GoogleEndpoints {
   if (testOrigin) {
-    return { auth: `${testOrigin}/o/oauth2/v2/auth`, token: `${testOrigin}/token`, revoke: `${testOrigin}/revoke`, gsc: `${testOrigin}/webmasters/v3`, admin: `${testOrigin}/admin/v1beta`, data: `${testOrigin}/data/v1beta`, inspect: `${testOrigin}/v1/urlInspection/index:inspect` };
+    return { auth: `${testOrigin}/o/oauth2/v2/auth`, token: `${testOrigin}/token`, revoke: `${testOrigin}/revoke`, gsc: `${testOrigin}/webmasters/v3`, admin: `${testOrigin}/admin/v1beta`, data: `${testOrigin}/data/v1beta`, inspect: `${testOrigin}/v1/urlInspection/index:inspect`, test: testOrigin };
   }
   return {
     auth: "https://accounts.google.com/o/oauth2/v2/auth",
@@ -81,7 +83,7 @@ export function createAuthRequest(o: {
     next: o.next ?? "connections",
     exp: (o.now ?? Date.now()) + OAUTH_TTL_MS,
   };
-  const u = new URL(o.endpoints.auth);
+  const u = assertGoogleUrl(o.endpoints.auth, o.endpoints.test ?? null);
   u.search = new URLSearchParams({
     client_id: o.clientId,
     redirect_uri: o.redirectUri,
@@ -161,7 +163,7 @@ export type TokenSet = { accessToken: string; refreshToken: string | null; expir
 async function tokenCall(endpoints: GoogleEndpoints, body: Record<string, string>, f: typeof fetch): Promise<Record<string, unknown>> {
   let res: Response;
   try {
-    res = await f(endpoints.token, {
+    res = await f(assertGoogleUrl(endpoints.token, endpoints.test ?? null).toString(), {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams(body).toString(),
@@ -203,7 +205,7 @@ export async function refreshAccessToken(o: { refreshToken: string; client: { cl
 /** Revokes a token at Google. Best effort: a token Google already forgot is fine. */
 export async function revokeToken(o: { token: string; endpoints: GoogleEndpoints; fetch?: typeof fetch }): Promise<boolean> {
   try {
-    const res = await (o.fetch ?? fetch)(o.endpoints.revoke, {
+    const res = await (o.fetch ?? fetch)(assertGoogleUrl(o.endpoints.revoke, o.endpoints.test ?? null).toString(), {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ token: o.token }).toString(),
