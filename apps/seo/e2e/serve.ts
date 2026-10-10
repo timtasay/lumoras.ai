@@ -5,7 +5,10 @@
  *   EMAIL_OUTBOX_DIR       magic links and invitations land as JSON files (no email leaves)
  *   CRAWLER_TEST_ORIGINS   northwind-dental.test → the fake site on 127.0.0.1
  *   RATE_LIMIT_SCALE       the suite signs in many times from one IP
- *   SEO_PROVIDER=fake      research answers from fixtures (no network, no real money)
+ *   SEO_PROVIDER=fake      research answers from fixtures (no network, no real money); with
+ *                          E2E_OPENSEO=hosted, SEO_PROVIDER=openseo + OPENSEO_MODE=hosted against a local
+ *                          FAKE hosted OpenSEO instead (API key required, credits), for the provider card in
+ *                          e2e/decisions.spec.ts only (the other specs expect the fake provider's data)
  *   GOOGLE_API_TEST_ORIGIN Search Console / GA4 OAuth and APIs point at a local fake Google (realistic
  *                          Search Analytics, URL Inspection and GA4 data; the seed syncs sonorch.ai from it)
  *   LLM_PROVIDER=fake      articles are written by FakeLlm (no model call, no real money)
@@ -26,6 +29,7 @@ import { startFakeSite } from "../test/helpers/fake-site.ts";
 import { FAKE_GOOGLE_CLIENT, startFakeGoogle } from "../test/helpers/fake-google.ts";
 import { startFakeGit } from "../test/helpers/fake-git.ts";
 import { startFakeWebhook } from "../test/helpers/fake-webhook.ts";
+import { startFakeOpenSeo } from "../test/helpers/fake-openseo.ts";
 import { googleEndpoints } from "../lib/google/oauth.ts";
 import { E2E } from "./config.ts";
 
@@ -39,12 +43,14 @@ async function main() {
   const db = await createTestDatabase();
   const encryptionKey = randomBytes(32).toString("base64");
   const pool = new pg.Pool({ connectionString: db.appUrl, max: 2 });
-  const github = await startFakeGit({ provider: "github", hostName: "github.test", repos: [{ owner: "lumoras", repo: "lumoras.ai", files: { "apps/web/content/insights/no-show-policy.md": "---\ntitle: No-show policy\n---\n" } }] });
+  const github = await startFakeGit({ provider: "github", hostName: "github.test", repos: [{ owner: "timtasay", repo: "lumoras.ai", defaultBranch: "dev", files: { "apps/web/content/insights/no-show-policy.md": "---\ntitle: No-show policy\n---\n" } }] });
   const hookSecret = randomBytes(24).toString("hex");
   const webhook = await startFakeWebhook(hookSecret, { hostName: "webhook.test" });
   const policy = { testResolve: new Map([["github.test", "127.0.0.1"], ["webhook.test", "127.0.0.1"]]) };
   // the fake Google first: the seed connects sonorch.ai's Search Console and GA4 (and Northwind's broken GA4) to it and syncs them
   const google = await startFakeGoogle();
+  // never a real key: the fake hosted OpenSEO accepts only this one
+  const openseo = E2E.openseoHosted ? await startFakeOpenSeo({ hosted: { apiKey: "oseo_e2e_fake_key_0123456789", credits: 8_412 } }) : null;
   await seed(pool, {
     keyring: readKeyring({ ENCRYPTION_KEY: encryptionKey }),
     content: { github: { apiBase: github.apiBase, token: github.token, reachable: true }, webhook: { endpoint: `${webhook.origin}/hook`, secret: hookSecret }, policy, mail: async () => {} },
@@ -74,8 +80,12 @@ async function main() {
     DATAFORSEO_PASSWORD: "",
     OPENSEO_MCP_URL: "",
     OPENSEO_MCP_TOKEN: "",
-    // research from fixtures; Google OAuth and APIs at the local fake
-    SEO_PROVIDER: "fake",
+    OPENSEO_MODE: openseo ? "hosted" : "",
+    OPENSEO_URL: openseo ? openseo.url : "",
+    OPENSEO_API_KEY: openseo ? "oseo_e2e_fake_key_0123456789" : "",
+    OPENSEO_PROJECT_ID: "",
+    // research from fixtures (or the fake hosted OpenSEO); Google OAuth and APIs at the local fake
+    SEO_PROVIDER: openseo ? "openseo" : "fake",
     GOOGLE_OAUTH_CLIENT_ID: FAKE_GOOGLE_CLIENT.clientId,
     GOOGLE_OAUTH_CLIENT_SECRET: FAKE_GOOGLE_CLIENT.clientSecret,
     GOOGLE_API_TEST_ORIGIN: google.origin,
@@ -98,6 +108,7 @@ async function main() {
     await webhook.close().catch(() => {});
     await site.close().catch(() => {});
     await google.close().catch(() => {});
+    await openseo?.close().catch(() => {});
     await dropAll().catch(() => {});
     await rm(E2E.stateFile, { force: true });
     process.exit(code);

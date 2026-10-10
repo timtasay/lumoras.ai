@@ -1,7 +1,7 @@
 /**
  * Development fakes for publishing (pnpm --filter seo fakes):
  *   - a fake GitHub API on 127.0.0.1:4571 (host name github.test) holding
- *     lumoras/lumoras.ai with a few existing insights, so the seeded Git
+ *     timtasay/lumoras.ai (base branch dev) with a few existing insights, so the seeded Git
  *     connection can be tested and articles land as pull requests;
  *   - a webhook receiver on 127.0.0.1:4572 (webhook.test) that verifies the
  *     signature of every delivery and prints it;
@@ -31,8 +31,9 @@ async function main() {
     token: DEV_FAKE_GITHUB.token,
     repos: [
       {
-        owner: "lumoras",
+        owner: "timtasay",
         repo: "lumoras.ai",
+        defaultBranch: "dev",
         files: {
           "apps/web/content/insights/no-show-policy.md": "---\ntitle: No-show policy\n---\n",
           "apps/web/content/insights/ai-receptionist-cost.md": "---\ntitle: AI receptionist cost\n---\n",

@@ -7,10 +7,16 @@
  * fakes), never from Google itself.
  *
  *   sonorch.ai   Search Console + GA4 connected and synced (16 months), 12 weekly
- *                rank checks, two monthly audits (one issue already a task),
- *                three quarterly backlink snapshots with two competitors
- *   lumoras.ai   six weekly rank checks (its published article's keyword), an audit,
- *                a backlinks baseline; Search Console not connected
+ *                rank checks of saved keywords marked targeted (nothing is published
+ *                through the app yet, so none is labelled Published), two monthly
+ *                audits (one issue already a task), three quarterly backlink
+ *                snapshots with two competitors
+ *   lumoras.ai   six weekly rank checks (its published article's keyword and its
+ *                existing pages' keywords), an audit, a backlinks baseline; Search
+ *                Console not connected
+ *
+ * Every screen agrees: a keyword is labelled Published in Rankings only when a
+ * published article (content_items) exists for it, as "Articles live" counts.
  *   seasonx.ai   an audit and a backlinks baseline; nothing to rank yet; Google not connected
  *   Northwind    fictional domain: paid measurement off; Search Console connected and
  *                a GA4 property whose tag is broken (the warning state)
@@ -55,13 +61,16 @@ export async function seedMeasurement(db: pg.Pool, ws: Record<string, { id: stri
   const deps: MeasureDeps = { db, seo: provider, google, now: () => clock, log: createLogger("seed", { level: "warn" }), googlePauseMs: 0 };
 
   // sonorch.ai: competitors for the backlinks comparison (reserved .example names: no real company gets invented numbers),
-  // its existing Insights articles' keywords as published targets, more saved keywords as targeted
+  // three topics it wants to rank for and more saved keywords marked targeted. Nothing is published through the app for
+  // sonorch.ai (owner decision #2 is open: no publishing connection), so none of them is a published target.
   await withWorkspace(db, ctxL, async (tx) => {
     await tx.action("seed.measurement");
     await tx.exec("UPDATE brand_profiles SET competitors = '{salon-suite.example,bookly-salon.example}' WHERE site_id = $1 AND cardinality(competitors) = 0", [sonorch]);
     await tx.exec(
-      `INSERT INTO rank_tracking_queue (workspace_id, site_id, keyword, market) VALUES ($1, $2, 'salon no show policy', 'United States'), ($1, $2, 'esthetician salary', 'United States'), ($1, $2, 'how to reduce no shows at a salon', 'United States')
-       ON CONFLICT (site_id, keyword, market) DO NOTHING`,
+      `INSERT INTO keywords (workspace_id, site_id, keyword, market, status, cluster, fit, variant_key)
+       VALUES ($1, $2, 'salon no show policy', 'United States', 'targeted', 'Policies', 'offered', ''), ($1, $2, 'esthetician salary', 'United States', 'targeted', 'Hiring', 'offered', ''),
+              ($1, $2, 'how to reduce no shows at a salon', 'United States', 'targeted', 'Policies', 'offered', '')
+       ON CONFLICT (site_id, keyword, market) DO UPDATE SET status = 'targeted' WHERE keywords.status = 'idea'`,
       [lumoras.id, sonorch],
     );
     await tx.exec("UPDATE keywords SET status = 'targeted' WHERE site_id = $1 AND status = 'idea' AND keyword IN (SELECT keyword FROM keywords WHERE site_id = $1 AND status = 'idea' ORDER BY search_volume DESC NULLS LAST LIMIT 4)", [sonorch]);
@@ -113,14 +122,14 @@ export async function seedMeasurement(db: pg.Pool, ws: Record<string, { id: stri
     await withWorkspace(db, ctxL, async (tx) => {
       await tx.action("seed.measurement");
       await tx.exec("UPDATE brand_profiles SET competitors = '{voice-desk.example}' WHERE site_id = $1 AND cardinality(competitors) = 0", [lum]);
-      // lumoras.ai's existing article keywords (marked published in the Phase 3 seed) are published targets
+      // the article the seed published through the app is a published target (the post-publish hook queues it too);
+      // lumoras.ai's existing pages' keywords (keyword status "published" in the Phase 3 seed) are tracked as saved keywords
       await tx.exec(
-        `INSERT INTO rank_tracking_queue (workspace_id, site_id, keyword, market)
-         SELECT $1, $2, primary_keyword, 'United States' FROM content_items WHERE site_id = $2 AND status = 'published' AND primary_keyword IS NOT NULL
+        `INSERT INTO rank_tracking_queue (workspace_id, site_id, item_id, keyword, market)
+         SELECT $1, $2, id, primary_keyword, 'United States' FROM content_items WHERE site_id = $2 AND status = 'published' AND primary_keyword IS NOT NULL
          ON CONFLICT (site_id, keyword, market) DO NOTHING`,
         [lumoras.id, lum],
       );
-      await tx.exec("INSERT INTO rank_tracking_queue (workspace_id, site_id, keyword, market) VALUES ($1, $2, 'missed calls small business', 'United States'), ($1, $2, 'call forwarding for business', 'United States') ON CONFLICT DO NOTHING", [lumoras.id, lum]);
     });
     await rank(ctxL, lum, NY, 6);
     await audits(ctxL, lum, NY, [0]);

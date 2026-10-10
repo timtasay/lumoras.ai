@@ -5,7 +5,9 @@ import { ReadOnlyNote } from "@/components/forms/FormBits";
 import { can } from "@/lib/auth/permissions";
 import { loadSite } from "@/lib/site-page";
 import { timezones } from "@/lib/ui/timezones";
-import { deleteSiteAction, updateSiteAction } from "../../../actions";
+import { deleteSiteAction, saveOpenSeoProjectAction, updateSiteAction } from "../../../actions";
+import { ProviderProjectForm } from "@/components/forms/ProviderProjectForm";
+import { providerInfo } from "@/lib/providers/registry";
 import { saveScheduleAction, setFeedAction } from "../../../publishing-actions";
 import { ScheduleForm } from "@/components/content/ScheduleForm";
 import { FeedPanel } from "@/components/content/FeedPanel";
@@ -34,6 +36,7 @@ export default async function SiteSettingsPage({ params }: { params: Promise<{ s
   const rankPrice = tracked.length ? formatMicros(dataForSeoPrice({ op: "rankTracker.run", params: { trackerId: "-", domain: site.domain, market: marketFor(settings), keywords: tracked.map((t) => t.keyword), depth: settings.rank_depth } }).micros) : null;
   const base = webEnv().baseUrl;
   const canEdit = can(a.role, "site:update");
+  const info = providerInfo();
   return (
     <div className="stack-lg">
       <section className="panel pad" aria-labelledby="details-h">
@@ -111,6 +114,20 @@ export default async function SiteSettingsPage({ params }: { params: Promise<{ s
           }}
         />
       </section>
+      {info.name === "openseo" ? (
+        <section className="panel pad" aria-labelledby="prov-proj-h" id="provider">
+          <h2 id="prov-proj-h" className="sub-h">
+            SEO data provider
+          </h2>
+          <p className="muted small">Paid research, rank checks, audits and backlinks for this site run on {info.label}, in this OpenSEO project.</p>
+          <ProviderProjectForm
+            action={saveOpenSeoProjectAction.bind(null, slug, site.id)}
+            value={settings.openseo_project_id}
+            readOnly={!canEdit}
+            fallback={info.defaultProject ? `the default project ${info.defaultProject}` : `a project found or created for ${site.domain}`}
+          />
+        </section>
+      ) : null}
       {can(a.role, "site:delete") ? <DeleteSite domain={site.domain} action={deleteSiteAction.bind(null, slug, site.id)} /> : null}
     </div>
   );

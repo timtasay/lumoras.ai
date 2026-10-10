@@ -36,6 +36,10 @@ export const PLACEHOLDERS = [
   "path",
   "author.name",
   "author.role",
+  /** person | organization */
+  "author.kind",
+  /** schema.org type: Person | Organization */
+  "author.type",
   "cover.kind",
   "cover.chips",
 ] as const;
@@ -56,6 +60,10 @@ function valueOf(a: PublishableArticle, key: Placeholder): unknown {
       return a.author?.name ?? "";
     case "author.role":
       return a.author?.role ?? "";
+    case "author.kind":
+      return a.author?.kind ?? "";
+    case "author.type":
+      return a.author?.type ?? "";
     case "cover.kind":
       return a.cover.kind;
     case "cover.chips":

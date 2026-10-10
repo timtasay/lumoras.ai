@@ -20,7 +20,7 @@ import { advanceOnboarding } from "@/lib/data/workspaces";
 import { slotsBetween } from "@/lib/content/schedule";
 import { enqueue, webPipelineDeps } from "@/lib/jobs/client";
 import { QUEUES } from "@/lib/pipeline/deps";
-import { createPublisher, publisherFor } from "@/lib/publishers/registry";
+import { createPublisher, loadPublishConnection, missingCredentialValidation, publisherFor } from "@/lib/publishers/registry";
 import { PublishError } from "@/lib/publishers/types";
 import { hit, LIMITS } from "@/lib/rate-limit";
 import { scheduleInput } from "@/lib/validation";
@@ -88,22 +88,24 @@ export async function testPublishConnectionAction(slug: string, siteId: string, 
     if (!isUuid(siteId) || !isUuid(connectionId)) return fail("Unknown connection.");
     await hit(pool(), LIMITS.publishTestPerSite, siteId, webEnv().rateLimitScale);
     const deps = webPipelineDeps();
-    const { publisher, site } = await withWorkspace(
+    const r = await withWorkspace(
       pool(),
       a.ctx,
       async (tx) => {
         const site = await getSiteSettings(tx, siteId);
-        return { site, ...(await publisherFor(tx, keyring(), a.workspace.id, connectionId, { domain: site.domain }, deps.outbound, createPublisher)) };
+        const conn = await loadPublishConnection(tx, connectionId);
+        // no token yet: say what is set and what is missing, without contacting anything
+        if (!(await tx.one<{ has: boolean }>("SELECT credentials_ciphertext IS NOT NULL AS has FROM connections WHERE id = $1", [connectionId])).has) return { missing: missingCredentialValidation(conn) };
+        return { missing: null, ...(await publisherFor(tx, keyring(), a.workspace.id, connectionId, { domain: site.domain }, deps.outbound, createPublisher)) };
       },
       { readOnly: true },
     );
-    const v = await publisher.validate();
+    const v = r.missing ?? (await r.publisher!.validate());
     await withWorkspace(pool(), a.ctx, async (tx) => {
       await tx.action("connection.test");
-      await setConnectionStatus(tx, connectionId, v.ok ? "ok" : "error", v.ok ? v.detail : v.detail);
+      await setConnectionStatus(tx, connectionId, v.ok ? "ok" : r.missing ? "warn" : "error", v.detail);
     });
     revalidatePath(`/w/${slug}`, "layout");
-    void site;
     return v.ok ? { ok: true, message: v.detail, at: Date.now(), data: { checks: v.checks } } : { ok: false, error: v.detail, at: Date.now(), data: { checks: v.checks } };
   } catch (e) {
     if (e instanceof PublishError) return fail(e.message);

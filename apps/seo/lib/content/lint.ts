@@ -70,7 +70,8 @@ export type LintInput = {
   rules: SeoRules;
   bannedWords: string[];
   siteDomain: string;
-  authors: { id: string; name: string; is_demo: boolean }[];
+  /** The site's configured bylines: people and organizations are both valid (kind defaults to person). */
+  authors: { id: string; name: string; is_demo: boolean; kind?: "person" | "organization"; role?: string }[];
   routes: InventoryRoute[];
   /** The site's other articles (this one excluded) with their live paths. */
   pages: OwnPage[];
@@ -199,11 +200,13 @@ export function lintArticle(input: LintInput, analysis: Analysis = analyzeMarkdo
     out.push(c.length ? res("duplicate_head_term", "fail", `${c.map(describeConflict).join("; ")}.`) : res("duplicate_head_term", "pass", "No other page targets this head term."));
   } else out.push(res("duplicate_head_term", "fail", "No primary keyword to check."));
 
-  // rule 10
+  // rule 10: a configured byline, a real person or the client's organization (owner decision, 10 October 2026)
   const author = input.authors.find((a) => a.id === input.authorId);
+  const org = author?.kind === "organization";
   if (!author) out.push(res("author", "fail", "The byline is not one of this site's configured authors."));
-  else if (author.is_demo) out.push(res("author", "warn", `${author.name} is a demo placeholder: replace it with a real person before this goes live under the client's name.`, false));
-  else out.push(res("author", "pass", `${author.name}.`));
+  else if (org && author.role) out.push(res("author", "fail", `${author.name} is an organization byline but carries a title ("${author.role}"). Organizations have no personal titles or credentials.`));
+  else if (author.is_demo) out.push(res("author", "warn", `${author.name} is a demo placeholder: replace it with a real ${org ? "organization name" : "person"} before this goes live under the client's name.`, false));
+  else out.push(res("author", "pass", org ? `${author.name} (organization byline, published as Organization).` : `${author.name}.`));
 
   // cover
   const kind = typeof input.cover.kind === "string" ? input.cover.kind : "";

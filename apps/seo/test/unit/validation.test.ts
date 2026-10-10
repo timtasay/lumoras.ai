@@ -51,13 +51,25 @@ describe("schemas", () => {
     assert.ok(keys.includes("competitors") && keys.includes("seoRules.descriptionMin") && keys.includes("exampleArticles.0"), keys.join());
   });
   it("authors: real-person fields only, https avatars", () => {
-    assert.deepEqual(authorInput.parse({ name: " Dr. Ana Ruiz ", role: "Dentist", bio: "", avatarUrl: "" }), { name: "Dr. Ana Ruiz", role: "Dentist", bio: "", avatarUrl: null });
+    assert.deepEqual(authorInput.parse({ name: " Dr. Ana Ruiz ", role: "Dentist", bio: "", avatarUrl: "" }), { kind: "person", name: "Dr. Ana Ruiz", role: "Dentist", bio: "", avatarUrl: null });
     assert.ok(!authorInput.safeParse({ name: "x", avatarUrl: "http://insecure.example/a.png" }).success);
     assert.ok(!authorInput.safeParse({ name: "" }).success);
+  });
+  it("authors: an organization byline (owner decision, 10 October 2026) has no title; other kinds are refused", () => {
+    assert.deepEqual(authorInput.parse({ kind: "organization", name: "Lumoras team", bio: "The team." }), { kind: "organization", name: "Lumoras team", role: "", bio: "The team.", avatarUrl: null });
+    const titled = authorInput.safeParse({ kind: "organization", name: "Lumoras team", role: "Head of content" });
+    assert.ok(!titled.success);
+    assert.match(fieldErrors(titled.error).role, /no job title or credentials/);
+    assert.ok(!authorInput.safeParse({ kind: "robot", name: "x" }).success);
   });
   it("connections: secrets are required and endpoints must be https", () => {
     assert.ok(connectionInput.safeParse({ kind: "webhook", label: "Hook", endpoint: "https://a.example/hook", secret: "s".repeat(16) }).success);
     assert.ok(!connectionInput.safeParse({ kind: "webhook", label: "Hook", endpoint: "http://a.example/hook", secret: "s".repeat(16) }).success);
-    assert.ok(!connectionInput.safeParse({ kind: "git", label: "Repo", repository: "https://github.com/x/y", secret: "" }).success);
+    // a Git connection may be saved before its token exists ("token needed"); a pasted token must be whole
+    assert.ok(connectionInput.safeParse({ kind: "git", label: "Repo", repository: "https://github.com/x/y", secret: "" }).success);
+    assert.ok(!connectionInput.safeParse({ kind: "git", label: "Repo", repository: "https://github.com/x/y", secret: "short" }).success);
+    assert.ok(!connectionInput.safeParse({ kind: "webhook", label: "Hook", endpoint: "https://a.example/hook", secret: "" }).success);
+    assert.ok(!connectionInput.safeParse({ kind: "git", label: "Repo", repository: "https://github.com/x/y", branch: "../main" }).success, "no .. in a branch name");
+    assert.equal((connectionInput.parse({ kind: "git", label: "Repo", repository: "https://github.com/timtasay/lumoras.ai", branch: "dev" }) as { branch: string }).branch, "dev");
   });
 });

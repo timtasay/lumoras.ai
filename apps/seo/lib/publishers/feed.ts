@@ -15,6 +15,8 @@ export type FeedArticle = {
   date: string;
   updatedAt: Date;
   author: string | null;
+  /** schema.org type of the byline: Person, or Organization for an organization byline. */
+  authorType?: "Person" | "Organization" | null;
   tags: string[];
   keyword: string;
 };
@@ -36,9 +38,9 @@ export function jsonFeed(site: FeedSite, items: FeedArticle[]) {
       content_text: a.bodyMd,
       date_published: `${a.date}T00:00:00Z`,
       date_modified: a.updatedAt.toISOString(),
-      ...(a.author ? { authors: [{ name: a.author }] } : {}),
+      ...(a.author ? { authors: [a.authorType === "Organization" ? { name: a.author, url: `https://${site.domain}/` } : { name: a.author }] } : {}),
       tags: a.tags,
-      _lumoras: { keyword: a.keyword },
+      _lumoras: { keyword: a.keyword, ...(a.author ? { authorType: a.authorType ?? "Person" } : {}) },
     })),
   };
 }

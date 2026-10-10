@@ -223,7 +223,9 @@ describe("measurement", { skip: skipReason ?? false }, () => {
   it("rank tracking is priced first and refused below the reserve: the provider is never called and nothing is charged", async () => {
     await asA(async (tx) => {
       await tx.exec("INSERT INTO keywords (workspace_id, site_id, keyword, status, cluster, search_volume) VALUES ($1, $2, 'salon pos', 'targeted', 'Point of sale', 900), ($1, $2, 'salon software', 'ranking', 'Point of sale', 2400), ($1, $2, 'esthetician salary', 'idea', 'Careers', 3000)", [A.ws, A.site]);
-      await tx.exec("INSERT INTO rank_tracking_queue (workspace_id, site_id, keyword, market) VALUES ($1, $2, 'salon no show policy', 'United States')", [A.ws, A.site]);
+      // a published article's keyword, queued by the post-publish hook (Rankings labels it Published only while the article is live)
+      const item = await tx.one<{ id: string }>("INSERT INTO content_items (workspace_id, site_id, slot_at, status, primary_keyword, title, created_by) VALUES ($1, $2, now(), 'published', 'salon no show policy', 'Salon no-show policy', 'system:test') RETURNING id", [A.ws, A.site]);
+      await tx.exec("INSERT INTO rank_tracking_queue (workspace_id, site_id, item_id, keyword, market) VALUES ($1, $2, $3, 'salon no show policy', 'United States')", [A.ws, A.site, item.id]);
       // a budget whose reserve is already reached: $1.00 a month, $0.90 reserve, $0.95 spent
       await setBudget(tx, A.ws, "seo_credits", 1_000_000, 900_000);
       await tx.exec("INSERT INTO usage_ledger (workspace_id, site_id, category, operation, provider, period, status, cost_micros, estimate_micros, actor_id, settled_at) VALUES ($1, $2, 'seo_credits', 'serp', 'fake', date_trunc('month', $3::timestamptz AT TIME ZONE 'UTC')::date, 'settled', 950000, 950000, 'system:test', now())", [A.ws, A.site, clock]);

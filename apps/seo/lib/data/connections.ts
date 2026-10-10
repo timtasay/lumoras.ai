@@ -35,7 +35,7 @@ export function listConnections(tx: Tx, siteId: string): Promise<ConnectionView[
 }
 
 /** Non-secret settings per kind; the secret goes in its own sealed column. */
-function split(input: ConnectionInput): { config: Record<string, string>; secret: string } {
+function split(input: ConnectionInput): { config: Record<string, string>; secret: string | null } {
   switch (input.kind) {
     case "git":
       return {
@@ -50,7 +50,7 @@ function split(input: ConnectionInput): { config: Record<string, string>; secret
           mode: input.mode,
           livePath: input.livePath,
         },
-        secret: input.secret,
+        secret: input.secret || null,
       };
     case "wordpress":
       return { config: { siteUrl: input.siteUrl, username: input.username }, secret: input.secret };
@@ -66,12 +66,37 @@ export async function createConnection(tx: Tx, ring: Keyring, workspaceId: strin
   const input = connectionInput.parse(raw);
   const id = randomUUID();
   const { config, secret } = split(input);
+  const sealed = secret ? encryptSecret(secret, connectionAad(workspaceId, id), ring) : null;
+  return tx.one<ConnectionView>(
+    `INSERT INTO connections (id, workspace_id, site_id, kind, label, config, credentials_ciphertext, key_version, status, status_detail)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10)
+     RETURNING ${VIEW_COLS}`,
+    [
+      id,
+      workspaceId,
+      siteId,
+      input.kind,
+      input.label,
+      JSON.stringify(config),
+      sealed?.ciphertext ?? null,
+      sealed?.keyVersion ?? null,
+      sealed ? "untested" : "warn",
+      input.kind === "wordpress" ? "Saved. The WordPress publisher arrives in Phase 5." : sealed ? "Saved. Run the test to check it." : TOKEN_NEEDED_DETAIL,
+    ],
+  );
+}
+
+/** Status detail of a Git connection saved without its access token. */
+export const TOKEN_NEEDED_DETAIL = "Token needed: add the repository access token to publish. Nothing is sent until then.";
+
+/** Adds or replaces the sealed credential of an existing connection; its status goes back to "not tested yet". */
+export async function setConnectionSecret(tx: Tx, ring: Keyring, workspaceId: string, id: string, secret: string): Promise<ConnectionView> {
   const sealed = encryptSecret(secret, connectionAad(workspaceId, id), ring);
   return tx.one<ConnectionView>(
-    `INSERT INTO connections (id, workspace_id, site_id, kind, label, config, credentials_ciphertext, key_version, status_detail)
-     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9)
-     RETURNING ${VIEW_COLS}`,
-    [id, workspaceId, siteId, input.kind, input.label, JSON.stringify(config), sealed.ciphertext, sealed.keyVersion, input.kind === "wordpress" ? "Saved. The WordPress publisher arrives in Phase 5." : "Saved. Run the test to check it."],
+    `UPDATE connections SET credentials_ciphertext = $2, key_version = $3, status = 'untested', status_detail = 'Token saved. Run the test to check it.', last_tested_at = NULL
+     WHERE id = $1 AND kind IN ('git', 'webhook', 'wordpress') RETURNING ${VIEW_COLS}`,
+    [id, sealed.ciphertext, sealed.keyVersion],
+    "connection",
   );
 }
 

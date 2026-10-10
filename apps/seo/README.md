@@ -11,6 +11,7 @@ Google setup**; the runbook is in that file). Phase 3: [`docs/phase-3-summary.md
 Phase 1: [`docs/phase-1-summary.md`](docs/phase-1-summary.md), Phase 0: [`docs/phase-0-summary.md`](docs/phase-0-summary.md)). The SEO data provider choice (owner
 decision #3) is argued in [`docs/provider-decision.md`](docs/provider-decision.md); OpenSEO's real MCP
 tools are listed in [`docs/openseo-tools.md`](docs/openseo-tools.md).
+Owner decisions and what was done about them: [`docs/owner-decisions.md`](docs/owner-decisions.md).
 Deferred work and workarounds: [`docs/open-work.md`](docs/open-work.md). External API versions
 and when their docs were read: [`docs/external-apis.md`](docs/external-apis.md).
 
@@ -62,7 +63,8 @@ apps/seo             this app
     llm/                     LlmProvider (types.ts), anthropic.ts (@anthropic-ai/sdk), fake.ts + fixtures.ts (FakeLlm),
                              prices.ts, metered.ts (model usage on the ledger), loop.ts (tool loop, untrusted data)
     pipeline/                the ten steps (run-steps.ts), runner.ts (persisted, resumable), prompts.ts, view.ts
-    publishers/              Publisher (types.ts), git.ts (GitHub + Gitea), webhook.ts (HMAC), feed.ts, frontmatter.ts
+    publishers/              Publisher (types.ts), git.ts (GitHub + Gitea), webhook.ts (HMAC), feed.ts, frontmatter.ts,
+                             byline.ts (Person / Organization structured data), lumoras.ts (lumoras.ai Git settings)
     measure/                 Phase 4: cadence.ts (windows, due, next), search.ts (sync plan, lag, aggregation),
                              gsc-sync.ts, ga4-sync.ts, health.ts (GA4 measurement health), inspect.ts (URL Inspection),
                              rank.ts, audit.ts (+ tasks), backlinks.ts, runs.ts (measurement_runs, alerts),
@@ -73,7 +75,7 @@ apps/seo             this app
     security/                csp.ts, origin.ts (CSRF check for route handlers)
     rate-limit.ts seed.ts validation.ts email.ts actions.ts
   migrations/        0001 bootstrap · 0002 auth · 0003 audit · 0004 tenancy · 0005 platform · 0006 research · 0007 content
-                     · 0008 measurement
+                     · 0008 measurement · 0009 owner decisions (author kind, OpenSEO project per site)
   scripts/           migrate.ts, seed.ts, grant-admin.ts, fakes.ts (dev fake GitHub, webhook receiver, fake Google),
                      gsc-sync.ts (`pnpm --filter seo gsc:sync -- --site <id>`)
   fixtures/          lumoras.ai/sitemap.xml (the seeded route inventory)
@@ -210,9 +212,13 @@ domain overview and a dozen saved keywords. With `SEO_PROVIDER` unset in develop
 the same fake provider and every screen says "Demo data".
 
 Phase 3 onboards lumoras.ai fully: the brand profile and SEO rules from `docs/content-spec.md`, the
-route inventory from `fixtures/lumoras.ai/sitemap.xml`, a demo author placeholder, a Git connection
-(file per post into `apps/web/content/insights/<slug>.md`, pull requests) pointing at a **local fake
-GitHub**, and Tuesday/Friday schedules on the three Lumoras sites. The seed runs the pipeline with
+route inventory from `fixtures/lumoras.ai/sitemap.xml`, the organization byline **"Lumoras team"**
+(published as schema.org `Organization`; owner decision of 10 October 2026), a Git connection to the real
+repository **`timtasay/lumoras.ai`** (base branch `dev`, file per post into
+`apps/web/content/insights/<slug>.md`, pull requests), and Tuesday/Friday schedules on the three Lumoras
+sites. The connection's token is never seeded: without the dev fakes it shows **"Token needed"** with the
+steps to create a fine-grained token (Contents + Pull requests read/write, that repository only); with
+`OUTBOUND_TEST_HOSTS=github.test` (dev fakes, e2e, tests) its API points at the **local fake GitHub**. The seed runs the pipeline with
 FakeLlm: one lumoras.ai article through all ten steps (published as a pull request when the fakes are
 running), the next lumoras.ai slot and two sonorch.ai slots waiting for review (one with an unverifiable
 claim), and the runway checked for every site (seasonx.ai has no publishing connection: red).
@@ -222,8 +228,10 @@ For the full demo, start the fakes first and export `OUTBOUND_TEST_HOSTS=github.
 pnpm --filter seo fakes            # fake GitHub on :4571 (github.test), webhook receiver on :4572 (webhook.test)
 ```
 
-`staff@lumoras.example` is a platform admin (agency home, impersonation). Every seeded author is
-marked as demo and must be replaced by a real person. In production, make a real staff member a
+`staff@lumoras.example` is a platform admin (agency home, impersonation). Every seeded author except
+lumoras.ai's "Lumoras team" is a flagged demo person and must be replaced by a real person (or the
+client's organization). Demo data agrees across screens: a keyword is labelled "Published" in Rankings
+only when its article is live (sonorch.ai has none, so its dashboard and Rankings both say so). In production, make a real staff member a
 platform admin with `pnpm --filter seo admin:grant name@lumoras.ai` (they must have signed in once;
 recorded in the audit log).
 
@@ -304,6 +312,14 @@ broken on purpose; the commands and outputs are in `docs/phase-3-summary.md`.
 agency path's admin check and audit row, the Indexing API guard, RLS on the new tables, the date-lag and
 cadence rules were each broken on purpose; the outputs are in `docs/phase-4-summary.md`.
 
+**Owner decisions (10 October 2026):** `test/integration/owner-decisions.pg.test.ts` (author kinds in the
+database, Person vs Organization through the real webhook publisher, hosted OpenSEO through the metered path
+against a fake hosted OpenSEO), `test/unit/providers.test.ts` (hosted mode: the key as `Authorization: Bearer`,
+no key refused, `whoami` credits, reported credits, estimate labels), `e2e/decisions.spec.ts` (screenshots
+`seo-dec-*`). The provider card with hosted OpenSEO is screenshotted with
+`E2E_OPENSEO=hosted pnpm --filter seo exec playwright test e2e/decisions.spec.ts -g "provider card"` (the
+server then answers research from the fake hosted OpenSEO; the default run checks the fake provider's card).
+
 **Proving the metering guards red:** `CACHE_TEST_SABOTAGE=shared` with the metering suite makes the
 cache visible across workspaces; the reserve, cache-key and lock guards were broken by hand (see
 `docs/phase-2-summary.md` for the commands and outputs).
@@ -349,6 +365,29 @@ docker build -f apps/seo/Dockerfile -t lumoras-seo .   # from the repository roo
    `test/integration/rls.pg.test.ts`. The suite discovers tenant tables from the catalog and fails
    if one is missing from the list or lacks forced RLS.
 3. Query it only through a `Tx` from `withWorkspace()`.
+
+## SEO data provider in production (owner decision #3)
+
+The documented production setting is **OpenSEO on the owner's hosted account**, in the server env file:
+
+```
+SEO_PROVIDER=openseo
+OPENSEO_MODE=hosted
+OPENSEO_API_KEY=oseo_…            # openseo.so → Settings → API keys; server env only
+# optional: OPENSEO_URL (default https://app.openseo.so/mcp), OPENSEO_PROJECT_ID (default project)
+```
+
+The key is sent only from the server, as `Authorization: Bearer` (see `docs/external-apis.md`);
+it never reaches a browser, a log line or a model. A site can name its OpenSEO project under Site settings →
+SEO data provider; otherwise the default project, else one per domain. `balance()` is `whoami`'s
+`creditsRemaining` (1 credit = US$0.001); each call is charged the credits OpenSEO reports for it, else our
+estimate (DataForSEO list price × 1.28), and the ledger's detail says which. Cache, budget and reserve work as
+for every provider.
+
+**Terms caveat** (shown to platform admins on the provider card): hosted OpenSEO allows SEO work for your own
+websites and for your clients, but not building a competing product or service. Use it for Lumoras's own sites
+and staff-run client work now; before clients run research themselves, get OpenSEO's written OK or move to
+self-hosted OpenSEO (`OPENSEO_MODE=selfhosted`, MIT, same tools) with a DataForSEO key.
 
 ## Adding a data provider
 

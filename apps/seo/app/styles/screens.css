@@ -327,7 +327,7 @@ a.onb-step:hover{background:var(--wash-2);color:var(--ink)}
 .conn-name{font-weight:600}
 .conn-sum{font-size:12.5px;color:var(--mute);overflow-wrap:anywhere}
 .conn-meta{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap}
-.conn-acts{display:flex;gap:6px}
+.conn-acts{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
 .conn-add{padding:18px;display:grid;gap:14px}
 .conn-add-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .conn-add h3{font-size:16px}
@@ -414,3 +414,19 @@ a.onb-step:hover{background:var(--wash-2);color:var(--ink)}
 /* KPI rows stretch to the full width when there are fewer tiles than columns */
 .page .kpi-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
 @media (max-width:640px){.page .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.page .kpi{padding:14px}}
+/* owner decision, 10 October 2026: organization bylines */
+.author-kind{display:grid;gap:8px;justify-items:start}
+.author-kind .fld-hint{max-width:70ch}
+.author-org-note{align-self:end;display:flex;gap:6px;align-items:center;padding-bottom:10px}
+.author-img[data-org]{border-radius:12px;color:var(--ion)}
+.author-img[data-org] .ico{width:22px;height:22px}
+/* Git connection saved without its token (owner decision, 10 October 2026) */
+.conn-token{display:grid;gap:10px;margin-top:8px;padding:12px 14px;border-radius:12px;background:var(--wash);border:1px dashed var(--amber);animation:rise-in var(--dur-panel) var(--ease-out) both}
+.conn-token-h{font-weight:600;display:flex;align-items:center;gap:6px}
+.conn-token-h .ico{color:var(--amber)}
+.conn-steps{display:grid;gap:6px;padding-left:20px;font-size:13.5px;color:var(--ink-2);list-style:decimal}
+.conn-steps .mono{overflow-wrap:anywhere}
+.conn-token-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:end}
+.conn-token-form > .form-alert{grid-column:1 / -1}
+@media (max-width:640px){.conn-token-form{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){.conn-token{animation:none}}

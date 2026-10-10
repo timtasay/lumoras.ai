@@ -15,6 +15,8 @@
  * model, and talk to the outside only through the SSRF guard.
  */
 
+import type { Byline } from "./byline.ts";
+
 export type ArticleCover = { kind: string; chips: string[] };
 
 /** Everything a publisher may put on the client's site. */
@@ -33,7 +35,8 @@ export type PublishableArticle = {
   readingMinutes: number;
   words: number;
   cover: ArticleCover;
-  author: { name: string; role: string } | null;
+  /** The configured byline: a person (schema.org Person) or the client's organization (Organization). */
+  author: Byline | null;
   /** Path on the client's site ("/insights/<slug>") and the full URL. */
   path: string;
   url: string;

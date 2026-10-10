@@ -253,7 +253,7 @@ export function prBody(a: PublishableArticle): string {
     `- **Publish date:** ${a.date}`,
     `- **Live URL after deploy:** ${a.url}`,
     `- **Words:** ${a.words}`,
-    a.author ? `- **Byline:** ${a.author.name}` : `- **Byline:** the site's default`,
+    a.author ? `- **Byline:** ${a.author.name} (${a.author.kind === "organization" ? "organization, schema.org Organization" : "person, schema.org Person"})` : `- **Byline:** the site's default`,
     a.sources.length ? `\nPrimary sources checked:\n${a.sources.map((s) => `- ${s.url}`).join("\n")}` : "",
   ]
     .filter((x) => x !== "")

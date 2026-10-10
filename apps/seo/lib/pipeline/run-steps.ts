@@ -27,6 +27,7 @@ import { readSeoRules, slugify } from "../validation.ts";
 import { gscInsights, inspectUrl } from "../google/service.ts";
 import { livePathPattern, loadPublishConnection, publisherFor, createPublisher } from "../publishers/registry.ts";
 import type { PublishableArticle } from "../publishers/types.ts";
+import { toByline } from "../publishers/byline.ts";
 import { BRAND_SOURCE, SYSTEM, briefOutput, draftOutput, factOutput, jsonSchemaOf, taskMessage, topicOutput, type BriefInput, type BriefOutput, type DraftInput, type FactInput, type TopicCandidate, type TopicInput, type TopicOutput } from "./prompts.ts";
 import { QUEUES, StepError, type PipelineDeps } from "./deps.ts";
 import type { StepKey } from "./steps.ts";
@@ -101,12 +102,12 @@ export async function stepContext(s: StepContext): Promise<StepResult> {
       gscNote = `Could not read Search Console: ${e instanceof Error ? e.message.slice(0, 120) : "error"}`;
     }
   } else if (d.gscConnected) gscNote = "Connected, but Google is not configured on this server.";
-  if (!d.authors.length) throw new StepError("The site has no configured author. Bylines are real people: add one under Authors (rule 10).");
+  if (!d.authors.length) throw new StepError("The site has no configured author. Bylines are real people or the client's organization: add one under Authors (rule 10).");
   return {
     input: { site: s.site.domain, slot: s.item.slot_at.toISOString(), publishDate: publishDateOf(s) },
     output: {
       brand: { overview: d.brand.overview.slice(0, 200), sells: d.brand.sells.length, doesNotSell: d.brand.does_not_sell.length, voiceRules: d.brand.voice_rules.length, productFacts: d.brand.product_facts.length },
-      authors: d.authors.map((a) => ({ id: a.id, name: a.name, demo: a.is_demo })),
+      authors: d.authors.map((a) => ({ id: a.id, name: a.name, kind: a.kind, demo: a.is_demo })),
       routes: d.routes,
       published: d.counts.published,
       scheduled: d.counts.scheduled,
@@ -445,7 +446,7 @@ export async function stepDraft(s: StepContext): Promise<StepResult> {
   const brief = item.brief as (BriefOutput & { slug: string }) | null;
   if (!brief || !item.primary_keyword) throw new StepError("No brief: run the brief step first.");
   const { brand, authors, refreshOf } = await tx(s, async (t) => ({ brand: await getBrand(t, s.site.id), authors: await listAuthors(t, s.site.id), refreshOf: item.refresh_of ? await getItem(t, item.refresh_of) : null }), true);
-  // rule 10: a configured author, a real person first; never a generated one
+  // rule 10: a configured byline (a real person or the client's organization), a non-demo one first; never a generated one
   const author = authors.find((a) => !a.is_demo) ?? authors[0];
   if (!author) throw new StepError("The site has no configured author (rule 10).");
   const rules = readSeoRules(brand.seo_rules);
@@ -471,7 +472,7 @@ export async function stepDraft(s: StepContext): Promise<StepResult> {
   });
   return {
     input: { brief: brief.title, author: author.name, voiceRules: brand.voice_rules.length },
-    output: { title: loop.output.title, titleLength: loop.output.title.length, descriptionLength: loop.output.description.length, words: a.words, sections: a.headings.filter((h) => h.depth === 2).length, author: { id: author.id, name: author.name, demo: author.is_demo }, version },
+    output: { title: loop.output.title, titleLength: loop.output.title.length, descriptionLength: loop.output.description.length, words: a.words, sections: a.headings.filter((h) => h.depth === 2).length, author: { id: author.id, name: author.name, kind: author.kind, demo: author.is_demo }, version },
     ...fromLoop(loop),
   };
 }
@@ -682,7 +683,7 @@ export function readingMinutes(words: number) {
 }
 
 export async function buildArticle(s: Pick<StepContext, "deps" | "ctx" | "site">, item: ContentItem, publishDate: string, pattern: string): Promise<PublishableArticle> {
-  const author = item.author_id ? await withWorkspace(s.deps.db, s.ctx, (t) => t.maybe<{ name: string; role: string }>("SELECT name, role FROM authors WHERE id = $1", [item.author_id]), { readOnly: true }) : null;
+  const author = item.author_id ? await withWorkspace(s.deps.db, s.ctx, (t) => t.maybe<{ kind: string; name: string; role: string }>("SELECT kind, name, role FROM authors WHERE id = $1", [item.author_id]), { readOnly: true }) : null;
   const a = analyzeMarkdown(item.body_md);
   const path = pagePath(pattern, item.slug!);
   const brief = (item.brief ?? {}) as { tags?: string[] };
@@ -700,7 +701,7 @@ export async function buildArticle(s: Pick<StepContext, "deps" | "ctx" | "site">
     readingMinutes: readingMinutes(a.words),
     words: a.words,
     cover: { kind: String(item.cover.kind ?? ""), chips: Array.isArray(item.cover.chips) ? item.cover.chips.map(String) : [] },
-    author: author ? { name: author.name, role: author.role } : null,
+    author: author ? toByline(author) : null,
     path,
     url: `https://${s.site.domain}${path}`,
     sources: item.sources.map((x) => ({ claim: x.claim, url: x.url })),

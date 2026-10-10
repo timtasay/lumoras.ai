@@ -43,7 +43,7 @@ const LIGHT: Record<ConnectionRow["status"], [LightState, string]> = {
 const PLANNED = ["social"] as const;
 
 function summary(c: ConnectionRow) {
-  if (c.kind === "git") return `${c.config.repository} · ${c.config.branch ?? "main"} · ${c.config.contentDir ?? "content/posts"}/${c.config.filenamePattern ?? "{{slug}}.md"} · ${c.config.mode === "commit" ? "commits directly" : "opens a pull request"}`;
+  if (c.kind === "git") return `${c.config.repository} · base ${c.config.branch ?? "main"} · ${c.config.contentDir ?? "content/posts"}/${c.config.filenamePattern ?? "{{slug}}.md"} · ${c.config.mode === "commit" ? "commits directly" : `opens a pull request into ${c.config.branch ?? "main"}`}`;
   if (c.kind === "wordpress") return `${c.config.siteUrl} · ${c.config.username}`;
   if (c.kind === "webhook") return `${c.config.endpoint} · signed HMAC-SHA256`;
   return "";
@@ -51,8 +51,63 @@ function summary(c: ConnectionRow) {
 
 const LIVE_TEST = new Set(["git", "webhook"]);
 
+/** owner/repo from https://host/owner/repo (for the token instructions). */
+function repoName(url: string | undefined): string {
+  const m = /^https:\/\/[^/]+\/([^/\s]+)\/([^/\s]+?)(?:\.git)?\/?$/.exec(url ?? "");
+  return m ? `${m[1]}/${m[2]}` : "the repository";
+}
+
+/**
+ * A Git connection saved without its access token: what to create, where,
+ * with which permissions, and a field to paste it. The token is sealed on the
+ * server and never comes back.
+ */
+function TokenNeeded({ c, canEdit, save }: { c: ConnectionRow; canEdit: boolean; save?: (prev: ActionState, fd: FormData) => Promise<ActionState> }) {
+  const [state, action, pending] = useActionState(save ?? (async () => idle), idle);
+  const repo = repoName(c.config.repository);
+  const gitea = c.config.provider === "gitea";
+  const base = c.config.branch ?? "main";
+  return (
+    <div className="conn-token" role="note" aria-labelledby={`tok-${c.id}`}>
+      <p className="conn-token-h" id={`tok-${c.id}`}>
+        <Icon name="lock" className="inline-ico" /> Token needed to publish to {repo}
+      </p>
+      {gitea ? (
+        <ol className="conn-steps">
+          <li>In Gitea: Settings → Applications → Generate new token, with repository read and write access.</li>
+          <li>Use an account that can open pull requests on {repo}.</li>
+        </ol>
+      ) : (
+        <ol className="conn-steps">
+          <li>
+            On GitHub: <strong>Settings → Developer settings → Personal access tokens → Fine-grained tokens</strong> → Generate new token.
+          </li>
+          <li>
+            Repository access: <strong>Only select repositories</strong> → <span className="mono">{repo}</span>, nothing else.
+          </li>
+          <li>
+            Repository permissions: <strong>Contents</strong> read and write, <strong>Pull requests</strong> read and write (Metadata read-only is added automatically).
+          </li>
+          <li>Generate it and paste it below. {c.config.mode === "commit" ? `Commits land on ${base}.` : `Pull requests target ${base}; merging stays with the repository's own review.`}</li>
+        </ol>
+      )}
+      {canEdit && save ? (
+        <form action={action} className="conn-token-form" noValidate key={state.ok ? state.at : "tok"}>
+          <ActionFeedback state={state} />
+          <TextField label="Access token" name="secret" type="password" autoComplete="off" placeholder={gitea ? "Gitea access token" : "github_pat_…"} error={state.fieldErrors?.secret} hint="Encrypted with AES-256-GCM before it is stored. Nobody can read it back here, including you." />
+          <Button type="submit" variant="primary" icon="lock" loading={pending}>
+            Save token
+          </Button>
+        </form>
+      ) : (
+        <p className="muted small">An editor or owner of this workspace adds the token.</p>
+      )}
+    </div>
+  );
+}
+
 /** The frontmatter presets: the lumoras.ai content spec, and a neutral one for most static-site generators. */
-export type TemplatePreset = { key: string; label: string; contentDir: string; filenamePattern: string; livePath: string; template: string };
+export type TemplatePreset = { key: string; label: string; contentDir: string; filenamePattern: string; livePath: string; template: string; repository?: string; branch?: string };
 
 /**
  * Per-site connections with status lights. Credentials are encrypted on the
@@ -70,6 +125,7 @@ export function ConnectionsPanel({
   test,
   choosePublish,
   presets = [],
+  saveToken,
 }: {
   connections: ConnectionRow[];
   canEdit: boolean;
@@ -79,6 +135,8 @@ export function ConnectionsPanel({
   test?: (id: string) => Promise<ActionState>;
   choosePublish?: (id: string | null) => Promise<ActionState>;
   presets?: TemplatePreset[];
+  /** Adds a token to a connection saved without one. */
+  saveToken?: (id: string, prev: ActionState, fd: FormData) => Promise<ActionState>;
 }) {
   const [kind, setKind] = useState<"git" | "wordpress" | "webhook">("git");
   const [state, action, pending] = useActionState(create, idle);
@@ -106,9 +164,10 @@ export function ConnectionsPanel({
       <ul className="conn-list">
         {connections.filter((c) => c.kind !== "search_console" && c.kind !== "ga4").map((c) => {
           const k = KIND[c.kind] ?? { label: c.kind, icon: "plug" as IconName, phase: 3 };
-          const [light, text] = LIGHT[c.status];
+          const needsToken = c.kind === "git" && !c.has_secret;
+          const [light, text] = needsToken ? (["warn", "Token needed"] as [LightState, string]) : LIGHT[c.status];
           return (
-            <li key={c.id} className="panel conn">
+            <li key={c.id} className="panel conn" data-token-needed={needsToken ? "" : undefined}>
               <span className="feat-ico" aria-hidden="true">
                 <Icon name={k.icon} />
               </span>
@@ -128,7 +187,7 @@ export function ConnectionsPanel({
                     <Badge icon="lock">Credentials encrypted · key v{c.key_version}</Badge>
                   ) : null}
                 </p>
-                {c.status_detail && !results[c.id] ? <p className="small muted conn-detail">{c.status_detail}</p> : null}
+                {c.status_detail && !results[c.id] && !needsToken ? <p className="small muted conn-detail">{c.status_detail}</p> : null}
                 {results[c.id] ? (
                   <div className="conn-test" role="status">
                     <p className="small">
@@ -148,6 +207,7 @@ export function ConnectionsPanel({
                     ) : null}
                   </div>
                 ) : null}
+                {needsToken ? <TokenNeeded c={c} canEdit={canEdit} save={saveToken ? saveToken.bind(null, c.id) : undefined} /> : null}
               </div>
               <div className="conn-acts">
                 {LIVE_TEST.has(c.kind) && test ? (
@@ -243,9 +303,9 @@ export function ConnectionsPanel({
             {kind === "git" ? (
               <>
                 <SelectField label="Host" name="provider" defaultValue="github" options={[{ value: "github", label: "GitHub" }, { value: "gitea", label: "Gitea" }]} error={fe.provider} />
-                <TextField label="Repository" name="repository" placeholder="https://github.com/owner/site" error={fe.repository} />
+                <TextField key={`r-${preset}`} label="Repository" name="repository" placeholder="https://github.com/owner/site" defaultValue={pre?.repository ?? ""} error={fe.repository} />
                 <TextField label="API address (optional)" name="apiBaseUrl" placeholder="https://api.github.com" hint="Leave empty for github.com, or for Gitea's /api/v1 under the repository's host." error={fe.apiBaseUrl} />
-                <TextField label="Branch" name="branch" defaultValue="main" error={fe.branch} />
+                <TextField key={`b-${preset}`} label="Base branch" name="branch" defaultValue={pre?.branch ?? "main"} hint="Pull requests target this branch (or commits land on it)." error={fe.branch} />
                 {presets.length ? (
                   <SelectField label="Site format" value={preset} onChange={(e) => setPreset(e.target.value)} options={presets.map((p) => ({ value: p.key, label: p.label }))} hint="Fills the folder, file name, live path and frontmatter below." />
                 ) : null}
@@ -253,7 +313,7 @@ export function ConnectionsPanel({
                 <TextField key={`d-${preset}`} label="Content folder" name="contentDir" defaultValue={pre?.contentDir ?? "content/posts"} error={fe.contentDir} />
                 <TextField key={`f-${preset}`} label="File name" name="filenamePattern" defaultValue={pre?.filenamePattern ?? "{{slug}}.md"} error={fe.filenamePattern} />
                 <TextField key={`l-${preset}`} label="Live path" name="livePath" defaultValue={pre?.livePath ?? "/blog/{{slug}}"} hint="Where the article appears on the site; internal links and the live check use it." error={fe.livePath} />
-                <TextField label="Access token" name="secret" type="password" autoComplete="off" hint="Fine-grained token with contents and pull-request access to this repository only." error={fe.secret} />
+                <TextField label="Access token (can be added later)" name="secret" type="password" autoComplete="off" hint="Fine-grained token with Contents and Pull requests read and write on this repository only. Leave it empty to save the settings now: the connection shows “token needed” until it is added." error={fe.secret} />
                 <TextareaField key={`t-${preset}`} className="span-2" label="Frontmatter template" name="frontmatterTemplate" rows={8} defaultValue={pre?.template ?? ""} hint="Placeholders like {{title}}, {{date}}, {{cover.chips}}. Values are written as quoted YAML, never raw." error={fe.frontmatterTemplate} spellCheck={false} />
               </>
             ) : kind === "wordpress" ? (

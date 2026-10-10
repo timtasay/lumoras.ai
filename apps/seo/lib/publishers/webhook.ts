@@ -18,6 +18,7 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { renderMarkdown } from "../content/markdown.ts";
 import { remoteMessage, requestJson, type HttpDeps } from "./http.ts";
 import { PublishError, type PublicationRef, type PublicationStatus, type PublishableArticle, type Publisher, type PublishResult, type Validation } from "./types.ts";
+import { articleJsonLd } from "./byline.ts";
 
 export const SIGNATURE_VERSION = "v1";
 export const REPLAY_WINDOW_SEC = 300;
@@ -67,6 +68,8 @@ export function webhookPayload(event: WebhookEvent, a: PublishableArticle | null
           readingMinutes: a.readingMinutes,
           words: a.words,
           author: a.author,
+          // schema.org BlogPosting with the byline as Person or Organization, for a <script type="application/ld+json">
+          structuredData: articleJsonLd(a, site),
           cover: a.cover,
           sources: a.sources,
           version: a.version,

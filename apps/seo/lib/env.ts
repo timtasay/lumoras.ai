@@ -294,10 +294,26 @@ export type WebEnv = {
 export type SeoProviderEnv =
   | { kind: "none" }
   | { kind: "fake" }
-  | { kind: "openseo"; url: string; token: string | null; cfAccess: { clientId: string; clientSecret: string } | null }
+  | {
+      kind: "openseo";
+      /** hosted: the owner's openseo.so account (API key); selfhosted: our own instance (owner decision #3). */
+      mode: OpenSeoMode;
+      url: string;
+      /** Bearer credential: the hosted API key (oseo_…), or an optional token for a proxy in front of a self-hosted instance. */
+      token: string | null;
+      cfAccess: { clientId: string; clientSecret: string } | null;
+      /** Research with no per-site project runs here (OPENSEO_PROJECT_ID). */
+      defaultProjectId: string | null;
+    }
   | { kind: "dataforseo"; login: string; password: string; baseUrl: string };
 
 const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1:\d{2,5}$/;
+
+export type OpenSeoMode = "hosted" | "selfhosted";
+/** OpenSEO's hosted MCP endpoint (openseo.so/docs/mcp, read 10 October 2026). */
+export const OPENSEO_HOSTED_URL = "https://app.openseo.so/mcp";
+/** OpenSEO project ids are opaque; never ':' (our tracker and audit ids are "<projectId>:<id>"). */
+export const OPENSEO_PROJECT_ID = /^[A-Za-z0-9._-]{1,100}$/;
 
 /**
  * SEO_PROVIDER and its credentials. Default: "fake" in development and tests,
@@ -314,20 +330,38 @@ export function readSeoProviderEnv(env: Env, problems: string[], opts: { product
       if (opts.secure) problems.push("SEO_PROVIDER=fake serves demo data and cannot be used with an https BETTER_AUTH_URL");
       return { kind: "fake" };
     case "openseo": {
-      const url = env.OPENSEO_MCP_URL?.trim() || "";
-      if (!url) problems.push("OPENSEO_MCP_URL is required when SEO_PROVIDER=openseo (e.g. http://open-seo:3001/mcp on the private network)");
-      else {
+      const mode = (env.OPENSEO_MODE?.trim() || "selfhosted") as OpenSeoMode;
+      if (mode !== "hosted" && mode !== "selfhosted") problems.push(`OPENSEO_MODE must be hosted or selfhosted (got "${env.OPENSEO_MODE}")`);
+      const defaultProjectId = env.OPENSEO_PROJECT_ID?.trim() || null;
+      if (defaultProjectId && !OPENSEO_PROJECT_ID.test(defaultProjectId)) problems.push("OPENSEO_PROJECT_ID must be an OpenSEO project id (letters, digits, '.', '_' or '-')");
+      const checkUrl = (name: string, url: string) => {
         try {
           const u = new URL(url);
-          if (u.protocol !== "https:" && u.protocol !== "http:") problems.push("OPENSEO_MCP_URL must be an http(s) URL");
-          if (u.username || u.password) problems.push("OPENSEO_MCP_URL must not contain credentials (use OPENSEO_MCP_TOKEN)");
+          if (u.protocol !== "https:" && u.protocol !== "http:") problems.push(`${name} must be an http(s) URL`);
+          if (u.username || u.password) problems.push(`${name} must not contain credentials (use ${mode === "hosted" ? "OPENSEO_API_KEY" : "OPENSEO_MCP_TOKEN"})`);
+          return u;
         } catch {
-          problems.push("OPENSEO_MCP_URL is not a valid URL");
+          problems.push(`${name} is not a valid URL`);
+          return null;
         }
+      };
+      if (mode === "hosted") {
+        // the owner's hosted account: the API key comes from server env only (never a browser, a log line or a model)
+        const url = env.OPENSEO_URL?.trim() || OPENSEO_HOSTED_URL;
+        const u = checkUrl("OPENSEO_URL", url);
+        // https always; a loopback http origin only in tests (a local fake hosted OpenSEO)
+        if (u && u.protocol !== "https:" && (opts.secure || !LOOPBACK_ORIGIN.test(u.origin))) problems.push("OPENSEO_URL must be https in hosted mode (a loopback http origin only in tests)");
+        const apiKey = env.OPENSEO_API_KEY?.trim() || "";
+        if (!apiKey) problems.push("OPENSEO_API_KEY is required when OPENSEO_MODE=hosted (OpenSEO → Settings → API keys; it starts with oseo_)");
+        else if (!/^oseo_\S{8,}$/.test(apiKey)) problems.push("OPENSEO_API_KEY must be an OpenSEO API key (it starts with oseo_)");
+        return { kind: "openseo", mode: "hosted", url, token: apiKey || null, cfAccess: null, defaultProjectId };
       }
+      const url = env.OPENSEO_URL?.trim() || env.OPENSEO_MCP_URL?.trim() || "";
+      if (!url) problems.push("OPENSEO_MCP_URL is required when SEO_PROVIDER=openseo and OPENSEO_MODE=selfhosted (e.g. http://open-seo:3001/mcp on the private network)");
+      else checkUrl(env.OPENSEO_URL?.trim() ? "OPENSEO_URL" : "OPENSEO_MCP_URL", url);
       const id = env.OPENSEO_CF_ACCESS_CLIENT_ID?.trim(), secret = env.OPENSEO_CF_ACCESS_CLIENT_SECRET?.trim();
       if (!!id !== !!secret) problems.push("OPENSEO_CF_ACCESS_CLIENT_ID and OPENSEO_CF_ACCESS_CLIENT_SECRET must be set together");
-      return { kind: "openseo", url, token: env.OPENSEO_MCP_TOKEN?.trim() || null, cfAccess: id && secret ? { clientId: id, clientSecret: secret } : null };
+      return { kind: "openseo", mode: "selfhosted", url, token: env.OPENSEO_MCP_TOKEN?.trim() || null, cfAccess: id && secret ? { clientId: id, clientSecret: secret } : null, defaultProjectId };
     }
     case "dataforseo": {
       const login = env.DATAFORSEO_LOGIN?.trim() || "", password = env.DATAFORSEO_PASSWORD?.trim() || "";

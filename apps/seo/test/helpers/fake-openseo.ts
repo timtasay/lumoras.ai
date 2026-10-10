@@ -1,9 +1,17 @@
 /**
- * A local stand-in for a self-hosted OpenSEO MCP endpoint (POST /mcp,
- * Streamable HTTP, stateless), answering tools/call with structuredContent in
- * the shapes OpenSEO v0.1.12 declares (docs/openseo-tools.md). Values are
- * synthetic. Records every call; can answer as SSE instead of JSON; refuses
- * requests without the expected bearer token when one is configured.
+ * A local stand-in for an OpenSEO MCP endpoint (POST /mcp, Streamable HTTP,
+ * stateless), answering tools/call with structuredContent in the shapes
+ * OpenSEO v0.1.12 declares (docs/openseo-tools.md). Values are synthetic.
+ * Records every call; can answer as SSE instead of JSON; refuses requests
+ * without the expected bearer token when one is configured.
+ *
+ * `hosted` makes it behave like the hosted service (app.openseo.so/mcp,
+ * src/server/mcp/api-key-auth.ts and formatters.ts at v0.1.12): an API key is
+ * REQUIRED (`Authorization: Bearer oseo_…` or `x-api-key`), anything else is
+ * a 401 `invalid_api_key`; `whoami` reports mode "hosted" and the account's
+ * creditsRemaining; paid tools deduct credits and report them as
+ * `creditsCharged` / `creditsRemaining` in the result's `_meta` and in
+ * `structuredContent.meta` (unless `reportCredits` is false).
  */
 import { createServer, type IncomingMessage } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -16,12 +24,28 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> 
   return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
 }
 
-export async function startFakeOpenSeo(opts: { token?: string; sse?: boolean } = {}) {
+/** Credits a paid tool charges on the fake hosted service (roughly the documented figures). */
+export const FAKE_HOSTED_CHARGES: Record<string, number> = {
+  research_keywords: 54,
+  get_keyword_metrics: 16,
+  get_serp_results: 5,
+  get_domain_overview: 120,
+  get_ranked_keywords: 40,
+  find_serp_competitors: 40,
+  get_backlinks_overview: 50,
+  get_backlinks_profile: 30,
+  run_rank_tracker: 5,
+};
+
+export type FakeHosted = { apiKey: string; credits: number; reportCredits?: boolean };
+
+export async function startFakeOpenSeo(opts: { token?: string; sse?: boolean; hosted?: FakeHosted } = {}) {
   const calls: McpCall[] = [];
+  const hosted = opts.hosted ? { ...opts.hosted, reportCredits: opts.hosted.reportCredits ?? true } : null;
   const projects: { id: string; name: string; domain: string | null }[] = [{ id: "p-existing", name: "sonorch.ai", domain: "sonorch.ai" }];
   let n = 0;
   const tools: Record<string, (a: Record<string, unknown>) => unknown> = {
-    whoami: () => ({ userEmail: "admin@localhost", scopes: [], mode: "self-hosted", creditsRemaining: null }),
+    whoami: () => (hosted ? { userEmail: "owner@lumoras.example", scopes: ["mcp"], mode: "hosted", creditsRemaining: hosted.credits } : { userEmail: "admin@localhost", scopes: [], mode: "self-hosted", creditsRemaining: null }),
     list_projects: () => ({ projects }),
     create_project: (a) => {
       const p = { id: `p-${++n}`, name: String(a.name), domain: (a.domain as string) ?? null };
@@ -66,6 +90,15 @@ export async function startFakeOpenSeo(opts: { token?: string; sse?: boolean } =
     };
     if (req.url !== "/mcp" || req.method !== "POST") return reply(404, { error: "not found" });
     if (opts.token && req.headers.authorization !== `Bearer ${opts.token}`) return reply(401, { error: "invalid_api_key" });
+    if (hosted) {
+      // hosted: an oseo_ API key is required, as a bearer token or x-api-key (api-key-auth.ts)
+      const bearer = String(req.headers.authorization ?? "").replace(/^Bearer /i, "");
+      const key = (req.headers["x-api-key"] as string | undefined) ?? bearer;
+      if (!key.startsWith("oseo_") || key !== hosted.apiKey) {
+        calls.push({ method: "rejected", headers: req.headers });
+        return reply(401, { error: "invalid_api_key", error_description: "The provided API key is invalid, expired, or disabled" });
+      }
+    }
     const msg = await readJson(req);
     const params = (msg.params ?? {}) as { name?: string; arguments?: Record<string, unknown>; _meta?: unknown };
     calls.push({ method: String(msg.method), name: params.name, args: params.arguments, headers: req.headers, meta: params._meta });
@@ -73,10 +106,19 @@ export async function startFakeOpenSeo(opts: { token?: string; sse?: boolean } =
     if (msg.method !== "tools/call") return reply(200, { jsonrpc: "2.0", id: msg.id, error: { code: -32601, message: "Method not found" } });
     const tool = tools[params.name ?? ""];
     if (!tool) return reply(200, { jsonrpc: "2.0", id: msg.id, result: { isError: true, content: [{ type: "text", text: `Unknown tool ${params.name}` }] } });
-    const sc = tool(params.arguments ?? {});
+    const sc = tool(params.arguments ?? {}) as Record<string, unknown>;
+    const charge = hosted ? (FAKE_HOSTED_CHARGES[params.name ?? ""] ?? 0) : 0;
+    if (hosted && charge) {
+      if (hosted.credits < charge) return reply(200, { jsonrpc: "2.0", id: msg.id, result: { isError: true, content: [{ type: "text", text: "This OpenSEO organization doesn't have enough credits for this request." }] } });
+      hosted.credits -= charge;
+      if (hosted.reportCredits) {
+        const meta = { creditsCharged: charge, creditsRemaining: hosted.credits };
+        return reply(200, { jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text: "summary table (ignored)" }], structuredContent: { ...sc, meta }, _meta: meta } });
+      }
+    }
     return reply(200, { jsonrpc: "2.0", id: msg.id, result: { content: [{ type: "text", text: "summary table (ignored)" }], structuredContent: sc } });
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   const port = (server.address() as AddressInfo).port;
-  return { url: `http://127.0.0.1:${port}/mcp`, calls, projects, close: () => new Promise<void>((r) => server.close(() => r())) };
+  return { url: `http://127.0.0.1:${port}/mcp`, calls, projects, account: hosted, close: () => new Promise<void>((r) => server.close(() => r())) };
 }

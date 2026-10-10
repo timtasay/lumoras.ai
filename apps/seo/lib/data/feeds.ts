@@ -10,6 +10,7 @@ import { withActor, withWorkspace } from "../db/tenant.ts";
 import { livePathPattern, loadPublishConnection } from "../publishers/registry.ts";
 import { pagePath } from "../content/links.ts";
 import type { FeedArticle, FeedSite } from "../publishers/feed.ts";
+import { schemaTypeFor } from "../publishers/byline.ts";
 
 export const FEED_ACTOR = "system:feed";
 
@@ -23,8 +24,8 @@ export async function loadFeed(db: pg.Pool, token: string, baseUrl: string, kind
     async (tx) => {
       const site = await tx.one<{ name: string; domain: string; publish_connection_id: string | null }>("SELECT name, domain, publish_connection_id FROM sites WHERE id = $1", [hit.site_id], "site");
       const pattern = site.publish_connection_id ? await loadPublishConnection(tx, site.publish_connection_id).then(livePathPattern, () => "/blog/{{slug}}") : "/blog/{{slug}}";
-      const rows = await tx.many<{ id: string; slug: string; title: string; description: string; body_md: string; publish_date: string; updated_at: Date; live_url: string | null; primary_keyword: string; brief: { tags?: string[] } | null; author: string | null }>(
-        `SELECT c.id, c.slug, c.title, c.description, c.body_md, to_char(c.publish_date, 'YYYY-MM-DD') AS publish_date, c.updated_at, c.live_url, c.primary_keyword, c.brief, a.name AS author
+      const rows = await tx.many<{ id: string; slug: string; title: string; description: string; body_md: string; publish_date: string; updated_at: Date; live_url: string | null; primary_keyword: string; brief: { tags?: string[] } | null; author: string | null; author_kind: string | null }>(
+        `SELECT c.id, c.slug, c.title, c.description, c.body_md, to_char(c.publish_date, 'YYYY-MM-DD') AS publish_date, c.updated_at, c.live_url, c.primary_keyword, c.brief, a.name AS author, a.kind AS author_kind
          FROM content_items c LEFT JOIN authors a ON a.id = c.author_id
          WHERE c.site_id = $1 AND c.status = 'published' AND c.slug IS NOT NULL AND c.publish_date IS NOT NULL
          ORDER BY c.publish_date DESC, c.published_at DESC NULLS LAST LIMIT 50`,
@@ -41,6 +42,7 @@ export async function loadFeed(db: pg.Pool, token: string, baseUrl: string, kind
           date: r.publish_date,
           updatedAt: r.updated_at,
           author: r.author,
+          authorType: r.author ? schemaTypeFor(r.author_kind === "organization" ? "organization" : "person") : null,
           tags: Array.isArray(r.brief?.tags) ? r.brief!.tags!.map(String).slice(0, 8) : [],
           keyword: r.primary_keyword ?? "",
         })),

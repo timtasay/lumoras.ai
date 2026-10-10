@@ -40,6 +40,7 @@ import { startFakeGit, type FakeGit } from "../helpers/fake-git.ts";
 import { startFakeWebhook, type FakeWebhook } from "../helpers/fake-webhook.ts";
 import { testDeps, TEST_RING } from "../helpers/pipeline.ts";
 import { makeWorkspace, type TestWorkspace } from "../helpers/workspace.ts";
+import { assertScreensAgree } from "../helpers/consistency.ts";
 
 const POLICY = { testResolve: new Map([["github.test", "127.0.0.1"], ["hooks.test", "127.0.0.1"]]) };
 const HOOK_SECRET = "hook-signing-secret-for-tests-only";
@@ -71,7 +72,7 @@ describe("the content pipeline", { skip: skipReason ?? false }, () => {
     db = await createTestDatabase();
     pool = new pg.Pool({ connectionString: db.appUrl, max: 8 });
     pool.on("error", () => {});
-    gh = await startFakeGit({ provider: "github", hostName: "github.test", repos: [{ owner: "lumoras", repo: "lumoras.ai", files: { "apps/web/content/insights/no-show-policy.md": "existing" } }] });
+    gh = await startFakeGit({ provider: "github", hostName: "github.test", repos: [{ owner: "timtasay", repo: "lumoras.ai", defaultBranch: "dev", files: { "apps/web/content/insights/no-show-policy.md": "existing" } }] });
     hook = await startFakeWebhook(HOOK_SECRET, { hostName: "hooks.test" });
     seeded = await seed(pool, { keyring: TEST_RING, content: { github: { apiBase: gh.apiBase, token: gh.token, reachable: true }, policy: POLICY } });
   });
@@ -111,15 +112,16 @@ describe("the content pipeline", { skip: skipReason ?? false }, () => {
     for (const k of ["context", "lint", "review", "publish"]) assert.equal(Number(steps.find((x) => x.step === k)!.cost_micros), 0, `${k} is free`);
 
     // the pull request, the file, the frontmatter lumoras.ai reads (docs/content-spec.md)
-    const repo = gh.repo("lumoras", "lumoras.ai");
+    const repo = gh.repo("timtasay", "lumoras.ai");
     assert.equal(repo.pulls.length, 1);
     const pr = repo.pulls[0];
     assert.equal(pr.state, "open");
-    assert.equal(pr.base, "main");
+    assert.equal(pr.base, "dev", "lumoras.ai's pull requests target dev (owner decision, 10 October 2026)");
+    assert.match(pr.body, /Byline:\*\* Lumoras team \(organization, schema\.org Organization\)/, "the organization byline");
     const filePath = `apps/web/content/insights/${item.slug}.md`;
-    const content = gh.fileOn("lumoras", "lumoras.ai", pr.head, filePath);
+    const content = gh.fileOn("timtasay", "lumoras.ai", pr.head, filePath);
     assert.ok(content, `${filePath} is on the PR branch`);
-    assert.equal(gh.fileOn("lumoras", "lumoras.ai", "main", filePath), null, "nothing was committed to main (PR mode)");
+    assert.equal(gh.fileOn("timtasay", "lumoras.ai", "dev", filePath), null, "nothing was committed to dev (PR mode)");
     const fm = matter(content!);
     assert.equal(fm.data.title, item.title);
     assert.ok(fm.data.title.length <= 60);
@@ -153,6 +155,12 @@ describe("the content pipeline", { skip: skipReason ?? false }, () => {
       await writeFile(path.join(process.env.ACCEPTANCE_OUT, filePath), content!);
       await writeFile(path.join(process.env.ACCEPTANCE_OUT, "pr.json"), JSON.stringify({ pr, file: filePath, requests: gh.requests }, null, 2));
     }
+  });
+
+  it("demo data agrees across screens with the fakes running: lumoras.ai's live article is the one keyword labelled Published; sonorch.ai has none", async () => {
+    const sites = await assertScreensAgree(db.name);
+    assert.deepEqual(sites.find((s) => s.domain === "lumoras.ai"), { domain: "lumoras.ai", live: 1, publishedLabels: 1 });
+    assert.deepEqual(sites.find((s) => s.domain === "sonorch.ai"), { domain: "sonorch.ai", live: 0, publishedLabels: 0 });
   });
 
   // ------------------------------------------------------------------ a workspace of our own for the rest

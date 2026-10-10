@@ -2,7 +2,8 @@
  * The three SeoDataProvider implementations against local fakes (no real
  * provider is ever called, no credits spent):
  *   DataForSeoProvider  → a fake api.dataforseo.com (v3 envelope)
- *   OpenSeoProvider     → a fake OpenSEO MCP endpoint (real tool names)
+ *   OpenSeoProvider     → a fake OpenSEO MCP endpoint (real tool names), self-hosted
+ *                         and hosted (API key required, whoami credits, per-call credits)
  *   FakeProvider        → fixtures; charges what DataForSEO would
  */
 import { after, before, describe, it } from "node:test";
@@ -10,12 +11,13 @@ import assert from "node:assert/strict";
 import { DataForSeoProvider } from "../../lib/providers/dataforseo.ts";
 import { FakeProvider } from "../../lib/providers/fake.ts";
 import { McpClient, McpError, parseSse } from "../../lib/providers/mcp-client.ts";
-import { OpenSeoProvider, RESEARCH_PROJECT } from "../../lib/providers/openseo.ts";
+import { OpenSeoProvider, RESEARCH_PROJECT, hostedCredits } from "../../lib/providers/openseo.ts";
+import { createProvider, OPENSEO_HOSTED_TERMS } from "../../lib/providers/registry.ts";
 import { dataForSeoPrice } from "../../lib/providers/operations.ts";
 import { ProviderError, ProviderUnsupportedError, invoke, type Market } from "../../lib/providers/types.ts";
 import { readSeoProviderEnv } from "../../lib/env.ts";
 import { startFakeDataForSeo } from "../helpers/fake-dataforseo.ts";
-import { startFakeOpenSeo } from "../helpers/fake-openseo.ts";
+import { FAKE_HOSTED_CHARGES, startFakeOpenSeo } from "../helpers/fake-openseo.ts";
 
 const US: Market = { locationCode: 2840, languageCode: "en", label: "United States" };
 
@@ -178,6 +180,96 @@ describe("OpenSeoProvider (against a fake OpenSEO MCP server)", () => {
     assert.deepEqual(parseSse('event: message\ndata: {"jsonrpc":"2.0","id":2,"result":{}}\n\n', 2), { jsonrpc: "2.0", id: 2, result: {} });
     assert.equal(parseSse("data: nope\n\n", 1), null);
     assert.throws(() => new McpClient({ url: "http://u:p@127.0.0.1/mcp" }), /credentials/);
+  });
+});
+
+describe("OpenSeoProvider, hosted mode (against a fake hosted OpenSEO: API key required, whoami credits, per-call credits)", () => {
+  const KEY = "oseo_test_hosted_key_0123";
+  let mcp: Awaited<ReturnType<typeof startFakeOpenSeo>>;
+  let p: OpenSeoProvider;
+  before(async () => {
+    mcp = await startFakeOpenSeo({ hosted: { apiKey: KEY, credits: 10_000 } });
+    p = new OpenSeoProvider({ url: mcp.url, mode: "hosted", token: KEY });
+  });
+  after(() => mcp.close());
+
+  it("sends the API key as Authorization: Bearer on every request (openseo.so/docs/mcp)", async () => {
+    await p.balance();
+    await p.domainOverview({ domain: "sonorch.ai", market: US });
+    assert.ok(mcp.calls.length >= 2);
+    for (const c of mcp.calls) assert.equal(c.headers.authorization, `Bearer ${KEY}`, `${c.name ?? c.method}: the API key was not sent`);
+    assert.equal(p.label, "OpenSEO (hosted, MCP)");
+  });
+
+  it("refuses to run without the key: nothing is sent, and the env check says what is missing", async () => {
+    const before = mcp.calls.length;
+    assert.throws(() => new OpenSeoProvider({ url: mcp.url, mode: "hosted" }), (e: unknown) => e instanceof ProviderError && /OPENSEO_API_KEY/.test(e.message));
+    assert.throws(() => new OpenSeoProvider({ url: mcp.url, mode: "hosted", token: "not-an-openseo-key" }), ProviderError);
+    assert.equal(mcp.calls.length, before, "a request went out without the key");
+    // a wrong key is refused by the server (401) and becomes a ProviderError
+    await assert.rejects(new OpenSeoProvider({ url: mcp.url, mode: "hosted", token: "oseo_wrong_key_00000" }).balance(), (e: unknown) => e instanceof ProviderError && /HTTP 401/.test(e.message));
+    const problems: string[] = [];
+    readSeoProviderEnv({ SEO_PROVIDER: "openseo", OPENSEO_MODE: "hosted" }, problems, { production: true, secure: true });
+    assert.match(problems.join(), /OPENSEO_API_KEY is required/);
+  });
+
+  it("balance() is whoami's creditsRemaining (1 credit = $0.001)", async () => {
+    const b = await p.balance();
+    assert.equal(b.micros, mcp.account!.credits * 1000);
+    assert.match(b.note ?? "", /credits on the hosted account/);
+  });
+
+  it("records the credits OpenSEO reports for a call, labelled as provider-reported", async () => {
+    const left = mcp.account!.credits;
+    const r = await p.keywordIdeas({ seed: "salon pos", market: US, limit: 150 });
+    assert.equal(r.costMicros, FAKE_HOSTED_CHARGES.research_keywords * 1000, "54 credits = $0.054");
+    assert.match(r.costDetail ?? "", /^provider-reported: OpenSEO charged 54 credits \(\$0\.054\)/);
+    assert.equal(mcp.account!.credits, left - 54);
+  });
+
+  it("estimates hosted prices as DataForSEO list × 1.28 in whole credits; charges the estimate, clearly labelled, when no credits are reported", async () => {
+    const o = { op: "keywordIdeas" as const, params: { seed: "x", market: US, limit: 150 } };
+    const list = dataForSeoPrice(o).micros; // $0.030
+    assert.equal(hostedCredits(list), 39, "ceil(0.030 × 1.28 × 1000)");
+    const e = await p.estimateCost(o);
+    assert.deepEqual([e.micros, e.basis], [39_000, "price-table"]);
+    assert.match(e.explain, /× 1\.28 hosted markup = 39 credits/);
+    const quiet = await startFakeOpenSeo({ hosted: { apiKey: KEY, credits: 500, reportCredits: false } });
+    try {
+      const r = await new OpenSeoProvider({ url: quiet.url, mode: "hosted", token: KEY }).serp({ keyword: "salon pos", market: US, depth: 20 });
+      assert.equal(r.costMicros, null, "no credits reported: the meter charges the estimate");
+      assert.match(r.costDetail ?? "", /^estimate: OpenSEO did not report/);
+    } finally {
+      await quiet.close();
+    }
+  });
+
+  it("runs in the site's project, else the default project, without listing or creating projects", async () => {
+    const d = new OpenSeoProvider({ url: mcp.url, mode: "hosted", token: KEY, defaultProjectId: "proj-default" });
+    const before = mcp.calls.length;
+    await d.serp({ keyword: "salon pos", market: US, depth: 20 }, { projectId: "proj-site" });
+    await d.serp({ keyword: "salon pos", market: US, depth: 20 });
+    const used = mcp.calls.slice(before);
+    assert.deepEqual(used.map((c) => [c.name, c.args?.projectId]), [["get_serp_results", "proj-site"], ["get_serp_results", "proj-default"]]);
+  });
+
+  it("is built from env by the registry; the terms note is for hosted only", () => {
+    const problems: string[] = [];
+    const cfg = readSeoProviderEnv({ SEO_PROVIDER: "openseo", OPENSEO_MODE: "hosted", OPENSEO_API_KEY: KEY, OPENSEO_PROJECT_ID: "proj-default" }, problems, { production: true, secure: true });
+    assert.deepEqual(problems, []);
+    assert.deepEqual(cfg, { kind: "openseo", mode: "hosted", url: "https://app.openseo.so/mcp", token: KEY, cfAccess: null, defaultProjectId: "proj-default" });
+    const prov = createProvider(cfg) as OpenSeoProvider;
+    assert.equal(prov.mode, "hosted");
+    assert.match(OPENSEO_HOSTED_TERMS, /competing product/);
+    const bad: string[] = [];
+    readSeoProviderEnv({ SEO_PROVIDER: "openseo", OPENSEO_MODE: "hosted", OPENSEO_API_KEY: KEY, OPENSEO_URL: "http://app.openseo.so/mcp" }, bad, { production: true, secure: true });
+    assert.match(bad.join(), /must be https/);
+    const proj: string[] = [];
+    readSeoProviderEnv({ SEO_PROVIDER: "openseo", OPENSEO_MODE: "hosted", OPENSEO_API_KEY: KEY, OPENSEO_PROJECT_ID: "a:b" }, proj, { production: false, secure: false });
+    assert.match(proj.join(), /OPENSEO_PROJECT_ID/);
+    const mode: string[] = [];
+    readSeoProviderEnv({ SEO_PROVIDER: "openseo", OPENSEO_MODE: "cloud" }, mode, { production: false, secure: false });
+    assert.match(mode.join(), /OPENSEO_MODE must be hosted or selfhosted/);
   });
 });
 

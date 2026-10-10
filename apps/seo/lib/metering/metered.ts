@@ -246,7 +246,7 @@ export async function meteredCall<K extends OperationName>(deps: MeterDeps, ctx:
 
   // 4. reserve: lock, check budget and reserve, hold the estimate
   const period = periodOf(clock());
-  type Reserved = { kind: "refused"; reason: Refusal; state: BudgetState } | { kind: "held"; ledgerId: string };
+  type Reserved = { kind: "refused"; reason: Refusal; state: BudgetState } | { kind: "held"; ledgerId: string; projectId: string | null };
   const reserved = await withWorkspace(deps.db, ctx, async (tx): Promise<Reserved> => {
     await tx.action("research.hold");
     await tx.exec("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [lockKey(ctx.workspaceId, category)]);
@@ -270,7 +270,9 @@ export async function meteredCall<K extends OperationName>(deps: MeterDeps, ctx:
        VALUES ($1, $2, $3, $4, $5, $6, 'held', $7, $7, $8) RETURNING id::text`,
       [ctx.workspaceId, ctx.siteId, category, op.op, p.name, period, estimate, ctx.actorId],
     );
-    return { kind: "held", ledgerId: l.id };
+    // OpenSEO: the site's own project (a site setting), read under the workspace's RLS
+    const proj = p.name === "openseo" && ctx.siteId ? await tx.maybe<{ id: string | null }>("SELECT openseo_project_id AS id FROM sites WHERE id = $1", [ctx.siteId]) : null;
+    return { kind: "held", ledgerId: l.id, projectId: proj?.id ?? null };
   });
   if (reserved.kind === "refused") throw new BudgetRefusedError(reserved.reason, op.op, estimate, reserved.state);
   const ledgerId = reserved.ledgerId;
@@ -278,7 +280,7 @@ export async function meteredCall<K extends OperationName>(deps: MeterDeps, ctx:
   // 5. the call, outside any transaction
   let res: Awaited<ReturnType<typeof invoke<K>>>;
   try {
-    res = await invoke(p, o);
+    res = await invoke(p, o, { projectId: reserved.projectId });
   } catch (e) {
     const known = e instanceof ProviderError;
     const billed = known ? Math.max(0, e.opts.billedMicros ?? 0) : estimate;
@@ -296,7 +298,9 @@ export async function meteredCall<K extends OperationName>(deps: MeterDeps, ctx:
 
   // 6. settle: charge, log, cache and audit in one transaction
   const cost = res.costMicros ?? estimate;
-  const detail = res.costMicros === null ? "cost not reported by the provider; charged at the estimate" : res.costMicros > estimate ? "provider charged more than the estimate" : null;
+  // the provider's own label wins (e.g. OpenSEO: "provider-reported: … credits" or "estimate: …"), so the ledger says where the number came from
+  const over = res.costMicros !== null && res.costMicros > estimate ? "provider charged more than the estimate" : null;
+  const detail = res.costDetail ? (over ? `${res.costDetail}; ${over}` : res.costDetail) : res.costMicros === null ? "cost not reported by the provider; charged at the estimate" : over;
   const settled = await withWorkspace(deps.db, ctx, async (tx) => {
     await tx.action("research.settle");
     const logId = await writeLog(tx, ctx, op, p.name, key, { status: "ok", estimate, cost, data: res.data, detail });

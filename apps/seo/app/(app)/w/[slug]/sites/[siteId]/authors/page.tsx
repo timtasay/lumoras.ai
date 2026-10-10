@@ -12,7 +12,7 @@ export default async function AuthorsPage({ params }: { params: Promise<{ slug: 
   const { site, a, authors } = await loadSite(slug, siteId, async (tx, s) => ({ authors: await listAuthors(tx, s.id) }));
   return (
     <AuthorsEditor
-      authors={authors.map((x) => ({ id: x.id, name: x.name, role: x.role, bio: x.bio, avatar_url: x.avatar_url, is_demo: x.is_demo }))}
+      authors={authors.map((x) => ({ id: x.id, kind: x.kind, name: x.name, role: x.role, bio: x.bio, avatar_url: x.avatar_url, is_demo: x.is_demo }))}
       canEdit={can(a.role, "author:manage")}
       save={saveAuthorAction.bind(null, slug, site.id)}
       remove={deleteAuthorAction.bind(null, slug)}

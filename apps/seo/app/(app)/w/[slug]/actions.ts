@@ -15,11 +15,11 @@ import { assertCan, isWorkspaceRole } from "@/lib/auth/permissions";
 import { keyring, webEnv } from "@/lib/config";
 import { pool } from "@/lib/db/pool";
 import { isUuid } from "@/lib/db/tenant";
-import { createConnection, deleteConnection } from "@/lib/data/connections";
+import { createConnection, deleteConnection, setConnectionSecret } from "@/lib/data/connections";
 import { createAuthor, createSite, deleteAuthor, deleteSite, getSite, updateAuthor, updateBrand, updateSite } from "@/lib/data/sites";
 import { advanceOnboarding, listMembers, ONBOARDING_STEPS, type OnboardingStep } from "@/lib/data/workspaces";
 import { hit, LIMITS } from "@/lib/rate-limit";
-import { authorInput, brandInput, connectionInput, DEFAULT_SEO_RULES, inviteInput, siteInput, workspaceInput } from "@/lib/validation";
+import { authorInput, brandInput, connectionInput, connectionTokenInput, openSeoProjectInput, DEFAULT_SEO_RULES, inviteInput, siteInput, workspaceInput } from "@/lib/validation";
 
 const bad = (field: string, msg: string): ActionState => ({ ok: false, error: "Check the highlighted fields.", fieldErrors: { [field]: msg }, at: Date.now() });
 
@@ -146,7 +146,37 @@ export async function createConnectionAction(slug: string, siteId: string, _prev
     const ring = keyring();
     await inWorkspace(slug, "connection:manage", "connection.create", (tx, a) => createConnection(tx, ring, a.workspace.id, siteId, input));
     revalidatePath(`/w/${slug}`, "layout");
-    return { ok: true, message: "Connection saved. Its credentials are encrypted and never shown again.", at: Date.now() };
+    return { ok: true, message: input.kind === "git" && !input.secret ? "Connection saved. Add its access token to publish: it shows \u201ctoken needed\u201d until then." : "Connection saved. Its credentials are encrypted and never shown again.", at: Date.now() };
+  } catch (e) {
+    return toActionError(e);
+  }
+}
+
+/** The OpenSEO project this site's research runs in (owner decision #3). Audited through the sites trigger. */
+export async function saveOpenSeoProjectAction(slug: string, siteId: string, _prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    if (!isUuid(siteId)) return { ok: false, error: "Unknown site.", at: Date.now() };
+    const { projectId } = openSeoProjectInput.parse(formObject(fd));
+    await inWorkspace(slug, "site:update", "site.provider_project", (tx) => tx.one("UPDATE sites SET openseo_project_id = $2 WHERE id = $1 RETURNING id", [siteId, projectId], "site"));
+    revalidatePath(`/w/${slug}`, "layout");
+    return { ok: true, message: projectId ? `Research for this site runs in OpenSEO project ${projectId}.` : "Cleared: the default project is used.", at: Date.now() };
+  } catch (e) {
+    return toActionError(e);
+  }
+}
+
+/** Adds (or replaces) a connection's access token: sealed with AES-256-GCM, never shown again, audited as a fingerprint. */
+export async function setConnectionTokenAction(slug: string, siteId: string, connectionId: string, _prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    if (!isUuid(connectionId)) return { ok: false, error: "Unknown connection.", at: Date.now() };
+    const { secret } = connectionTokenInput.parse(formObject(fd));
+    const ring = keyring();
+    await inWorkspace(slug, "connection:manage", "connection.token", async (tx, a) => {
+      await tx.one("SELECT 1 FROM connections WHERE id = $1 AND site_id = $2", [connectionId, siteId], "connection");
+      await setConnectionSecret(tx, ring, a.workspace.id, connectionId, secret);
+    });
+    revalidatePath(`/w/${slug}`, "layout");
+    return { ok: true, message: "Token saved and encrypted. Run the test to check it.", at: Date.now() };
   } catch (e) {
     return toActionError(e);
   }

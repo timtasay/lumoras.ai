@@ -1,7 +1,7 @@
 # Open work (Lumoras Growth)
 
 Things deferred, worked around, or waiting on someone. Each item says what it stands in for.
-Phases 0 to 4, 10 October 2026.
+Phases 0 to 4 and the owner decisions of 10 October 2026 (`owner-decisions.md`).
 
 ## Waiting on the owner
 
@@ -22,10 +22,14 @@ Phases 0 to 4, 10 October 2026.
 - **First platform admin.** After the first deploy, a Lumoras staff member signs in once and the
   owner runs `docker exec lumoras-seo node --import tsx scripts/grant-admin.ts <email>`
   (recorded in the audit log as `system:cli`).
-- **Decision #3: SEO data provider.** Phase 2 runs on `SEO_PROVIDER=fake` in development and tests and
-  `none` in production. Recommendation in `docs/provider-decision.md` (DataForSEO directly). Production
-  needs `SEO_PROVIDER` plus `DATAFORSEO_LOGIN`/`DATAFORSEO_PASSWORD` (or `OPENSEO_MCP_URL`). Ask DataForSEO
-  in writing about multi-client use (their ToS is silent).
+- **Decision #3: SEO data provider — decided: hosted OpenSEO; the key is pending.** Built: `OPENSEO_MODE=hosted`.
+  The owner sets in the server env file `SEO_PROVIDER=openseo`, `OPENSEO_MODE=hosted` and
+  `OPENSEO_API_KEY=oseo_…` (optionally `OPENSEO_PROJECT_ID`, and per-site projects under Site settings). Until
+  then production runs with `SEO_PROVIDER=none`. **Terms:** use it for Lumoras's own sites and staff-run
+  client work; before clients run research themselves, get OpenSEO's written OK or move to self-hosted
+  OpenSEO with a DataForSEO key (nothing in code stops a client role from starting research today: it is a
+  policy the provider card states to platform admins). Not yet verified against the real hosted service (no
+  key here): first use should be one `whoami` and one small research call, checking the ledger detail.
 - **Google OAuth client for Search Console and GA4.** Create a Web OAuth client (needs the host name,
   decision #1), add the redirect URI `<BETTER_AUTH_URL>/api/google/callback`, enable the Search Console
   API, Analytics Admin API and Analytics Data API, configure the consent screen with the two read-only
@@ -40,20 +44,33 @@ Phases 0 to 4, 10 October 2026.
   connection, so seasonx.ai's runway reads red ("No publishing connection is set") and sonorch.ai's
   articles stop at the review gate. When the owner decides, each gets a Git (file per post) or webhook
   connection like lumoras.ai.
-- **The real lumoras.ai repository and token.** The seeded Git connection points at a local fake GitHub
-  with `https://github.com/lumoras/lumoras.ai` as a placeholder owner/name. Production needs the real
-  repository address and a fine-grained token (Contents read/write and Pull requests read/write on that
-  repository only), entered on the site's Connections tab and checked with Test. Pull requests are the
-  default; merging stays with lumoras.ai's own review and CI.
-- **Bylines (rule 10) vs. lumoras.ai's content spec.** The seed uses a demo author placeholder ("Demo
-  author for lumoras.ai", flagged in the editor and as a non-blocking lint warning). The content spec's
-  articles are signed "Lumoras team"; rule 10 asks for real people. The owner decides whether a team
-  byline is acceptable or names the people who sign.
+- **The lumoras.ai token.** The connection now points at `timtasay/lumoras.ai`, base branch `dev`, pull
+  requests (owner decision, 10 October 2026) and shows "Token needed". The owner creates a fine-grained token
+  (Contents read/write and Pull requests read/write on that repository only), pastes it on lumoras.ai →
+  Connections → Save token, and runs Test. Merging stays with lumoras.ai's own review and CI. Until then
+  lumoras.ai's runway reads "The publishing connection (lumoras.ai repository) needs its access token" and
+  rolling generation does not start for it. An existing production database seeded before this change keeps
+  its old connection: change it by adding a new one with the "lumoras.ai insights" preset and removing the old.
+- **Bylines — decided and built.** "Lumoras team" is an organization byline (schema.org `Organization`).
+  lumoras.ai's `content-spec.md` frontmatter has no author field (apps/web renders "Lumoras team" and its own
+  `Organization` JSON-LD), so the Git file for lumoras.ai carries no byline; other sites can add
+  `{{author.name}}`, `{{author.type}}` or `{{author.kind}}` to their frontmatter template, and webhook receivers
+  get `article.structuredData` (a BlogPosting with the author typed). sonorch.ai and seasonx.ai still have
+  flagged demo people until decision #2.
 - **Writing model and its budget.** Production runs with `LLM_PROVIDER=none` until the owner sets
   `LLM_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`, and gives each workspace an `llm_tokens` budget
   (Budget and usage). Without a budget, runs stop at the topic step with "No monthly budget is set".
 - **Autopilot.** Off for every site; turning it on records who acknowledged the warning and when. Whether
   any client may use it at all (and with what written agreement) is an owner/commercial question (#5).
+
+## Resolved on 10 October 2026
+
+- **Demo data consistency.** Fixed in the seed and in code: Rankings labels a keyword
+  "Published" only while its article is published (`trackedKeywords`), and the seed no longer queues sonorch.ai's
+  or lumoras.ai's existing pages as published targets (they are saved keywords). Checked for every seeded site by
+  `test/helpers/consistency.ts` (seed and pipeline suites) and in the browser (`e2e/decisions.spec.ts`). Keyword
+  status "published" on the Keywords tab still means "an existing page targets it" (rule 5), which is a
+  different thing from "Articles live" (published through Lumoras Growth).
 
 ## Deferred to a later phase
 
@@ -93,8 +110,11 @@ Phases 0 to 4, 10 October 2026.
   account's own `price` object from `appendix/user_data` once a day would keep them exact; a worker job
   for it is not built yet. Model prices come from `lib/llm/prices.ts` / `LLM_PRICES_JSON`. Settlements always use the cost DataForSEO reports, so this only affects how early a
   call near the reserve is refused.
-- **OpenSEO actual costs.** Self-hosted OpenSEO reports neither per-call cost nor balance, so with
-  `SEO_PROVIDER=openseo` the ledger charges the estimate (`detail` says so). See provider-decision.md.
+- **OpenSEO actual costs.** Self-hosted OpenSEO reports neither per-call cost nor balance, so the ledger charges
+  the estimate (`detail` starts "estimate:"). Hosted OpenSEO reports the balance (`whoami`) and its result schema
+  has `creditsCharged`, which we record ("provider-reported: …") — but v0.1.12's paid tools do not fill it yet,
+  so hosted calls are charged our estimate (list × 1.28) until they do. A periodic reconciliation against the
+  `whoami` balance delta is not built.
 - **Provider credentials from encrypted platform settings.** Credentials come from the environment
   only. Storing them encrypted in the database (editable by platform admins) can follow if the owner
   wants rotation without a redeploy.

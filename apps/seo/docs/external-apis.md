@@ -3,6 +3,21 @@
 Build prompt section 17: read the documentation of every external API before integrating it,
 and record the version and the date. Newest first.
 
+## OpenSEO hosted MCP (owner decision #3, 10 October 2026; `lib/providers/openseo.ts` hosted mode)
+
+Read 10 October 2026. No OpenSEO tool was called and no credit was spent (the local fake
+`test/helpers/fake-openseo.ts` with `hosted` stands in for it).
+
+| Source (date / version) | What we rely on |
+| --- | --- |
+| <https://openseo.so/docs/mcp> (no version or date on the page) | Hosted endpoint `https://app.openseo.so/mcp`. API key auth for headless clients: `Authorization: Bearer oseo_YOUR_KEY` **or** `x-api-key: oseo_YOUR_KEY`; keys start with `oseo_`, are created under Settings → API keys, shown once, and "are personal: anything an agent does with your key acts as you in your workspace". "If your agent cannot find a project, ask it to list OpenSEO projects first and use the returned project ID." We send the Bearer form only. |
+| `every-app/open-seo` v0.1.12 (`89e5a00`, 8 October 2026; shallow clone read as data) `src/server/mcp/api-key-auth.ts` | Both headers accepted only with the `oseo_` prefix; a bad key is **401** `{"error":"invalid_api_key"}`, a revoked one 403 `account_access_revoked`, limits 429 `rate_limited`/`usage_exceeded` with `Retry-After`. |
+| same, `tools/whoami.ts` | Free; `structuredContent` `{userEmail, scopes, mode: "hosted" \| "self-hosted", creditsRemaining}` (monthly + top-up credits; `null` when billing is unavailable or self-hosted). Our `balance()`. |
+| same, `formatters.ts` + `output-schemas.ts` | A tool result may carry `meta: {creditsCharged, creditsRemaining}` both as the result's `_meta` and inside `structuredContent.meta`. We record `creditsCharged` when present; v0.1.12's paid tools do not fill it yet, so the estimate is charged and labelled until they do. Out of credits: a tool error "doesn't have enough credits". |
+| same, `src/shared/billing.ts` (and `openseo-tools.md` §2) | 1 credit = US$0.001; hosted charges `ceil(raw DataForSEO USD × 1.28 × 1000)` credits. Our hosted estimate uses the same formula on our DataForSEO list-price table. |
+| <https://openseo.so/pricing> (no date) | Base plan $10/month including $10 of usage; top-up credits roll over. No per-credit price is stated on the page (the 1 credit = $0.001 figure is from the source). |
+| <https://openseo.so/terms-and-conditions> (last revised 8/23/2026) | 2.1: hosted use for "SEO work for your own websites and for your clients"; may not "use them to build a competing product or service". 2.2(a) no distributing/hosting the Site's content except as 2.1 allows; 2.2(c) no access "to build a similar or competitive website, product, or service". Hence the caveat on the provider card. |
+
 ## Google Search Console, GA4 Data and Admin APIs (Phase 4 measurement, `lib/google/`, `lib/measure/`)
 
 All read 10 October 2026 on developers.google.com / support.google.com; "updated" is the page's own
@@ -86,9 +101,13 @@ DataForSEO SERP results also give the non-organic item types (SERP features), st
   branches, contents (`POST/PUT/DELETE /contents/{path}` with `new_branch` to branch off), pulls. Auth
   `Authorization: token <token>`.
 - **Not called by any test:** `test/helpers/fake-git.ts` implements both APIs (including the API-version
-  header check) for unit, integration and e2e tests; the seeded lumoras.ai connection points at the
-  local fake (`http://github.test:4571`). **Before go-live:** one supervised PR against a scratch
-  repository with the production token.
+  header check) for unit, integration and e2e tests. Since 10 October 2026 the seeded lumoras.ai connection
+  names the real repository `timtasay/lumoras.ai` (base branch `dev`, pull requests) and the real API
+  (`https://api.github.com`) with **no token** ("token needed"); only with `OUTBOUND_TEST_HOSTS=github.test`
+  (dev fakes, e2e, tests) does its API point at the local fake (`http://github.test:4571`). Token creation
+  path as shown in the app: Settings → Developer settings → Personal access tokens → Fine-grained tokens,
+  "Only select repositories", Contents and Pull requests read and write. **Before go-live:** the first PR
+  into `dev` with the owner's token is reviewed by hand.
 
 ## Search Console URL Inspection API v1 (Phase 3, after publishing)
 
@@ -140,8 +159,9 @@ DataForSEO SERP results also give the non-organic item types (SERP features), st
   same day. Details and every tool: `docs/openseo-tools.md`.
 - **How we use it:** our own minimal Streamable HTTP client (no SDK dependency): stateless
   `tools/call` POSTs carrying the 2026-07-28 protocol's per-request `_meta` and `Mcp-Method`/`Mcp-Name`
-  headers; JSON or SSE answers; only `structuredContent` is read. Optional bearer token or Cloudflare
-  Access service token. Not called by any test (`test/helpers/fake-openseo.ts`).
+  headers; JSON or SSE answers; only `structuredContent` (and the result's credit `meta`) is read. Hosted mode
+  (10 October 2026, section above): the API key as `Authorization: Bearer`; self-hosted: optional bearer token or
+  Cloudflare Access service token. Not called by any test (`test/helpers/fake-openseo.ts`).
 
 ## Google OAuth 2.0, Search Console API, GA4 Admin and Data APIs (Phase 2, `lib/google/`)
 

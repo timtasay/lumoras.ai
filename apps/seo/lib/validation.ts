@@ -204,17 +204,30 @@ export const brandInput = z.object({
 });
 export type BrandInput = z.infer<typeof brandInput>;
 
-export const authorInput = z.object({
-  name: trimmed(120, "Name").min(1, "Enter the person's name"),
-  role: trimmed(120, "Role").default(""),
-  bio: trimmed(2000, "Bio").default(""),
-  avatarUrl: z
-    .string()
-    .trim()
-    .default("")
-    .transform((s) => s || null)
-    .pipe(httpsUrl.nullable()),
-});
+/**
+ * A byline (rule 10): a real person, or the client's organization ("Lumoras
+ * team", owner decision of 10 October 2026). An organization has no personal
+ * title or credentials, so a role is refused for it rather than dropped
+ * silently. Published as schema.org Person or Organization.
+ */
+export const AUTHOR_KINDS = ["person", "organization"] as const;
+export const authorInput = z
+  .object({
+    kind: z.enum(AUTHOR_KINDS, { error: "Choose a person or an organization" }).default("person"),
+    name: trimmed(120, "Name").min(1, "Enter the byline's name"),
+    role: trimmed(120, "Role").default(""),
+    bio: trimmed(2000, "Bio").default(""),
+    avatarUrl: z
+      .string()
+      .trim()
+      .default("")
+      .transform((s) => s || null)
+      .pipe(httpsUrl.nullable()),
+  })
+  .refine((a) => a.kind === "person" || a.role === "", {
+    message: "An organization byline has no job title or credentials. Leave the role empty, or add the person who signs as a person byline.",
+    path: ["role"],
+  });
 export type AuthorInput = z.infer<typeof authorInput>;
 
 /** https, or http to a *.test host (local fakes in tests; the SSRF guard refuses .test outside tests). */
@@ -247,13 +260,20 @@ export const connectionInput = z.discriminatedUnion("kind", [
     repository: z.string().trim().regex(/^https:\/\/[^\s]+\/[^\s/]+\/[^\s/]+$/, "Use the repository's https:// address, like https://github.com/owner/site").max(500),
     /** Empty: derived (api.github.com, or <gitea>/api/v1). */
     apiBaseUrl: z.union([z.literal(""), endpointUrl]).default(""),
-    branch: z.string().trim().regex(/^[\w./-]{1,100}$/, "Enter a branch name").default("main"),
+    /** The base branch: articles land here (mode commit) or pull requests target it (mode pr). Per connection. */
+    branch: z.string().trim().regex(/^[\w./-]{1,100}$/, "Enter a branch name").refine((s) => !s.split("/").includes("..") && !s.startsWith("/") && !s.endsWith("/") && !s.endsWith(".lock"), "Enter a branch name").default("main"),
     contentDir: z.string().trim().regex(/^[\w./-]{0,200}$/, "A folder path inside the repository, like content/posts").refine((s) => !s.split("/").includes(".."), "No .. in the path").default("content/posts"),
     filenamePattern: z.string().trim().regex(/^[\w.{}\s-]{1,100}$/, "Like {{slug}}.md").refine((s) => /\{\{\s*slug\s*\}\}/.test(s), "Must contain {{slug}}").default("{{slug}}.md"),
     frontmatterTemplate: z.string().max(4000).default(""),
     mode: z.enum(["pr", "commit"]).default("pr"),
     livePath,
-    secret: z.string().trim().min(8, "Paste an access token").max(4000),
+    /** Optional at first: without one the connection shows "token needed" and nothing publishes until it is added. */
+    secret: z
+      .string()
+      .trim()
+      .max(4000)
+      .default("")
+      .refine((s) => s === "" || s.length >= 8, "Paste the whole access token"),
   }),
   z.object({
     kind: z.literal("wordpress"),
@@ -271,6 +291,20 @@ export const connectionInput = z.discriminatedUnion("kind", [
   }),
 ]);
 export type ConnectionInput = z.infer<typeof connectionInput>;
+
+/** A site's OpenSEO project (owner decision #3); empty clears it. No ':' (tracker ids are "<projectId>:<id>"). */
+export const openSeoProjectInput = z.object({
+  projectId: z
+    .string()
+    .trim()
+    .max(100, "At most 100 characters")
+    .regex(/^[A-Za-z0-9._-]*$/, "Letters, digits, '.', '_' or '-' only")
+    .default("")
+    .transform((s) => s || null),
+});
+
+/** Adding (or replacing) the access token of an existing connection. */
+export const connectionTokenInput = z.object({ secret: z.string().trim().min(8, "Paste the whole access token").max(4000) });
 
 export const inviteInput = z.object({
   email: z.string().trim().toLowerCase().email("Enter an email address").max(254),

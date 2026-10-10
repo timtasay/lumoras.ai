@@ -11,4 +11,6 @@ export const E2E = {
   stateFile: path.join(root, "test-results", "e2e-state.json"),
   fakeDomain: "northwind-dental.test",
   shots: process.env.SCREENSHOT_DIR || null,
+  /** E2E_OPENSEO=hosted: the server answers research from a local fake hosted OpenSEO (provider-card screenshots only). */
+  openseoHosted: process.env.E2E_OPENSEO === "hosted",
 };

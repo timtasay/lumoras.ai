@@ -30,10 +30,11 @@ export type PlanResult = { created: number; started: number; skipped: number; re
 export async function generationBlocker(tx: Tx, site: SiteSettings, now: Date): Promise<string | null> {
   if (site.status !== "active") return `The site is ${site.status}.`;
   if (!site.schedule_active) return "The schedule is off.";
-  if (!(await listAuthors(tx, site.id)).length) return "No author is configured (bylines must be real people).";
+  if (!(await listAuthors(tx, site.id)).length) return "No author is configured (bylines are real people or the client's organization).";
   if (!site.publish_connection_id) return "No publishing connection is set.";
-  const conn = await tx.maybe<{ status: string; label: string }>("SELECT status, label FROM connections WHERE id = $1", [site.publish_connection_id]);
+  const conn = await tx.maybe<{ status: string; label: string; has_secret: boolean }>("SELECT status, label, credentials_ciphertext IS NOT NULL AS has_secret FROM connections WHERE id = $1", [site.publish_connection_id]);
   if (!conn) return "The publishing connection was removed.";
+  if (!conn.has_secret) return `The publishing connection (${conn.label}) needs its access token.`;
   if (conn.status === "error") return `The publishing connection (${conn.label}) is failing its test.`;
   const llm = await readBudgetState(tx, "llm_tokens", periodOf(now));
   if (llm.unset) return "No model-usage budget is set for this workspace.";

@@ -222,7 +222,7 @@ export function ArticleEditor({
           <div className="banner" role="note">
             <Icon name="alert" />
             <p>
-              <strong>The byline is a demo placeholder.</strong> Bylines are published as real people: replace the author before this goes live under the client&apos;s name.
+              <strong>The byline is a demo placeholder.</strong> Bylines are published as real people or the client&apos;s organization: replace the author before this goes live under the client&apos;s name.
             </p>
           </div>
         ) : null}

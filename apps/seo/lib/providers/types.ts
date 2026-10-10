@@ -80,8 +80,15 @@ export type OperationResults = {
   "siteAudit.issues": AuditIssue[];
 };
 
-/** What a provider answers: the data, what it says it charged (null = it does not say), and billable units. */
-export type ProviderResponse<T> = { data: T; costMicros: number | null; units: number };
+/**
+ * What a provider answers: the data, what it says it charged (null = it does
+ * not say), billable units, and optionally how the cost was obtained (the
+ * ledger shows it: provider-reported credits vs. our estimate).
+ */
+export type ProviderResponse<T> = { data: T; costMicros: number | null; units: number; costDetail?: string };
+
+/** Per-call context from the metered path: the site's provider project (OpenSEO), when it has one. */
+export type CallContext = { projectId?: string | null };
 
 export type CostEstimate = {
   /** Upper bound, micro-USD. */
@@ -94,7 +101,7 @@ export type CostEstimate = {
 
 export type Balance = { micros: number | null; checkedAt: Date; note?: string };
 
-type Call<K extends OperationName> = (p: OperationParams[K]) => Promise<ProviderResponse<OperationResults[K]>>;
+type Call<K extends OperationName> = (p: OperationParams[K], cx?: CallContext) => Promise<ProviderResponse<OperationResults[K]>>;
 
 export interface SeoDataProvider {
   readonly name: ProviderName;
@@ -145,25 +152,25 @@ export class ProviderUnsupportedError extends ProviderError {
 }
 
 /** Calls the provider method an operation names. The only place that maps names to methods. */
-export function invoke<K extends OperationName>(p: SeoDataProvider, operation: OperationOf<K>): Promise<ProviderResponse<OperationResults[K]>> {
+export function invoke<K extends OperationName>(p: SeoDataProvider, operation: OperationOf<K>, cx: CallContext = {}): Promise<ProviderResponse<OperationResults[K]>> {
   const o = operation as Operation;
   const r = (() => {
     switch (o.op) {
-      case "keywordIdeas": return p.keywordIdeas(o.params);
-      case "keywordMetrics": return p.keywordMetrics(o.params);
-      case "serp": return p.serp(o.params);
-      case "domainOverview": return p.domainOverview(o.params);
-      case "rankedKeywords": return p.rankedKeywords(o.params);
-      case "serpCompetitors": return p.serpCompetitors(o.params);
-      case "backlinksOverview": return p.backlinksOverview(o.params);
-      case "backlinksProfile": return p.backlinksProfile(o.params);
-      case "rankTracker.create": return p.rankTracker.create(o.params);
-      case "rankTracker.add": return p.rankTracker.add(o.params);
-      case "rankTracker.run": return p.rankTracker.run(o.params);
-      case "rankTracker.get": return p.rankTracker.get(o.params);
-      case "siteAudit.run": return p.siteAudit.run(o.params);
-      case "siteAudit.status": return p.siteAudit.status(o.params);
-      case "siteAudit.issues": return p.siteAudit.issues(o.params);
+      case "keywordIdeas": return p.keywordIdeas(o.params, cx);
+      case "keywordMetrics": return p.keywordMetrics(o.params, cx);
+      case "serp": return p.serp(o.params, cx);
+      case "domainOverview": return p.domainOverview(o.params, cx);
+      case "rankedKeywords": return p.rankedKeywords(o.params, cx);
+      case "serpCompetitors": return p.serpCompetitors(o.params, cx);
+      case "backlinksOverview": return p.backlinksOverview(o.params, cx);
+      case "backlinksProfile": return p.backlinksProfile(o.params, cx);
+      case "rankTracker.create": return p.rankTracker.create(o.params, cx);
+      case "rankTracker.add": return p.rankTracker.add(o.params, cx);
+      case "rankTracker.run": return p.rankTracker.run(o.params, cx);
+      case "rankTracker.get": return p.rankTracker.get(o.params, cx);
+      case "siteAudit.run": return p.siteAudit.run(o.params, cx);
+      case "siteAudit.status": return p.siteAudit.status(o.params, cx);
+      case "siteAudit.issues": return p.siteAudit.issues(o.params, cx);
     }
   })();
   return r as Promise<ProviderResponse<OperationResults[K]>>;

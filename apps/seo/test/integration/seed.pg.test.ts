@@ -15,6 +15,8 @@ import { finishCrawlRun, startCrawlRun, CrawlBusyError } from "../../lib/data/cr
 import { listConnections, readConnectionSecret, rotateConnectionKeys } from "../../lib/data/connections.ts";
 import { seed, SEED_USERS } from "../../lib/seed.ts";
 import { createTestDatabase, dropAll, skipReason, adminQuery, type TestDb } from "../helpers/db.ts";
+import { assertScreensAgree } from "../helpers/consistency.ts";
+import { LUMORAS_GIT } from "../../lib/publishers/lumoras.ts";
 
 const K1 = randomBytes(32).toString("base64");
 const K2 = randomBytes(32).toString("base64");
@@ -61,10 +63,43 @@ describe("seed and data layer (PostgreSQL)", { skip: skipReason ?? false }, () =
       { slug: "lumoras", roles: ["editor", "owner", "reviewer", "viewer"] },
       { slug: "northwind-dental", roles: ["editor", "owner", "reviewer", "viewer"] },
     ]);
-    const demo = await adminQuery<{ n: string }>("SELECT count(*) n FROM authors WHERE NOT is_demo", [], db.name);
-    assert.equal(Number(demo[0].n), 0, "every seeded author is marked as demo");
+    // lumoras.ai is signed by its organization (owner decision, 10 October 2026); every other seeded author is a flagged demo person
+    const real = await adminQuery<{ domain: string; kind: string; name: string; role: string }>("SELECT s.domain, a.kind, a.name, a.role FROM authors a JOIN sites s ON s.id = a.site_id WHERE NOT a.is_demo", [], db.name);
+    assert.deepEqual(real, [{ domain: "lumoras.ai", kind: "organization", name: "Lumoras team", role: "" }]);
+    const demo = await adminQuery<{ domain: string; kind: string }>("SELECT s.domain, a.kind FROM authors a JOIN sites s ON s.id = a.site_id WHERE a.is_demo ORDER BY s.domain", [], db.name);
+    assert.deepEqual([...new Set(demo.map((d) => d.domain))], ["northwind-dental.example", "seasonx.ai", "sonorch.ai"]);
+    assert.ok(demo.every((d) => d.kind === "person"), "demo placeholders are people");
     const admins = await adminQuery<{ email: string }>("SELECT email FROM auth_user WHERE role = 'admin'", [], db.name);
     assert.deepEqual(admins, [{ email: "staff@lumoras.example" }]);
+  });
+
+  it("demo data agrees across screens: a keyword is labelled Published only when its article is live (sonorch.ai: none)", async () => {
+    const sites = await assertScreensAgree(db.name);
+    assert.deepEqual(sites.find((s) => s.domain === "sonorch.ai"), { domain: "sonorch.ai", live: 0, publishedLabels: 0 });
+    // sonorch.ai still has a full ranking history, on saved keywords marked targeted
+    const [r] = await adminQuery<{ n: number; kws: number }>(
+      "SELECT count(*)::int n, count(DISTINCT keyword)::int kws FROM rank_snapshots r JOIN sites s ON s.id = r.site_id WHERE s.domain = 'sonorch.ai' AND r.source = 'saved'",
+      [],
+      db.name,
+    );
+    assert.ok(r.kws >= 5 && r.n >= r.kws * 10, `sonorch.ai ranking history: ${JSON.stringify(r)}`);
+  });
+
+  it("without the dev fakes, lumoras.ai's Git connection points at timtasay/lumoras.ai (base dev, pull requests) with no token: token needed", async () => {
+    const site = ids.workspaces.lumoras.sites["lumoras.ai"];
+    const conns = await withWorkspace(pool, { workspaceId: ids.workspaces.lumoras.id, actorId: "system:test" }, (tx) => listConnections(tx, site), { readOnly: true });
+    const git = conns.find((c) => c.kind === "git")!;
+    assert.equal(git.label, "lumoras.ai repository");
+    assert.equal(git.has_secret, false, "no token is seeded: the owner adds it in the app");
+    assert.equal(git.status, "warn");
+    assert.match(git.status_detail ?? "", /^Token needed/);
+    assert.deepEqual(
+      { repository: git.config.repository, branch: git.config.branch, contentDir: git.config.contentDir, filenamePattern: git.config.filenamePattern, mode: git.config.mode, apiBaseUrl: git.config.apiBaseUrl, livePath: git.config.livePath },
+      { repository: "https://github.com/timtasay/lumoras.ai", branch: "dev", contentDir: "apps/web/content/insights", filenamePattern: "{{slug}}.md", mode: "pr", apiBaseUrl: "", livePath: "/insights/{{slug}}" },
+    );
+    assert.equal(git.config.frontmatterTemplate, LUMORAS_GIT.frontmatterTemplate);
+    const [s] = await adminQuery<{ publish_connection_id: string; runway_reason: string | null }>("SELECT publish_connection_id, runway_reason FROM sites WHERE id = $1", [site], db.name);
+    assert.equal(s.publish_connection_id, git.id);
   });
 
   it("stores a crawl: routes upserted, one audit summary, brand pre-filled only where empty, one crawl at a time", async () => {

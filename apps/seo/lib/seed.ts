@@ -9,11 +9,14 @@
  * competitor guesses). Northwind Dental: fictional, on a reserved .example
  * domain, so a crawl of it simply finds nothing.
  *
- * Every demo author has is_demo = true and says so: bylines must be real people.
+ * Bylines: lumoras.ai is signed by its organization, "Lumoras team" (docs/content-spec.md;
+ * owner decision of 10 October 2026), a real byline published as schema.org Organization.
+ * Every other seeded author is a demo person with is_demo = true and says so: it must be
+ * replaced by a real person (or the client's organization) before anything goes live.
  */
 import type pg from "pg";
 import { withWorkspace, type Actor } from "./db/tenant.ts";
-import { createSite, createAuthor } from "./data/sites.ts";
+import { createSite, createAuthor, updateAuthor } from "./data/sites.ts";
 import { createConnection } from "./data/connections.ts";
 import { advanceOnboarding } from "./data/workspaces.ts";
 import type { Keyring } from "./crypto/secrets.ts";
@@ -34,12 +37,14 @@ import { runResearch } from "./research/service.ts";
 const SEED: Actor = { actorId: "system:seed" };
 const HYPE = ["revolutionary", "seamless", "cutting-edge", "game-changer"];
 
+/** demo: flagged placeholder (default true); replaces: an older seeded name this byline takes over (re-seeding an existing database). */
+type SeedAuthor = { kind?: "person" | "organization"; name: string; role: string; bio: string; demo?: boolean; replaces?: string };
 type SeedUser = { email: string; name: string; admin?: boolean };
 type SeedSite = {
   input: Omit<SiteInput, "researchMaxAgeDays">;
   brand: Partial<BrandInput>;
   seoRules?: Partial<SeoRules>;
-  authors: { name: string; role: string; bio: string }[];
+  authors: SeedAuthor[];
   routes?: { path: string; lastmod: Date | null }[];
   routesSource?: string;
   seeds?: string[];
@@ -66,11 +71,21 @@ export const SEED_USERS: SeedUser[] = [
   { email: "viewer@northwind-dental.example", name: "Demo viewer, Northwind" },
 ];
 
-const DEMO_AUTHOR = (site: string) => ({
+const DEMO_AUTHOR = (site: string): SeedAuthor => ({
   name: `Demo author for ${site}`,
   role: "Placeholder: replace with a real person",
   bio: "Seed data. Bylines are published as Person structured data, so this must be replaced with a real person, their real role and a bio they confirmed before anything is written.",
 });
+
+/** lumoras.ai's real byline: docs/content-spec.md signs every piece "Lumoras team" (owner decision, 10 October 2026). */
+export const LUMORAS_TEAM_AUTHOR: SeedAuthor = {
+  kind: "organization",
+  name: "Lumoras team",
+  role: "",
+  bio: "The team at Lumoras LLC. Articles on lumoras.ai are signed by the team, not by one person.",
+  demo: false,
+  replaces: "Demo author for lumoras.ai",
+};
 
 /**
  * lumoras.ai's real route inventory: the sitemap apps/web/app/sitemap.ts renders, kept as a local
@@ -158,7 +173,7 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
         },
         // docs/content-spec.md, as data (rule 13)
         seoRules: { introMinSentences: 2, introMaxSentences: 3, minSections: 3, noH1InBody: true, noEmDash: true, noEmoji: true, coverKinds: ["call", "people", "checklist", "ticket", "calendar", "chart"], coverChips: 2, coverChipMax: 22 },
-        authors: [DEMO_AUTHOR("lumoras.ai")],
+        authors: [LUMORAS_TEAM_AUTHOR],
         routes: lumorasRoutes(),
         routesSource: "seed: fixtures/lumoras.ai/sitemap.xml",
         seeds: ["ai receptionist", "missed calls", "call forwarding for business"],
@@ -252,9 +267,16 @@ export async function seed(db: pg.Pool, opts: { keyring?: Keyring | null; resear
             b.forbiddenClaims ?? [], b.voiceRules ?? [], b.bannedWords ?? [], JSON.stringify(b.keyPages ?? []), JSON.stringify({ ...DEFAULT_SEO_RULES, ...s.seoRules })],
         );
         for (const a of s.authors) {
-          if (!(await tx.maybe("SELECT 1 FROM authors WHERE site_id = $1 AND name = $2", [siteId, a.name]))) {
-            const created = await createAuthor(tx, wsId, siteId, { ...a, avatarUrl: null });
-            await tx.exec("UPDATE authors SET is_demo = true WHERE id = $1", [created.id]);
+          const demo = a.demo ?? true;
+          const input = { kind: a.kind ?? "person", name: a.name, role: a.role, bio: a.bio, avatarUrl: null };
+          // an older seed's placeholder becomes this byline (its articles keep pointing at it)
+          const old = a.replaces ? await tx.maybe<{ id: string }>("SELECT id FROM authors WHERE site_id = $1 AND name = $2 AND is_demo", [siteId, a.replaces]) : null;
+          if (old && !(await tx.maybe("SELECT 1 FROM authors WHERE site_id = $1 AND name = $2", [siteId, a.name]))) {
+            await updateAuthor(tx, old.id, input);
+            await tx.exec("UPDATE authors SET is_demo = $2 WHERE id = $1", [old.id, demo]);
+          } else if (!(await tx.maybe("SELECT 1 FROM authors WHERE site_id = $1 AND name = $2", [siteId, a.name]))) {
+            const created = await createAuthor(tx, wsId, siteId, input);
+            if (demo) await tx.exec("UPDATE authors SET is_demo = true WHERE id = $1", [created.id]);
           }
         }
         if (s.routes?.length) {

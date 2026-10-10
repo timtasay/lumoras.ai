@@ -3,7 +3,8 @@
  *
  * Env: DATABASE_URL (the app role), optional ENCRYPTION_KEY(S) for the demo
  * connections' sealed secrets, optional OUTBOUND_TEST_HOSTS=github.test,webhook.test
- * when the dev fakes (scripts/fakes.ts) run. Refuses next to a real deployment (an https
+ * when the dev fakes (scripts/fakes.ts) run. Without github.test there, lumoras.ai's
+ * Git connection points at the real repository with no token ("token needed"). Refuses next to a real deployment (an https
  * BETTER_AUTH_URL) because it creates a platform admin (staff@lumoras.example).
  * Sign in as any seeded user with a magic link: in development the link is
  * printed in the web server's log.
@@ -56,7 +57,9 @@ async function main(): Promise<number> {
     if (!googleUp) log.info("no fake Google running: Search Console and GA4 stay disconnected in the demo (start pnpm --filter seo fakes and set GOOGLE_API_TEST_ORIGIN)");
     const r = await seed(db, {
       keyring,
-      content: { github: { ...DEV_FAKE_GITHUB, reachable }, webhook: hosts.includes("webhook.test") ? DEV_FAKE_WEBHOOK : undefined, policy },
+      // env-gated: only with OUTBOUND_TEST_HOSTS=github.test does lumoras.ai's connection point at the fake GitHub;
+      // otherwise it points at the real timtasay/lumoras.ai with no token ("token needed")
+      content: { github: hosts.includes("github.test") ? { ...DEV_FAKE_GITHUB, reachable } : undefined, webhook: hosts.includes("webhook.test") ? DEV_FAKE_WEBHOOK : undefined, policy },
       measure: { google },
     });
     log.info("seeded", { db: redactUrl(url), workspaces: Object.keys(r.workspaces), users: SEED_USERS.map((u) => `${u.email}${u.admin ? " (platform admin)" : ""}`) });

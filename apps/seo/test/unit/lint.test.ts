@@ -170,6 +170,14 @@ describe("lint: each rule fails on its own", () => {
     assert.equal(a.blocking, false);
     assert.ok(lintPassed(demo), "the demo byline warning does not block (the review screen shows it)");
   });
+  it("author (rule 10): an organization byline is a valid configured author; one with a title fails", () => {
+    const org = lintArticle(base({ authors: [{ id: "a1", name: "Lumoras team", is_demo: false, kind: "organization", role: "" }] }));
+    assert.equal(byRule(org, "author")[0].status, "pass");
+    assert.match(byRule(org, "author")[0].detail, /organization byline, published as Organization/);
+    const person = lintArticle(base({ authors: [{ id: "a1", name: "Ada Real", is_demo: false, kind: "person", role: "Editor" }] }));
+    assert.equal(byRule(person, "author")[0].status, "pass");
+    expectFail({ authors: [{ id: "a1", name: "Lumoras team", is_demo: false, kind: "organization", role: "Editor" }] }, "author", /organization byline but carries a title/);
+  });
   it("cover: kind, chip count and chip length from the brand's content spec", () => {
     expectFail({ cover: { kind: "poster", chips: ["A", "B"] } }, "cover", /not one of call, chart/);
     expectFail({ cover: { kind: "call", chips: ["Only one"] } }, "cover", /2 expected/);

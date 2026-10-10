@@ -10,16 +10,17 @@ import { listGoogleConnections } from "@/lib/google/service";
 import { provider, providerInfo } from "@/lib/providers/registry";
 import { loadSite } from "@/lib/site-page";
 import { dateLabel } from "@/lib/ui/time";
-import { createConnectionAction, deleteConnectionAction } from "../../../actions";
+import { createConnectionAction, deleteConnectionAction, setConnectionTokenAction } from "../../../actions";
 import { setPublishConnectionAction, testPublishConnectionAction } from "../../../publishing-actions";
 import { getSiteSettings } from "@/lib/data/sites";
 import { DEFAULT_TEMPLATE, LUMORAS_INSIGHTS_TEMPLATE } from "@/lib/publishers/frontmatter";
+import { LUMORAS_GIT } from "@/lib/publishers/lumoras";
 import type { TemplatePreset } from "@/components/forms/ConnectionsPanel";
 
 /** Site formats offered when adding a Git connection. */
 const PRESETS: TemplatePreset[] = [
   { key: "generic", label: "Markdown site (Next.js, Astro, Hugo, Jekyll)", contentDir: "content/posts", filenamePattern: "{{slug}}.md", livePath: "/blog/{{slug}}", template: DEFAULT_TEMPLATE },
-  { key: "lumoras", label: "lumoras.ai insights (content spec)", contentDir: "apps/web/content/insights", filenamePattern: "{{slug}}.md", livePath: "/insights/{{slug}}", template: LUMORAS_INSIGHTS_TEMPLATE },
+  { key: "lumoras", label: "lumoras.ai insights (content spec)", contentDir: LUMORAS_GIT.contentDir, filenamePattern: LUMORAS_GIT.filenamePattern, livePath: LUMORAS_GIT.livePath, template: LUMORAS_INSIGHTS_TEMPLATE, repository: LUMORAS_GIT.repository, branch: LUMORAS_GIT.branch },
 ];
 import { googleCards } from "@/lib/google/view";
 
@@ -63,6 +64,7 @@ export default async function ConnectionsPage({ params, searchParams }: { params
           test={testPublishConnectionAction.bind(null, slug, site.id)}
           choosePublish={setPublishConnectionAction.bind(null, slug, site.id)}
           presets={site.domain === "lumoras.ai" ? [PRESETS[1], PRESETS[0]] : PRESETS}
+          saveToken={setConnectionTokenAction.bind(null, slug, site.id)}
         />
       </section>
       {a.viewer.isPlatformAdmin ? <ProviderStatus info={providerInfo()} balance={balance} note={note} /> : null}

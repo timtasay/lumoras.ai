@@ -108,11 +108,12 @@ test("rankings: position chart (inverted), cluster filter, published vs saved, m
   const rows = page.getByRole("region", { name: "Tracked keywords" }).locator("tbody tr");
   const all = await rows.count();
   expect(all).toBeGreaterThan(5);
-  await page.getByRole("radio", { name: /^Published/ }).click();
-  await expect(rows.filter({ hasText: "Saved" })).toHaveCount(0);
-  const published = await rows.count();
-  expect(published).toBeGreaterThan(0);
-  expect(published).toBeLessThan(all);
+  // nothing is published through the app for sonorch.ai yet (its dashboard says "Nothing published yet"), so no keyword is labelled Published
+  await expect(page.getByRole("radio", { name: /^Published/ })).toHaveText("Published 0");
+  await expect(page.getByRole("radio", { name: /^Saved/ })).toHaveText(`Saved ${all}`);
+  await page.getByRole("radio", { name: /^Saved/ }).click();
+  await expect(rows).toHaveCount(all);
+  await expect(rows.locator(".badge").filter({ hasText: /^Published$/ })).toHaveCount(0);
   await page.getByRole("radio", { name: /^All/ }).click();
   await page.getByLabel("Cluster").selectOption("Policies");
   await expect(rows).not.toHaveCount(all);

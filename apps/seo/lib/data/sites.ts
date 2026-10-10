@@ -58,12 +58,14 @@ export type SiteSettings = Site & {
   backlinks_cadence: "off" | "monthly" | "quarterly";
   search_sync: boolean;
   inspect_daily_cap: number;
+  /** Owner decision #3: the OpenSEO project this site's research runs in (null: the default project, else found by domain). */
+  openseo_project_id: string | null;
 };
 
 const SETTINGS_COLS = `schedule_days, to_char(schedule_time, 'HH24:MI') AS schedule_time, schedule_active, generation_mode, lead_days, batch_size, horizon_days,
   review_mode, autopilot_acknowledged_by, autopilot_acknowledged_at, allow_backdating, runway_threshold_days, runway_days, runway_level, runway_reason,
   runway_checked_at, runway_alerted_level, runway_alerted_at, publish_connection_id, feed_enabled, feed_token,
-  rank_cadence, rank_device, rank_depth, rank_max_keywords, audit_cadence, audit_max_pages, backlinks_cadence, search_sync, inspect_daily_cap`;
+  rank_cadence, rank_device, rank_depth, rank_max_keywords, audit_cadence, audit_max_pages, backlinks_cadence, search_sync, inspect_daily_cap, openseo_project_id`;
 
 export function getSiteSettings(tx: Tx, id: string): Promise<SiteSettings> {
   return tx.one<SiteSettings>(`SELECT ${SITE_COLS}, ${SETTINGS_COLS} FROM sites WHERE id = $1`, [id], "site");
@@ -175,9 +177,13 @@ export async function prefillBrand(tx: Tx, siteId: string, p: { overview: string
   );
 }
 
+/** A byline: a real person, or the client's organization ("Lumoras team"). Published as schema.org Person or Organization. */
+export type AuthorKind = "person" | "organization";
+
 export type Author = {
   id: string;
   site_id: string;
+  kind: AuthorKind;
   name: string;
   role: string;
   bio: string;
@@ -187,22 +193,27 @@ export type Author = {
 };
 
 export function listAuthors(tx: Tx, siteId: string): Promise<Author[]> {
-  return tx.many<Author>("SELECT id, site_id, name, role, bio, avatar_url, is_demo, created_at FROM authors WHERE site_id = $1 ORDER BY created_at", [siteId]);
+  return tx.many<Author>("SELECT id, site_id, kind, name, role, bio, avatar_url, is_demo, created_at FROM authors WHERE site_id = $1 ORDER BY created_at", [siteId]);
 }
 
-export function createAuthor(tx: Tx, workspaceId: string, siteId: string, a: AuthorInput): Promise<Author> {
+/** An author as saved: kind defaults to a person. */
+type AuthorSave = Omit<AuthorInput, "kind"> & { kind?: AuthorKind };
+
+export function createAuthor(tx: Tx, workspaceId: string, siteId: string, a: AuthorSave): Promise<Author> {
+  const kind = a.kind ?? "person";
   return tx.one<Author>(
-    `INSERT INTO authors (workspace_id, site_id, name, role, bio, avatar_url) VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, site_id, name, role, bio, avatar_url, is_demo, created_at`,
-    [workspaceId, siteId, a.name, a.role, a.bio, a.avatarUrl],
+    `INSERT INTO authors (workspace_id, site_id, kind, name, role, bio, avatar_url) VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, site_id, kind, name, role, bio, avatar_url, is_demo, created_at`,
+    [workspaceId, siteId, kind, a.name, kind === "organization" ? "" : a.role, a.bio, a.avatarUrl],
   );
 }
 
-export function updateAuthor(tx: Tx, id: string, a: AuthorInput): Promise<Author> {
+export function updateAuthor(tx: Tx, id: string, a: AuthorSave): Promise<Author> {
+  const kind = a.kind ?? "person";
   return tx.one<Author>(
-    `UPDATE authors SET name = $2, role = $3, bio = $4, avatar_url = $5 WHERE id = $1
-     RETURNING id, site_id, name, role, bio, avatar_url, is_demo, created_at`,
-    [id, a.name, a.role, a.bio, a.avatarUrl],
+    `UPDATE authors SET kind = $2, name = $3, role = $4, bio = $5, avatar_url = $6 WHERE id = $1
+     RETURNING id, site_id, kind, name, role, bio, avatar_url, is_demo, created_at`,
+    [id, kind, a.name, kind === "organization" ? "" : a.role, a.bio, a.avatarUrl],
     "author",
   );
 }

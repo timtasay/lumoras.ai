@@ -114,12 +114,30 @@ export class McpClient {
 
   /** tools/call: returns structuredContent; a tool error becomes an McpError. */
   async callTool<T = Record<string, unknown>>(name: string, args: Record<string, unknown>): Promise<T> {
+    return (await this.callToolMeta<T>(name, args)).data;
+  }
+
+  /**
+   * tools/call with the result's metadata: OpenSEO puts `creditsCharged` /
+   * `creditsRemaining` in the result's `_meta` and in `structuredContent.meta`
+   * (src/server/mcp/formatters.ts). Both are read; numbers only.
+   */
+  async callToolMeta<T = Record<string, unknown>>(name: string, args: Record<string, unknown>): Promise<{ data: T; meta: { creditsCharged: number | null; creditsRemaining: number | null } }> {
     const r = await this.rpc("tools/call", { name, arguments: args }, name);
     if (r.isError) {
       const first = Array.isArray(r.content) ? (r.content[0] as { text?: unknown } | undefined) : undefined;
       throw new McpError(`${name}: ${String(first?.text ?? "tool error").slice(0, 300)}`);
     }
     if (!r.structuredContent || typeof r.structuredContent !== "object") throw new McpError(`${name}: no structuredContent in the result`);
-    return r.structuredContent as T;
+    const sc = r.structuredContent as Record<string, unknown>;
+    const metas = [r._meta, sc.meta].filter((m): m is Record<string, unknown> => !!m && typeof m === "object" && !Array.isArray(m));
+    const pick = (k: string) => {
+      for (const m of metas) {
+        const v = m[k];
+        if (typeof v === "number" && Number.isFinite(v) && v >= 0) return v;
+      }
+      return null;
+    };
+    return { data: sc as T, meta: { creditsCharged: pick("creditsCharged"), creditsRemaining: pick("creditsRemaining") } };
   }
 }

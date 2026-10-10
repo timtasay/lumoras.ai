@@ -30,10 +30,15 @@ import { alertRun, claimRun, finishRun, type MeasureDeps, type RunTrigger } from
 
 export type TrackedKeyword = { keyword: string; source: "published" | "saved"; itemId: string | null; cluster: string; volume: number | null };
 
-/** The keywords a site tracks: published targets first, then saved keywords by volume; deduplicated; capped. */
+/**
+ * The keywords a site tracks: published targets first, then saved keywords by
+ * volume; deduplicated; capped. A keyword is labelled "published" only while
+ * its article is published (so Rankings and "Articles live" agree); a queued
+ * keyword without one is tracked as "saved".
+ */
 export async function trackedKeywords(tx: Tx, siteId: string, cap: number): Promise<TrackedKeyword[]> {
   const rows = await tx.many<{ keyword: string; source: "published" | "saved"; item_id: string | null; cluster: string | null; volume: number | null }>(
-    `SELECT q.keyword, 'published' AS source, q.item_id, coalesce(nullif(k.cluster, ''), ci.cluster, '') AS cluster, k.search_volume AS volume, 0 AS o
+    `SELECT q.keyword, CASE WHEN ci.status = 'published' THEN 'published' ELSE 'saved' END AS source, CASE WHEN ci.status = 'published' THEN q.item_id END AS item_id, coalesce(nullif(k.cluster, ''), ci.cluster, '') AS cluster, k.search_volume AS volume, 0 AS o
        FROM rank_tracking_queue q
        LEFT JOIN keywords k ON k.site_id = q.site_id AND k.keyword = q.keyword
        LEFT JOIN content_items ci ON ci.id = q.item_id

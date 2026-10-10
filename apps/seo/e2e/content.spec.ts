@@ -262,7 +262,7 @@ test("a publishing connector's live Test against the fake GitHub, and the status
   const conn = page.locator(".conn").filter({ hasText: "lumoras.ai repository (fake GitHub)" });
   await expect(conn.getByText("Publishes this site")).toBeVisible();
   await conn.getByRole("button", { name: "Test" }).click();
-  await expect(conn.locator(".conn-test")).toContainText("Ready: opens a pull request on main.");
+  await expect(conn.locator(".conn-test")).toContainText("Ready: opens a pull request on dev.");
   expect(await conn.locator(".conn-test li").count()).toBeGreaterThanOrEqual(5);
   await shot(page, "connections-publishing-test-dark-1440", P3);
   await page.reload();

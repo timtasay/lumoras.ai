@@ -132,9 +132,9 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
       );
     case "authors":
       return (
-        <OnboardingFrame {...frame} wide title="Who signs the articles?" lede="Bylines are published as real people. Add the people who will put their name to the content, with their real role.">
+        <OnboardingFrame {...frame} wide title="Who signs the articles?" lede="Bylines are the real people who put their name to the content, with their real role, or your organization (like “Lumoras team”) when the team signs together.">
           <AuthorsEditor
-            authors={data.authors.map((x) => ({ id: x.id, name: x.name, role: x.role, bio: x.bio, avatar_url: x.avatar_url, is_demo: x.is_demo }))}
+            authors={data.authors.map((x) => ({ id: x.id, kind: x.kind, name: x.name, role: x.role, bio: x.bio, avatar_url: x.avatar_url, is_demo: x.is_demo }))}
             canEdit
             save={saveAuthorAction.bind(null, slug, site!.id)}
             remove={deleteAuthorAction.bind(null, slug)}

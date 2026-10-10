@@ -19,6 +19,11 @@ import { apiBaseFor, GitPublisher, GITHUB_API_VERSION, parseRepository, readGitC
 import { signWebhook, verifyWebhook, WebhookPublisher, REPLAY_WINDOW_SEC } from "../../lib/publishers/webhook.ts";
 import { jsonFeed, rssFeed, xmlEscape } from "../../lib/publishers/feed.ts";
 import { PublishError, type PublishableArticle } from "../../lib/publishers/types.ts";
+import { articleJsonLd, authorJsonLd, toByline } from "../../lib/publishers/byline.ts";
+import { prBody } from "../../lib/publishers/git.ts";
+import { webhookPayload } from "../../lib/publishers/webhook.ts";
+import { missingCredentialValidation, tokenInstructions } from "../../lib/publishers/registry.ts";
+import { LUMORAS_GIT } from "../../lib/publishers/lumoras.ts";
 import { startFakeGit, type FakeGit } from "../helpers/fake-git.ts";
 import { startFakeWebhook, type FakeWebhook } from "../helpers/fake-webhook.ts";
 
@@ -38,7 +43,7 @@ const article = (over: Partial<PublishableArticle> = {}): PublishableArticle => 
   readingMinutes: 4,
   words: 812,
   cover: { kind: "call", chips: ["Every call answered", 'Say "hi"'] },
-  author: { name: "Ada Real", role: "Head of support" },
+  author: { kind: "person", name: "Ada Real", role: "Head of support", type: "Person" },
   path: "/insights/ai-receptionist-for-small-business",
   url: "https://lumoras.ai/insights/ai-receptionist-for-small-business",
   sources: [{ claim: "x", url: "https://sources.example/a" }],
@@ -237,6 +242,60 @@ describe("webhook publisher against a verifying receiver", () => {
   it("the SSRF guard refuses a private endpoint that is not an allowed test host", async () => {
     const p = new WebhookPublisher({ endpoint: "http://127.0.0.1:9/hook" }, secret, { domain: "lumoras.ai" }, {});
     await assert.rejects(p.publish(article()));
+  });
+});
+
+describe("bylines as structured data: Person for people, Organization for organizations (owner decision, 10 October 2026)", () => {
+  const site = { domain: "lumoras.ai" };
+  const org = toByline({ kind: "organization", name: "Lumoras team", role: "should never appear" });
+  const person = toByline({ kind: "person", name: "Ada Real", role: "Head of support" });
+  it("maps an authors row to the byline publishers get (an organization's role is dropped)", () => {
+    assert.deepEqual(org, { kind: "organization", name: "Lumoras team", role: "", type: "Organization" });
+    assert.deepEqual(person, { kind: "person", name: "Ada Real", role: "Head of support", type: "Person" });
+    assert.deepEqual(toByline({ name: "Legacy row", role: "" }), { kind: "person", name: "Legacy row", role: "", type: "Person" }, "rows without a kind are people");
+  });
+  it("schema.org author nodes: Organization has a url and never a jobTitle; Person has the real title", () => {
+    assert.deepEqual(authorJsonLd(org, site), { "@type": "Organization", name: "Lumoras team", url: "https://lumoras.ai/" });
+    assert.deepEqual(authorJsonLd(person, site), { "@type": "Person", name: "Ada Real", jobTitle: "Head of support" });
+    const ld = articleJsonLd(article({ author: org }), site);
+    assert.equal(ld["@context"], "https://schema.org");
+    assert.equal(ld["@type"], "BlogPosting");
+    assert.deepEqual(ld.author, { "@type": "Organization", name: "Lumoras team", url: "https://lumoras.ai/" });
+  });
+  it("every place author data leaves the app says which: webhook body, frontmatter placeholders, pull request, JSON Feed", () => {
+    const body = webhookPayload("article.published", article({ author: org }), site, "d1", new Date("2026-10-13T13:00:00Z"));
+    assert.deepEqual(body.article!.author, org);
+    assert.equal((body.article!.structuredData as { author: { "@type": string } }).author["@type"], "Organization");
+    assert.equal((webhookPayload("article.published", article(), site, "d2", new Date()).article!.structuredData as { author: { "@type": string } }).author["@type"], "Person");
+    const fm = matter(renderPostFile("---\nauthor: {{author.name}}\nauthorType: {{author.type}}\nauthorKind: {{author.kind}}\n---", article({ author: org })));
+    assert.deepEqual(fm.data, { author: "Lumoras team", authorType: "Organization", authorKind: "organization" });
+    assert.match(prBody(article({ author: org })), /Byline:\*\* Lumoras team \(organization, schema\.org Organization\)/);
+    assert.match(prBody(article()), /Byline:\*\* Ada Real \(person, schema\.org Person\)/);
+    const f = jsonFeed({ name: "Lumoras", domain: "lumoras.ai", feedUrl: "https://growth.example/f" }, [
+      { id: "1", url: "https://lumoras.ai/insights/a", title: "A", description: "d", bodyMd: "x", date: "2026-10-13", updatedAt: new Date(), author: "Lumoras team", authorType: "Organization", tags: [], keyword: "k" },
+    ]);
+    assert.deepEqual(f.items[0].authors, [{ name: "Lumoras team", url: "https://lumoras.ai/" }]);
+    assert.equal(f.items[0]._lumoras.authorType, "Organization");
+  });
+});
+
+describe("lumoras.ai's Git connection without its token (owner decision, 10 October 2026)", () => {
+  const conn = { kind: "git", label: "lumoras.ai repository", config: { ...LUMORAS_GIT } as Record<string, unknown> };
+  it("points at timtasay/lumoras.ai, base branch dev, pull requests, the content-spec folder", () => {
+    assert.deepEqual(readGitConfig(conn.config), { ...LUMORAS_GIT, apiBaseUrl: "" });
+    assert.equal(apiBaseFor(readGitConfig(conn.config)), "https://api.github.com");
+    assert.equal(renderFilename(LUMORAS_GIT.filenamePattern, { slug: "no-show-policy", date: "2026-10-13" }), "no-show-policy.md");
+  });
+  it("the Test explains what is missing without contacting anything; the instructions name the one repository and both permissions", () => {
+    const v = missingCredentialValidation(conn);
+    assert.equal(v.ok, false);
+    assert.match(v.detail, /^Token needed: lumoras\.ai repository has no access token yet, so the repository was not contacted/);
+    assert.deepEqual(v.checks.map((c) => [c.label, c.ok]), [["Repository", true], ["Base branch", true], ["Folder and file", true], ["Access token", false]]);
+    assert.match(v.checks[1].detail, /^dev: pull requests target it/);
+    const steps = tokenInstructions(conn).join(" ");
+    assert.match(steps, /Fine-grained tokens/);
+    assert.match(steps, /Only select repositories → timtasay\/lumoras\.ai/);
+    assert.match(steps, /Contents → Read and write; Pull requests → Read and write/);
   });
 });
 

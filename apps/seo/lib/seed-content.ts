@@ -4,12 +4,15 @@
  *
  *   lumoras.ai   onboarded end to end (acceptance): brand profile and SEO
  *                rules from docs/content-spec.md, route inventory from its
- *                sitemap (fixture), its existing articles' keywords, a demo
- *                author placeholder, a Git connection (file per post,
- *                apps/web/content/insights/<slug>.md, pull request mode) to a
- *                FAKE GitHub, schedule Tuesday and Friday 09:00 New York.
- *                One article runs all ten steps and lands as a pull request
- *                when the fake GitHub is reachable (e2e, dev fakes, tests).
+ *                sitemap (fixture), its existing articles' keywords, the
+ *                organization byline "Lumoras team", a Git connection to the
+ *                real repository timtasay/lumoras.ai (file per post,
+ *                apps/web/content/insights/<slug>.md, pull requests into dev),
+ *                schedule Tuesday and Friday 09:00 New York. Without the dev
+ *                fakes the connection has NO token ("token needed": the owner
+ *                adds it in the app). With them (e2e, tests, `pnpm fakes` +
+ *                OUTBOUND_TEST_HOSTS) its API points at the local FAKE GitHub
+ *                and one article runs all ten steps and lands as a pull request.
  *   sonorch.ai   scheduled but no publishing connection yet: two articles
  *                wait for review (one with an unverifiable claim), so the
  *                runway is short and its alert fires.
@@ -34,12 +37,15 @@ import type { SafeFetchPolicy } from "./net/safe-fetch.ts";
 import { executeRun, startRun } from "./pipeline/runner.ts";
 import type { Mailer, PipelineDeps } from "./pipeline/deps.ts";
 import { FakeProvider } from "./providers/fake.ts";
-import { LUMORAS_INSIGHTS_TEMPLATE } from "./publishers/frontmatter.ts";
+import { LUMORAS_GIT } from "./publishers/lumoras.ts";
 import type { SeedResult } from "./seed.ts";
 
 export type SeedContentOptions = {
   keyring?: Keyring | null;
-  /** The (fake) GitHub API lumoras.ai's Git connection points at. Default: the dev fakes (scripts/fakes.ts). */
+  /**
+   * The FAKE GitHub API lumoras.ai's Git connection points at (tests, e2e, the dev fakes). Unset: the
+   * connection points at the real api.github.com with no token, in the "token needed" state.
+   */
   github?: { apiBase: string; token: string; reachable?: boolean };
   /** The (fake) webhook receiver for Northwind. */
   webhook?: { endpoint: string; secret: string };
@@ -54,7 +60,7 @@ const SEED: Actor = { actorId: "system:seed" };
 export const DEV_FAKE_GITHUB = { apiBase: "http://github.test:4571", token: "fake-token-0123456789" };
 /** The dev webhook receiver (scripts/fakes.ts). Not a secret: it only signs deliveries to a local fake. */
 export const DEV_FAKE_WEBHOOK = { endpoint: "http://webhook.test:4572/hook", secret: "dev-webhook-signing-secret-0123456789" };
-export const LUMORAS_REPO = "https://github.com/lumoras/lumoras.ai";
+export const LUMORAS_REPO = LUMORAS_GIT.repository;
 
 /** lumoras.ai's existing articles (docs/content-spec.md): their keywords are taken (rule 5). */
 export const LUMORAS_EXISTING_KEYWORDS = [
@@ -69,7 +75,7 @@ export async function seedContent(db: pg.Pool, out: SeedResult, opts: SeedConten
   const lctx: TenantContext = { ...SEED, workspaceId: lumoras.id };
   const already = await withWorkspace(db, lctx, (tx) => tx.maybe("SELECT 1 FROM content_items LIMIT 1"), { readOnly: true });
   if (already) return;
-  const gh = opts.github ?? DEV_FAKE_GITHUB;
+  const gh = opts.github ?? null;
 
   await withWorkspace(db, lctx, async (tx) => {
     await tx.action("seed.content");
@@ -91,12 +97,23 @@ export async function seedContent(db: pg.Pool, out: SeedResult, opts: SeedConten
     }
     await tx.exec("UPDATE sites SET schedule_days = '{2,5}', schedule_time = '09:00', schedule_active = true, lead_days = 3, runway_threshold_days = 10 WHERE id = ANY($1)", [[l, so, sx]]);
     if (opts.keyring) {
-      const git = await createConnection(tx, opts.keyring, lumoras.id, l, { kind: "git", label: "lumoras.ai repository (fake GitHub)", repository: LUMORAS_REPO, branch: "main", secret: gh.token });
-      await tx.exec("UPDATE connections SET config = config || $2::jsonb, status_detail = $3 WHERE id = $1", [
-        git.id,
-        JSON.stringify({ provider: "github", apiBaseUrl: gh.apiBase, contentDir: "apps/web/content/insights", filenamePattern: "{{slug}}.md", frontmatterTemplate: LUMORAS_INSIGHTS_TEMPLATE, mode: "pr", livePath: "/insights/{{slug}}" }),
-        "Demo: points at a local FAKE GitHub, never the real repository. Test it to see the status light.",
-      ]);
+      const { provider, repository, branch, contentDir, filenamePattern, frontmatterTemplate, mode, livePath } = LUMORAS_GIT;
+      const git = await createConnection(tx, opts.keyring, lumoras.id, l, {
+        kind: "git",
+        label: gh ? "lumoras.ai repository (fake GitHub)" : "lumoras.ai repository",
+        provider,
+        repository,
+        branch,
+        contentDir,
+        filenamePattern,
+        frontmatterTemplate,
+        mode,
+        livePath,
+        // the real token is the owner's: never seeded; development and tests use the fake GitHub's
+        secret: gh?.token ?? "",
+      });
+      // development and tests only: the API at the local fake GitHub (never the real one)
+      if (gh) await tx.exec("UPDATE connections SET config = config || jsonb_build_object('apiBaseUrl', $2::text), status_detail = $3 WHERE id = $1", [git.id, gh.apiBase, "Development: the API points at a local FAKE GitHub (github.test), never the real repository. Test it to see the status light."]);
       await tx.exec("UPDATE sites SET publish_connection_id = $2 WHERE id = $1", [l, git.id]);
     }
     // lay out the first slots (the worker keeps doing this every few minutes)
