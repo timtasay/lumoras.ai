@@ -72,6 +72,23 @@ export const SONORCH_GIT: SitePreset = {
   seoRules: { coverKinds: ["calendar", "phone", "receipt", "card", "chart", "clock", "people", "list"], coverChips: 2, coverChipMax: 26 },
 };
 
+/**
+ * seasonx.ai (docs/site-formats/seasonx.ai.md): the same post format as
+ * sonorch.ai (fields, author keys, cover motifs, chips), validated by
+ * src/content/postFrontmatter.ts, which arrives with the format change
+ * (lumoras/seasonx.ai#1); publishing waits for it on dev.
+ */
+export const SEASONX_GIT: SitePreset = {
+  ...SONORCH_GIT,
+  key: "seasonx",
+  label: "seasonx.ai insights (MDX, Gitea)",
+  repository: "https://gitea.timdatinh.com/lumoras/seasonx.ai",
+  // the site's AUTHORS (src/content/posts.ts): byline name → key
+  authorKeys: { Tim: "tim", Tran: "tran", Alex: "alex", Jayden: "jayden" },
+  requiredPath: "src/content/postFrontmatter.ts",
+  domain: "seasonx.ai",
+};
+
 const GENERIC: SitePreset = {
   key: "generic",
   label: "Markdown site (Next.js, Astro, Hugo, Jekyll)",
@@ -104,7 +121,7 @@ const LUMORAS: SitePreset = {
   domain: "lumoras.ai",
 };
 
-export const SITE_PRESETS: SitePreset[] = [GENERIC, LUMORAS, SONORCH_GIT];
+export const SITE_PRESETS: SitePreset[] = [GENERIC, LUMORAS, SONORCH_GIT, SEASONX_GIT];
 
 /** The presets for a site: its own first (when there is one), then the rest. */
 export function presetsFor(domain: string): SitePreset[] {

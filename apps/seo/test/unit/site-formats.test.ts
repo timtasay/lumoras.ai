@@ -16,7 +16,7 @@ import matter from "gray-matter";
 import { escapeMdxBody, renderPostFile } from "../../lib/publishers/frontmatter.ts";
 import { formatAuthorKeys, parseAuthorKeys } from "../../lib/publishers/author-keys.ts";
 import { GitPublisher, readGitConfig, type GitConfig } from "../../lib/publishers/git.ts";
-import { presetConnection, presetsFor, SITE_PRESETS, SONORCH_GIT } from "../../lib/publishers/presets.ts";
+import { presetConnection, presetsFor, SEASONX_GIT, SITE_PRESETS, SONORCH_GIT } from "../../lib/publishers/presets.ts";
 import { PublishError, type PublishableArticle } from "../../lib/publishers/types.ts";
 import { connectionInput } from "../../lib/validation.ts";
 import { startFakeGit, type FakeGit } from "../helpers/fake-git.ts";
@@ -87,6 +87,23 @@ describe("sonorch.ai preset", () => {
     assert.equal(presetsFor("sonorch.ai").length, SITE_PRESETS.length);
     assert.deepEqual(SONORCH_GIT.seoRules?.coverKinds, ["calendar", "phone", "receipt", "card", "chart", "clock", "people", "list"]);
     assert.equal(SONORCH_GIT.seoRules?.coverChipMax, 26);
+  });
+});
+
+describe("seasonx.ai preset", () => {
+  it("the same post format as sonorch.ai, in lumoras/seasonx.ai, into dev, waiting for its validator", () => {
+    assert.equal(SEASONX_GIT.repository, "https://gitea.timdatinh.com/lumoras/seasonx.ai");
+    assert.equal(SEASONX_GIT.provider, "gitea");
+    assert.equal(SEASONX_GIT.branch, "dev");
+    assert.equal(SEASONX_GIT.requiredPath, "src/content/postFrontmatter.ts");
+    assert.equal(SEASONX_GIT.contentDir, "src/content/posts");
+    assert.equal(SEASONX_GIT.filenamePattern, "{{slug}}.mdx");
+    assert.equal(SEASONX_GIT.bodyFormat, "mdx");
+    assert.equal(presetsFor("seasonx.ai")[0].key, "seasonx");
+    const { data } = matter(renderPostFile(SEASONX_GIT.template, article({ author: { kind: "person", name: "Alex", role: "", type: "Person" }, cover: { kind: "people", chips: ["Party of 8 · Sat 7:30"] } }), { bodyFormat: "mdx", authorKeys: SEASONX_GIT.authorKeys }));
+    assert.deepEqual(Object.keys(data), ["slug", "title", "description", "publishedAt", "author", "readingMinutes", "cover"]);
+    assert.equal(data.author, "alex");
+    assert.deepEqual(data.cover, { motif: "people", chips: ["Party of 8 · Sat 7:30"] });
   });
 });
 

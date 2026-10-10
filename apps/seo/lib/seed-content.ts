@@ -38,7 +38,7 @@ import { executeRun, startRun } from "./pipeline/runner.ts";
 import type { Mailer, PipelineDeps } from "./pipeline/deps.ts";
 import { FakeProvider } from "./providers/fake.ts";
 import { LUMORAS_GIT } from "./publishers/lumoras.ts";
-import { presetConnection, SONORCH_GIT } from "./publishers/presets.ts";
+import { presetConnection, SEASONX_GIT, SONORCH_GIT } from "./publishers/presets.ts";
 import type { SeedResult } from "./seed.ts";
 
 export type SeedContentOptions = {
@@ -116,9 +116,11 @@ export async function seedContent(db: pg.Pool, out: SeedResult, opts: SeedConten
       // development and tests only: the API at the local fake GitHub (never the real one)
       if (gh) await tx.exec("UPDATE connections SET config = config || jsonb_build_object('apiBaseUrl', $2::text), status_detail = $3 WHERE id = $1", [git.id, gh.apiBase, "Development: the API points at a local FAKE GitHub (github.test), never the real repository. Test it to see the status light."]);
       await tx.exec("UPDATE sites SET publish_connection_id = $2 WHERE id = $1", [l, git.id]);
-      // sonorch.ai on Gitea (owner decision #2): no token is ever seeded, so it shows "Token needed" and contacts nothing
+      // sonorch.ai and seasonx.ai on Gitea (owner decision #2): no token is ever seeded, so it shows "Token needed" and contacts nothing
       const soGit = await createConnection(tx, opts.keyring, lumoras.id, so, presetConnection(SONORCH_GIT, "sonorch.ai repository (Gitea)"));
       await tx.exec("UPDATE sites SET publish_connection_id = $2 WHERE id = $1", [so, soGit.id]);
+      const sxGit = await createConnection(tx, opts.keyring, lumoras.id, sx, presetConnection(SEASONX_GIT, "seasonx.ai repository (Gitea)"));
+      await tx.exec("UPDATE sites SET publish_connection_id = $2 WHERE id = $1", [sx, sxGit.id]);
     }
     // lay out the first slots (the worker keeps doing this every few minutes)
     for (const id of [l, so, sx]) {
