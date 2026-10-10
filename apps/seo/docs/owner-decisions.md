@@ -11,13 +11,16 @@ Answers from the owner, recorded so every phase builds on them. Newest first.
 | AI budget (Phase 3 Q4) | Who pays for model usage? | **Lumoras's own Anthropic account** pays. | Set `LLM_PROVIDER=anthropic` with an API key from the Claude Console in the server env file. Per-workspace `llm_tokens` budgets stay as a safety cap and for per-client cost reporting. |
 | Autopilot (Phase 3 Q5) | May clients use autopilot? | **Yes, for any Lumoras client.** | No code change: autopilot stays off by default per site and needs the recorded acknowledgement to switch on. |
 | Reviewer role (Phase 1 Q2) | Who approves content on the client side? | **A separate Reviewer role** (built in Phase 3). | Whether reviewer accounts count as paid seats is a pricing question for Phase 6. |
+| Google account (Phase 4 Q1) | Which Google account owns sonorch.ai's Search Console? | **timtasay@gmail.com.** | That account connects sonorch.ai's Search Console and GA4 in the app once the Google OAuth client exists (needs #1 host name). |
+| Competitors (Phase 4 Q3) | Real competitors for backlink comparison. | sonorch.ai and seasonx.ai are not competitors of each other (salons vs restaurants). | Proposed from the sites' own comparison pages, pending owner confirmation: sonorch.ai → Slang.ai, Rosie, BookingBee; seasonx.ai → Slang.ai. |
+| Social networks (#4) | Which networks first? | **Facebook, Instagram, Threads, Bluesky, TikTok.** | Native APIs vs an aggregator still to decide after Phase 5 reads each network's API and terms. TikTok accepts photo/video posts only. |
 | SEO data provider (#3) | OpenSEO or DataForSEO direct? | **OpenSEO**, using the owner's existing account. | **Done (10 October 2026), key pending.** `OpenSeoProvider` has a hosted mode: `SEO_PROVIDER=openseo`, `OPENSEO_MODE=hosted`, `OPENSEO_API_KEY` (server env, sent as `Authorization: Bearer`), optional `OPENSEO_URL` and `OPENSEO_PROJECT_ID`; a per-site project in Site settings. `balance()` reads `whoami` credits; the ledger records the credits OpenSEO reports, else the estimate (list × 1.28), labelled either way. The terms caveat below is shown to platform admins on the provider card. Hosted terms allow "SEO work … for your own websites and for your clients" but bar using it "to build a competing product or service" (see `provider-decision.md`), so: use it for Lumoras's own sites and staff-run client work now; before clients run research themselves, get OpenSEO's written OK or move to self-hosted OpenSEO (MIT, same tools) with a DataForSEO key. |
 
 ## Still open
 
 - **#1 Product name and host name** ("Lumoras Growth", `growth.lumoras.ai` are placeholders). Also blocks the Google OAuth client.
 - **#2 sonorch.ai and seasonx.ai publishing:** migrate their posts to one Markdown file per post, or build an adapter that edits their typed `posts.ts` list.
-- **#4 Social networks** and native APIs vs an aggregator (Phase 5).
+- **#4 (rest):** native APIs or an aggregator for the five networks (Phase 5).
 - **#5 Pricing and plans**, including whether reviewer seats are paid (Phase 6).
 - Phase 1: who can create workspaces; session, invitation, sign-in link and impersonation lifetimes.
 - Phase 2: default SEO budget for new workspaces; per-workspace cache (current) vs shared; cache ages.
