@@ -15,15 +15,13 @@ format_status:
   state: pending-merge
   pull_request: https://gitea.timdatinh.com/lumoras/seasonx.ai/pulls/1
   pr_branch: content/file-per-post
-  pr_base_currently: main
+  pr_base: dev
   note: >-
-    PR #1 was opened into main before the dev-first decision. Changing its base to
-    dev (or closing it and reopening into dev) was blocked by a permission check, so
-    the owner needs to do it, or allow it. The branch was cut from 864ae1f, the
-    commit that both dev and main were at, so it applies to dev unchanged. The
-    one-file-per-post format exists on a branch only once PR #1 is merged there.
-    Until then, the branch still keeps post metadata in the POSTS array in
-    src/content/posts.ts, and a lone .mdx file would be ignored.
+    PR #1 targets dev (retargeted from main on 10 October 2026, owner's
+    request). The one-file-per-post format exists on dev only once PR #1 is
+    merged; until then dev keeps post metadata in the POSTS array in
+    src/content/posts.ts, a lone .mdx file would be ignored, and the publisher
+    refuses to write one (format check: src/content/postFrontmatter.ts on dev).
 content_dir: src/content/posts
 filename_pattern: "{slug}.mdx"
 slug_pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
