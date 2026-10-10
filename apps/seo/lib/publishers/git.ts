@@ -21,7 +21,7 @@
  * Every call is idempotent on retry: a branch, file or pull request that a
  * previous attempt already created is found and reused, never duplicated.
  */
-import { joinPath, renderFilename, renderPostFile, unknownPlaceholders, DEFAULT_TEMPLATE } from "./frontmatter.ts";
+import { joinPath, renderFilename, renderPostFile, unknownPlaceholders, DEFAULT_TEMPLATE, type BodyFormat, type RenderOptions } from "./frontmatter.ts";
 import { obj, remoteMessage, requestJson, str, type HttpDeps, type JsonResponse } from "./http.ts";
 import { PublishError, type PublicationRef, type PublicationStatus, type PublishableArticle, type Publisher, type PublishResult, type Validation, type ValidationCheck } from "./types.ts";
 
@@ -41,6 +41,16 @@ export type GitConfig = {
   mode: "pr" | "commit";
   /** The article's path on the live site, e.g. /insights/{{slug}}. */
   livePath: string;
+  /** "mdx" escapes the body for MDX sites (sonorch.ai, seasonx.ai). */
+  bodyFormat: BodyFormat;
+  /** Byline name → the site's author key, for {{author.key}}. */
+  authorKeys: Record<string, string>;
+  /**
+   * A file that must exist on the base branch before anything publishes: the
+   * mark that the site's file-per-post format is in place (sonorch.ai:
+   * src/content/post-schema.ts, added by its format pull request). Empty: no check.
+   */
+  requiredPath: string;
 };
 
 export const GIT_DEFAULTS: Omit<GitConfig, "provider" | "repository" | "apiBaseUrl"> = {
@@ -50,6 +60,9 @@ export const GIT_DEFAULTS: Omit<GitConfig, "provider" | "repository" | "apiBaseU
   frontmatterTemplate: DEFAULT_TEMPLATE,
   mode: "pr",
   livePath: "/blog/{{slug}}",
+  bodyFormat: "markdown",
+  authorKeys: {},
+  requiredPath: "",
 };
 
 export const GITHUB_API_VERSION = "2026-03-10";
@@ -285,6 +298,10 @@ export class GitPublisher implements Publisher {
     const add = (label: string, ok: boolean, detail: string) => checks.push({ label, ok, detail });
     const bad = unknownPlaceholders(this.cfg.frontmatterTemplate);
     add("Frontmatter template", !bad.length, bad.length ? `Unknown placeholder(s): ${bad.join(", ")}` : "Every placeholder is known.");
+    if (/\{\{\s*author\.key\s*\}\}/.test(this.cfg.frontmatterTemplate)) {
+      const names = Object.entries(this.cfg.authorKeys);
+      add("Author keys", names.length > 0, names.length ? names.map(([n, k]) => `${n} → ${k}`).join(", ") : "The template uses {{author.key}} but no author keys are set, so nothing can publish.");
+    }
     try {
       add("File name pattern", true, this.pathFor({ slug: "example-article", date: "2026-01-01" }));
     } catch (e) {
@@ -302,6 +319,10 @@ export class GitPublisher implements Publisher {
         add("Content directory", dir, dir ? `${this.cfg.contentDir} exists.` : `${this.cfg.contentDir} was not found on ${this.cfg.branch}; it will be created by the first article.`);
         if (!dir) checks[checks.length - 1].ok = true;
       }
+      if (head && this.cfg.requiredPath) {
+        const has = await this.host.file(this.cfg.requiredPath, this.cfg.branch);
+        add("Site format", !!has, has ? `${this.cfg.requiredPath} is on ${this.cfg.branch}.` : this.formatMissing());
+      }
     } catch (e) {
       add("Repository and token", false, e instanceof PublishError ? e.message : "Unexpected error.");
     }
@@ -313,10 +334,30 @@ export class GitPublisher implements Publisher {
     return a.url;
   }
 
+  private formatMissing(): string {
+    return `${this.cfg.requiredPath} is not on ${this.cfg.branch} yet, so the site would not pick up a post file: merge the site's file-per-post change first. Nothing was published.`;
+  }
+
+  private get render(): RenderOptions {
+    return { bodyFormat: this.cfg.bodyFormat, authorKeys: this.cfg.authorKeys };
+  }
+
+  /** The file for an article, after the checks that need no network (author key). */
+  renderFile(a: PublishableArticle): string {
+    return renderPostFile(this.cfg.frontmatterTemplate, a, this.render);
+  }
+
+  /** Refuses before writing anything when the site's format is not on the base branch. */
+  private async requireFormat(): Promise<void> {
+    if (!this.cfg.requiredPath) return;
+    if (!(await this.host.file(this.cfg.requiredPath, this.cfg.branch))) throw new PublishError(this.formatMissing(), { status: 409 });
+  }
+
   async publish(a: PublishableArticle): Promise<PublishResult> {
     const path = this.pathFor(a);
-    const content = renderPostFile(this.cfg.frontmatterTemplate, a);
+    const content = this.renderFile(a);
     const base = this.cfg.branch;
+    await this.requireFormat();
     const existing = await this.host.file(path, base);
     if (existing && existing.content !== content) throw new PublishError(`${path} already exists on ${base}; refusing to overwrite a page we did not publish. Use update for refreshes.`, { status: 409 });
     const message = `Add article: ${a.title}`;
@@ -338,8 +379,9 @@ export class GitPublisher implements Publisher {
 
   async update(a: PublishableArticle, prev: PublicationRef): Promise<PublishResult> {
     const path = prev.path ?? this.pathFor(a);
-    const content = renderPostFile(this.cfg.frontmatterTemplate, a);
+    const content = this.renderFile(a);
     const base = this.cfg.branch;
+    await this.requireFormat();
     const current = await this.host.file(path, base);
     if (!current) throw new PublishError(`${path} is not on ${base} (was the earlier pull request merged?).`, { status: 404 });
     const message = `Update article: ${a.title}`;
@@ -397,5 +439,13 @@ export function readGitConfig(config: Record<string, unknown>): GitConfig {
     frontmatterTemplate: s("frontmatterTemplate", GIT_DEFAULTS.frontmatterTemplate),
     mode: config.mode === "commit" ? "commit" : "pr",
     livePath: s("livePath", GIT_DEFAULTS.livePath),
+    bodyFormat: config.bodyFormat === "mdx" ? "mdx" : "markdown",
+    authorKeys: readAuthorKeys(config.authorKeys),
+    requiredPath: s("requiredPath", GIT_DEFAULTS.requiredPath),
   };
+}
+
+function readAuthorKeys(v: unknown): Record<string, string> {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return {};
+  return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter((e): e is [string, string] => typeof e[1] === "string" && e[1] !== ""));
 }

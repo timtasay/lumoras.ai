@@ -112,6 +112,9 @@ for (const provider of ["github", "gitea"] as const) {
       frontmatterTemplate: LUMORAS_INSIGHTS_TEMPLATE,
       mode: "pr",
       livePath: "/insights/{{slug}}",
+      bodyFormat: "markdown",
+      authorKeys: {},
+      requiredPath: "",
       ...over,
     });
     before(async () => {
@@ -282,7 +285,7 @@ describe("bylines as structured data: Person for people, Organization for organi
 describe("lumoras.ai's Git connection without its token (owner decision, 10 October 2026)", () => {
   const conn = { kind: "git", label: "lumoras.ai repository", config: { ...LUMORAS_GIT } as Record<string, unknown> };
   it("points at timtasay/lumoras.ai, base branch dev, pull requests, the content-spec folder", () => {
-    assert.deepEqual(readGitConfig(conn.config), { ...LUMORAS_GIT, apiBaseUrl: "" });
+    assert.deepEqual(readGitConfig(conn.config), { ...LUMORAS_GIT, apiBaseUrl: "", bodyFormat: "markdown", authorKeys: {}, requiredPath: "" });
     assert.equal(apiBaseFor(readGitConfig(conn.config)), "https://api.github.com");
     assert.equal(renderFilename(LUMORAS_GIT.filenamePattern, { slug: "no-show-policy", date: "2026-10-13" }), "no-show-policy.md");
   });

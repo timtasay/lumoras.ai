@@ -13,15 +13,8 @@ import { dateLabel } from "@/lib/ui/time";
 import { createConnectionAction, deleteConnectionAction, setConnectionTokenAction } from "../../../actions";
 import { setPublishConnectionAction, testPublishConnectionAction } from "../../../publishing-actions";
 import { getSiteSettings } from "@/lib/data/sites";
-import { DEFAULT_TEMPLATE, LUMORAS_INSIGHTS_TEMPLATE } from "@/lib/publishers/frontmatter";
-import { LUMORAS_GIT } from "@/lib/publishers/lumoras";
-import type { TemplatePreset } from "@/components/forms/ConnectionsPanel";
+import { presetsFor } from "@/lib/publishers/presets";
 
-/** Site formats offered when adding a Git connection. */
-const PRESETS: TemplatePreset[] = [
-  { key: "generic", label: "Markdown site (Next.js, Astro, Hugo, Jekyll)", contentDir: "content/posts", filenamePattern: "{{slug}}.md", livePath: "/blog/{{slug}}", template: DEFAULT_TEMPLATE },
-  { key: "lumoras", label: "lumoras.ai insights (content spec)", contentDir: LUMORAS_GIT.contentDir, filenamePattern: LUMORAS_GIT.filenamePattern, livePath: LUMORAS_GIT.livePath, template: LUMORAS_INSIGHTS_TEMPLATE, repository: LUMORAS_GIT.repository, branch: LUMORAS_GIT.branch },
-];
 import { googleCards } from "@/lib/google/view";
 
 export const metadata: Metadata = { title: "Connections" };
@@ -63,7 +56,7 @@ export default async function ConnectionsPage({ params, searchParams }: { params
           publishId={settings.publish_connection_id}
           test={testPublishConnectionAction.bind(null, slug, site.id)}
           choosePublish={setPublishConnectionAction.bind(null, slug, site.id)}
-          presets={site.domain === "lumoras.ai" ? [PRESETS[1], PRESETS[0]] : PRESETS}
+          presets={presetsFor(site.domain)}
           saveToken={setConnectionTokenAction.bind(null, slug, site.id)}
         />
       </section>

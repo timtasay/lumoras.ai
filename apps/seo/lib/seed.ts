@@ -27,6 +27,7 @@ import path from "node:path";
 import { parseSitemap } from "./crawl/parse.ts";
 import { pauseFictionalMeasurement, seedMeasurement, type SeedMeasureOptions } from "./seed-measure.ts";
 import { seedContent, type SeedContentOptions } from "./seed-content.ts";
+import { SONORCH_GIT } from "./publishers/presets.ts";
 import { DEFAULT_SEO_RULES } from "./validation.ts";
 import { addSeeds, saveKeywords, setBudget, setKeywordCluster, setKeywordStatus } from "./data/research.ts";
 import { meteredCall } from "./metering/metered.ts";
@@ -125,6 +126,8 @@ export const SEED_WORKSPACES: SeedWorkspace[] = [
           bannedWords: HYPE,
           keyPages: [{ url: "https://sonorch.ai/", title: "Sonorch", description: "POS and AI receptionist for salons." }],
         },
+        // the site's own build enforces its cover art (docs/site-formats/sonorch.ai.md)
+        seoRules: SONORCH_GIT.seoRules,
         authors: [DEMO_AUTHOR("sonorch.ai")],
         seeds: ["salon pos", "no show policy", "esthetician salary", "salon booking software", "ai receptionist for salons", "salon deposit policy"],
       },

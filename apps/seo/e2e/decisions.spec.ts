@@ -109,6 +109,39 @@ test("lumoras.ai Git connection: token needed → the Test explains → the toke
   expect(errors).toEqual([]);
 });
 
+test("sonorch.ai on Gitea: its site format comes first and fills MDX, author keys and the format check; the seeded connection needs a token", async ({ page }) => {
+  const errors = watchConsole(page);
+  const site = await siteId("sonorch.ai");
+  await setTheme(page, "dark");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, "owner@lumoras.example", `/w/lumoras/sites/${site}/connections`);
+  const form = page.locator(".conn-add");
+  await expect(form.getByLabel("Site format")).toHaveValue("sonorch");
+  await expect(form.getByLabel("Host")).toHaveValue("gitea");
+  await expect(form.getByLabel("Repository")).toHaveValue("https://gitea.timdatinh.com/lumoras/sonorch.ai");
+  await expect(form.getByLabel("Base branch")).toHaveValue("main");
+  await expect(form.getByLabel("Content folder")).toHaveValue("src/content/posts");
+  await expect(form.getByLabel("File name")).toHaveValue("{{slug}}.mdx");
+  await expect(form.getByLabel("Body format")).toHaveValue("mdx");
+  await expect(form.getByLabel("Format check (optional)")).toHaveValue("src/content/post-schema.ts");
+  await expect(form.getByLabel("Author keys (for {{author.key}})")).toHaveValue("Tim = tim\nTran = tran\nAlex = alex\nJayden = jayden");
+  await expect(form.getByLabel("Frontmatter template")).toHaveValue(/author: \{\{author\.key\}\}/);
+  // switching format refills the fields
+  await form.getByLabel("Site format").selectOption("generic");
+  await expect(form.getByLabel("Body format")).toHaveValue("markdown");
+  await expect(form.getByLabel("Author keys (for {{author.key}})")).toHaveValue("");
+  await form.getByLabel("Site format").selectOption("sonorch");
+  // the seeded connection: Gitea, no token, nothing contacted
+  const conn = page.locator(".conn").filter({ has: page.locator(".conn-name", { hasText: /^sonorch\.ai repository \(Gitea\)/ }) });
+  await expect(conn.locator(".light")).toContainText("Token needed");
+  await expect(conn.locator(".conn-token")).toContainText("In Gitea: Settings → Applications → Generate new token");
+  await expect(conn.locator(".conn-sum")).toContainText("src/content/posts/{{slug}}.mdx · opens a pull request into main · MDX · waits for src/content/post-schema.ts");
+  await shot(page, "connection-sonorch-gitea-dark-1440", P);
+  await page.setViewportSize({ width: 375, height: 800 });
+  await noSideways(page);
+  expect(errors).toEqual([]);
+});
+
 for (const theme of ["dark", "light"] as const) {
   test(`sonorch.ai: "Articles live" and Rankings agree, nothing labelled Published (${theme})`, async ({ page }) => {
     const errors = watchConsole(page);

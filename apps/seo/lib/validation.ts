@@ -5,6 +5,7 @@
  */
 import * as z from "zod";
 import { WORKSPACE_ROLES } from "./auth/permissions.ts";
+import { formatAuthorKeys, parseAuthorKeys } from "./publishers/author-keys.ts";
 
 /** Names that only exist inside a network: refused as a site domain. */
 const INTERNAL_TLDS = new Set(["localhost", "local", "internal", "intranet", "lan", "home", "corp", "arpa", "localdomain"]);
@@ -251,6 +252,19 @@ const livePath = z
   .regex(/^\/[\w./{}-]*\{\{\s*slug\s*\}\}[\w./-]*$/, "A path with {{slug}} in it, like /blog/{{slug}}")
   .default("/blog/{{slug}}");
 
+/** "Name = key" lines (the form) or the parsed record (presets, the seed). */
+const authorKeys = z
+  .union([z.string().max(5000), z.record(z.string(), z.string())])
+  .default("")
+  .transform((v, ctx) => {
+    const r = parseAuthorKeys(typeof v === "string" ? v : formatAuthorKeys(v));
+    if ("error" in r) {
+      ctx.addIssue({ code: "custom", message: r.error });
+      return z.NEVER;
+    }
+    return r.keys;
+  });
+
 export const CONNECTION_KINDS = ["git", "wordpress", "webhook", "search_console", "ga4"] as const;
 export const connectionInput = z.discriminatedUnion("kind", [
   z.object({
@@ -267,6 +281,11 @@ export const connectionInput = z.discriminatedUnion("kind", [
     frontmatterTemplate: z.string().max(4000).default(""),
     mode: z.enum(["pr", "commit"]).default("pr"),
     livePath,
+    /** "mdx" escapes the body so an MDX site compiles it as text. */
+    bodyFormat: z.enum(["markdown", "mdx"]).default("markdown"),
+    authorKeys,
+    /** A file that must be on the base branch before anything publishes (the site's format is in place). */
+    requiredPath: z.string().trim().regex(/^[\w./-]{0,300}$/, "A file path inside the repository, like src/content/post-schema.ts").refine((s) => !s.split("/").includes("..") && !s.startsWith("/"), "A path inside the repository").default(""),
     /** Optional at first: without one the connection shows "token needed" and nothing publishes until it is added. */
     secret: z
       .string()

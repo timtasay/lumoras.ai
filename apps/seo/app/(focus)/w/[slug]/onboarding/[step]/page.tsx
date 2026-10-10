@@ -37,15 +37,11 @@ import { listCalendar } from "@/lib/data/content";
 import { siteRunway } from "@/lib/content/planner";
 import { describeSchedule, localParts } from "@/lib/content/schedule";
 import { describeConnection, loadPublishConnection } from "@/lib/publishers/registry";
-import { DEFAULT_TEMPLATE, LUMORAS_INSIGHTS_TEMPLATE } from "@/lib/publishers/frontmatter";
+import { presetsFor } from "@/lib/publishers/presets";
 import { createConnectionAction, deleteConnectionAction } from "@/app/(app)/w/[slug]/actions";
 import { saveScheduleAction, setPublishConnectionAction, testPublishConnectionAction } from "@/app/(app)/w/[slug]/publishing-actions";
 import type { CalItem } from "@/components/ui/CalendarMini";
 
-const PRESETS = [
-  { key: "generic", label: "Markdown site (Next.js, Astro, Hugo, Jekyll)", contentDir: "content/posts", filenamePattern: "{{slug}}.md", livePath: "/blog/{{slug}}", template: DEFAULT_TEMPLATE },
-  { key: "lumoras", label: "lumoras.ai insights (content spec)", contentDir: "apps/web/content/insights", filenamePattern: "{{slug}}.md", livePath: "/insights/{{slug}}", template: LUMORAS_INSIGHTS_TEMPLATE },
-];
 
 export const metadata: Metadata = { title: "Set up the workspace" };
 
@@ -171,7 +167,7 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
             publishId={st.publish_connection_id}
             test={testPublishConnectionAction.bind(null, slug, site!.id)}
             choosePublish={setPublishConnectionAction.bind(null, slug, site!.id)}
-            presets={site!.domain === "lumoras.ai" ? [PRESETS[1], PRESETS[0]] : PRESETS}
+            presets={presetsFor(site!.domain)}
           />
           <div className="onb-foot">
             <p className="muted small">

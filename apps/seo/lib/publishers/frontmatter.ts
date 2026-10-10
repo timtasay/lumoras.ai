@@ -18,7 +18,7 @@
  * inject a key. Unknown placeholders are refused when the connection is
  * saved and tested, never discovered at publish time.
  */
-import type { PublishableArticle } from "./types.ts";
+import { PublishError, type PublishableArticle } from "./types.ts";
 
 export const PLACEHOLDERS = [
   "title",
@@ -40,6 +40,8 @@ export const PLACEHOLDERS = [
   "author.kind",
   /** schema.org type: Person | Organization */
   "author.type",
+  /** The site's own key for the byline (sonorch.ai: "tran"), from the connection's author keys. */
+  "author.key",
   "cover.kind",
   "cover.chips",
 ] as const;
@@ -54,8 +56,31 @@ export function unknownPlaceholders(template: string): string[] {
   return [...new Set(out)];
 }
 
-function valueOf(a: PublishableArticle, key: Placeholder): unknown {
+/** How a connection renders files beyond the template: the body's format and the site's author keys. */
+export type RenderOptions = {
+  /** "mdx": the body is escaped so MDX reads it as text (see escapeMdxBody). Default "markdown". */
+  bodyFormat?: BodyFormat;
+  /** Byline name → the site's key for it, for {{author.key}}. */
+  authorKeys?: Record<string, string>;
+};
+export const BODY_FORMATS = ["markdown", "mdx"] as const;
+export type BodyFormat = (typeof BODY_FORMATS)[number];
+
+/** The site's key for the article's byline. Refuses, naming what to add, when there is none. */
+export function authorKey(a: Pick<PublishableArticle, "author">, keys: Record<string, string> = {}): string {
+  if (!a.author) throw new PublishError("This site's format needs an author key, but the article has no byline. Choose one of the site's authors.");
+  const k = keys[a.author.name];
+  if (!k) {
+    const known = Object.keys(keys);
+    throw new PublishError(`No author key for "${a.author.name}". Add a line "${a.author.name} = <key>" to the connection's author keys${known.length ? ` (it has: ${known.join(", ")})` : ""}.`);
+  }
+  return k;
+}
+
+function valueOf(a: PublishableArticle, key: Placeholder, o: RenderOptions): unknown {
   switch (key) {
+    case "author.key":
+      return authorKey(a, o.authorKeys);
     case "author.name":
       return a.author?.name ?? "";
     case "author.role":
@@ -82,17 +107,67 @@ export function yamlValue(v: unknown): string {
   return JSON.stringify(v == null ? "" : String(v));
 }
 
-export function renderFrontmatter(template: string, a: PublishableArticle): string {
+export function renderFrontmatter(template: string, a: PublishableArticle, o: RenderOptions = {}): string {
   const bad = unknownPlaceholders(template);
   if (bad.length) throw new Error(`unknown placeholder(s) in the frontmatter template: ${bad.join(", ")}`);
-  const body = template.replace(TOKEN, (_, k: Placeholder) => yamlValue(valueOf(a, k))).trim();
+  const body = template.replace(TOKEN, (_, k: Placeholder) => yamlValue(valueOf(a, k, o))).trim();
   const fenced = body.startsWith("---") ? body : `---\n${body}\n---`;
   return fenced.endsWith("---") ? fenced : `${fenced}\n---`;
 }
 
-/** The whole file: frontmatter, a blank line, the Markdown body, one trailing newline. */
-export function renderPostFile(template: string, a: PublishableArticle): string {
-  return `${renderFrontmatter(template, a)}\n\n${a.bodyMd.trim()}\n`;
+/** The whole file: frontmatter, a blank line, the body (escaped for MDX when asked), one trailing newline. */
+export function renderPostFile(template: string, a: PublishableArticle, o: RenderOptions = {}): string {
+  const body = o.bodyFormat === "mdx" ? escapeMdxBody(a.bodyMd) : a.bodyMd;
+  return `${renderFrontmatter(template, a, o)}\n\n${body.trim()}\n`;
+}
+
+/**
+ * Markdown made safe to compile as MDX, where a bare "<" opens a JSX tag, "{"
+ * and "}" open a JavaScript expression and an HTML comment fails the build
+ * (docs/site-formats/sonorch.ai.md). Outside code, "<", "{" and "}" become
+ * character escapes that render as themselves, an autolink <https://x>
+ * becomes [https://x](https://x) and HTML comments are dropped. Fenced code
+ * blocks and inline code spans are left exactly as written: MDX keeps them
+ * literal, and an escape there would show its backslash.
+ */
+export function escapeMdxBody(md: string): string {
+  const out: string[] = [];
+  let fence: string | null = null;
+  let prose: string[] = [];
+  const flush = () => {
+    if (prose.length) out.push(escapeProse(prose.join("\n")));
+    prose = [];
+  };
+  for (const line of md.replace(/\r\n?/g, "\n").split("\n")) {
+    const open = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (fence) {
+      out.push(line);
+      if (open && open[1][0] === fence[0] && open[1].length >= fence.length && line.trim() === open[1]) fence = null;
+    } else if (open && !(open[1][0] === "`" && line.slice(open.index + open[1].length).includes("`"))) {
+      flush();
+      fence = open[1];
+      out.push(line);
+    } else prose.push(line);
+  }
+  flush();
+  return out.join("\n");
+}
+
+function escapeProse(text: string): string {
+  const noComments = text.replace(/<!--[\s\S]*?(-->|$)/g, "");
+  // split around inline code spans (a run of n backticks closed by the same run)
+  return noComments
+    .split(/(`+)([\s\S]*?[^`])\1(?!`)/)
+    .map((part, i, all) => {
+      // split() with two groups: [text, ticks, code, text, ticks, code, …]
+      if (i % 3 === 1) return part + all[i + 1] + part;
+      if (i % 3 === 2) return "";
+      return part
+        .replace(/<(https?:\/\/[^\s<>]+)>/g, "[$1]($1)")
+        .replace(/(^|[^\\])([<{}])/g, "$1\\$2")
+        .replace(/(^|[^\\])([<{}])/g, "$1\\$2");
+    })
+    .join("");
 }
 
 /** "{{slug}}.md" → "no-show-policy.md". Only the slug and the date may appear in a file name. */

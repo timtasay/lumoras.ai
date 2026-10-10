@@ -7,6 +7,8 @@ import { Segmented, SelectField, TextareaField, TextField } from "@/components/u
 import { Badge, StatusLight, type LightState } from "@/components/ui/Status";
 import { useToast } from "@/components/ui/Toast";
 import { idle, type ActionState } from "@/lib/actions-state";
+import { formatAuthorKeys } from "@/lib/publishers/author-keys";
+import type { SitePreset } from "@/lib/publishers/presets";
 import { ActionFeedback, ReadOnlyNote, submitKeepingValues } from "./FormBits";
 
 export type ConnectionRow = {
@@ -43,7 +45,7 @@ const LIGHT: Record<ConnectionRow["status"], [LightState, string]> = {
 const PLANNED = ["social"] as const;
 
 function summary(c: ConnectionRow) {
-  if (c.kind === "git") return `${c.config.repository} · base ${c.config.branch ?? "main"} · ${c.config.contentDir ?? "content/posts"}/${c.config.filenamePattern ?? "{{slug}}.md"} · ${c.config.mode === "commit" ? "commits directly" : `opens a pull request into ${c.config.branch ?? "main"}`}`;
+  if (c.kind === "git") return `${c.config.repository} · base ${c.config.branch ?? "main"} · ${c.config.contentDir ?? "content/posts"}/${c.config.filenamePattern ?? "{{slug}}.md"} · ${c.config.mode === "commit" ? "commits directly" : `opens a pull request into ${c.config.branch ?? "main"}`}${c.config.bodyFormat === "mdx" ? " · MDX" : ""}${c.config.requiredPath ? ` · waits for ${c.config.requiredPath}` : ""}`;
   if (c.kind === "wordpress") return `${c.config.siteUrl} · ${c.config.username}`;
   if (c.kind === "webhook") return `${c.config.endpoint} · signed HMAC-SHA256`;
   return "";
@@ -106,8 +108,8 @@ function TokenNeeded({ c, canEdit, save }: { c: ConnectionRow; canEdit: boolean;
   );
 }
 
-/** The frontmatter presets: the lumoras.ai content spec, and a neutral one for most static-site generators. */
-export type TemplatePreset = { key: string; label: string; contentDir: string; filenamePattern: string; livePath: string; template: string; repository?: string; branch?: string };
+/** A site format (lib/publishers/presets.ts): fills the Git connection's fields. */
+export type TemplatePreset = Omit<SitePreset, "seoRules">;
 
 /**
  * Per-site connections with status lights. Credentials are encrypted on the
@@ -302,19 +304,22 @@ export function ConnectionsPanel({
             <TextField label="Label" name="label" required defaultValue={kind === "git" ? "Content repository" : kind === "wordpress" ? "WordPress site" : "Publishing webhook"} error={fe.label} />
             {kind === "git" ? (
               <>
-                <SelectField label="Host" name="provider" defaultValue="github" options={[{ value: "github", label: "GitHub" }, { value: "gitea", label: "Gitea" }]} error={fe.provider} />
+                <SelectField key={`h-${preset}`} label="Host" name="provider" defaultValue={pre?.provider ?? "github"} options={[{ value: "github", label: "GitHub" }, { value: "gitea", label: "Gitea" }]} error={fe.provider} />
                 <TextField key={`r-${preset}`} label="Repository" name="repository" placeholder="https://github.com/owner/site" defaultValue={pre?.repository ?? ""} error={fe.repository} />
                 <TextField label="API address (optional)" name="apiBaseUrl" placeholder="https://api.github.com" hint="Leave empty for github.com, or for Gitea's /api/v1 under the repository's host." error={fe.apiBaseUrl} />
                 <TextField key={`b-${preset}`} label="Base branch" name="branch" defaultValue={pre?.branch ?? "main"} hint="Pull requests target this branch (or commits land on it)." error={fe.branch} />
                 {presets.length ? (
-                  <SelectField label="Site format" value={preset} onChange={(e) => setPreset(e.target.value)} options={presets.map((p) => ({ value: p.key, label: p.label }))} hint="Fills the folder, file name, live path and frontmatter below." />
+                  <SelectField label="Site format" value={preset} onChange={(e) => setPreset(e.target.value)} options={presets.map((p) => ({ value: p.key, label: p.label }))} hint="Fills the repository, folder, file name, live path, frontmatter and body format below." />
                 ) : null}
                 <SelectField label="How it publishes" name="mode" defaultValue="pr" options={[{ value: "pr", label: "Open a pull request (recommended)" }, { value: "commit", label: "Commit to the branch" }]} error={fe.mode} />
                 <TextField key={`d-${preset}`} label="Content folder" name="contentDir" defaultValue={pre?.contentDir ?? "content/posts"} error={fe.contentDir} />
                 <TextField key={`f-${preset}`} label="File name" name="filenamePattern" defaultValue={pre?.filenamePattern ?? "{{slug}}.md"} error={fe.filenamePattern} />
                 <TextField key={`l-${preset}`} label="Live path" name="livePath" defaultValue={pre?.livePath ?? "/blog/{{slug}}"} hint="Where the article appears on the site; internal links and the live check use it." error={fe.livePath} />
                 <TextField label="Access token (can be added later)" name="secret" type="password" autoComplete="off" hint="Fine-grained token with Contents and Pull requests read and write on this repository only. Leave it empty to save the settings now: the connection shows “token needed” until it is added." error={fe.secret} />
-                <TextareaField key={`t-${preset}`} className="span-2" label="Frontmatter template" name="frontmatterTemplate" rows={8} defaultValue={pre?.template ?? ""} hint="Placeholders like {{title}}, {{date}}, {{cover.chips}}. Values are written as quoted YAML, never raw." error={fe.frontmatterTemplate} spellCheck={false} />
+                <TextareaField key={`t-${preset}`} className="span-2" label="Frontmatter template" name="frontmatterTemplate" rows={8} defaultValue={pre?.template ?? ""} hint="Placeholders like {{title}}, {{date}}, {{cover.chips}}, {{author.key}}. Values are written as quoted YAML, never raw." error={fe.frontmatterTemplate} spellCheck={false} />
+                <SelectField key={`m-${preset}`} label="Body format" name="bodyFormat" defaultValue={pre?.bodyFormat ?? "markdown"} options={[{ value: "markdown", label: "Markdown" }, { value: "mdx", label: "MDX (escapes <, { and } in the text)" }]} hint="MDX sites compile the body as code: a bare < or { would break their build." error={fe.bodyFormat} />
+                <TextField key={`q-${preset}`} label="Format check (optional)" name="requiredPath" defaultValue={pre?.requiredPath ?? ""} placeholder="src/content/post-schema.ts" hint="A file that must be on the base branch before anything publishes, e.g. once the site's post format change is merged." error={fe.requiredPath} />
+                <TextareaField key={`a-${preset}`} className="span-2" label="Author keys (for {{author.key}})" name="authorKeys" rows={4} defaultValue={pre ? formatAuthorKeys(pre.authorKeys) : ""} placeholder="Tran = tran" hint="One per line: the byline's name as set on this site's Authors, then the key the site's frontmatter uses." error={fe.authorKeys} spellCheck={false} />
               </>
             ) : kind === "wordpress" ? (
               <>

@@ -35,7 +35,7 @@ export function listConnections(tx: Tx, siteId: string): Promise<ConnectionView[
 }
 
 /** Non-secret settings per kind; the secret goes in its own sealed column. */
-function split(input: ConnectionInput): { config: Record<string, string>; secret: string | null } {
+function split(input: ConnectionInput): { config: Record<string, unknown>; secret: string | null } {
   switch (input.kind) {
     case "git":
       return {
@@ -49,6 +49,9 @@ function split(input: ConnectionInput): { config: Record<string, string>; secret
           frontmatterTemplate: input.frontmatterTemplate || DEFAULT_TEMPLATE,
           mode: input.mode,
           livePath: input.livePath,
+          bodyFormat: input.bodyFormat,
+          authorKeys: input.authorKeys,
+          requiredPath: input.requiredPath,
         },
         secret: input.secret || null,
       };
