@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Sora } from "next/font/google";
+import Script from "next/script";
 import "@lumoras/ui-tokens/tokens.css";
 import "@lumoras/ui-tokens/theme-control.css";
 import "./globals.css";
@@ -71,6 +72,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Google Analytics, as on the old lumoras.ai. Disclosed in /privacy (Cookies and analytics). */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-LG4J18ZMY9" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-LG4J18ZMY9');
+          `}
+        </Script>
       </head>
       <body>
         <a className="skip" href="#main">

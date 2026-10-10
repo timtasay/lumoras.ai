@@ -35,6 +35,8 @@ export function GET() {
     line("Help center", "/help-center"),
     line("FAQ", "/faq", `${faq.groups.reduce((n, g) => n + g.items.length, 0)} questions and answers`),
     line("Book a demo", "/demo"),
+    line("Privacy policy", "/privacy", "how lumoras.ai handles demo requests, analytics cookies and server logs"),
+    line("Terms of use", "/terms", "terms for using the lumoras.ai website"),
     "",
     "## Knowledge base",
     "",

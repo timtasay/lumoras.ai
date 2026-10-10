@@ -9,9 +9,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./content/**/*"],
   },
+  // The old lumoras.ai served its terms at /tos; old links may still point there.
   // Retired in-store audio pages (Lumoras Sound was discontinued). Permanent, so search engines move on.
   async redirects() {
     return [
+      { source: "/tos", destination: "/terms", permanent: true },
       {
         source: "/knowledge-base/overhead-paging-and-store-announcements",
         destination: "/knowledge-base/where-is-my-order-calls",

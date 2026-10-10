@@ -43,6 +43,8 @@ export function SiteFooter() {
                 <li key={l.href}><Link href={l.href}>{l.label}</Link></li>
               ))}
               <li><Link href="/demo">Book a demo</Link></li>
+              <li><Link href="/privacy">Privacy policy</Link></li>
+              <li><Link href="/terms">Terms of use</Link></li>
               {/* TODO(launch): real sign-in URL */}
               <li><a href={SIGN_IN_URL}>Sign in</a></li>
             </ul>

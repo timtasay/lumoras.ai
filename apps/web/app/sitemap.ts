@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getGuides, getHelpArticles, getInsights } from "@/lib/content";
-import { absoluteUrl } from "@/lib/site";
+import { LEGAL_UPDATED, absoluteUrl } from "@/lib/site";
 
 const maxDate = (dates: string[], fallback: string) => dates.reduce((m, d) => (d > m ? d : m), "") || fallback;
 
@@ -19,6 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl("/help-center"), lastModified: maxDate(help.map((h) => h.updated), today), changeFrequency: "weekly", priority: 0.7 },
     { url: absoluteUrl("/faq"), lastModified: latestAll, changeFrequency: "monthly", priority: 0.6 },
     { url: absoluteUrl("/demo"), lastModified: latestAll, changeFrequency: "yearly", priority: 0.5 },
+    { url: absoluteUrl("/privacy"), lastModified: LEGAL_UPDATED, changeFrequency: "yearly", priority: 0.3 },
+    { url: absoluteUrl("/terms"), lastModified: LEGAL_UPDATED, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   return [

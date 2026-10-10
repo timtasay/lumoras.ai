@@ -17,6 +17,12 @@ export const CONTACT_PHONE = "TODO";
 export const DEMO_LINE = "941-430-4049";
 export const DEMO_LINE_TEL = "tel:+19414304049";
 
+/** Legal pages (/privacy, /terms): contacts carried over from the old lumoras.ai and the shared "Last updated" date. */
+export const PRIVACY_EMAIL = "privacy@lumoras.ai";
+export const LEGAL_EMAIL = "legal@lumoras.ai";
+export const SECURITY_EMAIL = "security@lumoras.ai";
+export const LEGAL_UPDATED = "2026-10-10";
+
 /** TODO(launch): point at the real sign-in URL once the console has a public address. */
 export const SIGN_IN_URL = "#";
 
@@ -26,6 +32,8 @@ export const PRODUCTS = {
     url: "https://sonorch.ai",
     domain: "sonorch.ai",
     helpCenter: "https://sonorch.ai",
+    privacy: "https://sonorch.ai/privacy",
+    terms: "https://sonorch.ai/terms",
     description: "POS and AI receptionist for salons, barbers, spas, nail and lash studios and med spas.",
   },
   seasonx: {
@@ -35,12 +43,16 @@ export const PRODUCTS = {
     helpCenter: "https://seasonx.ai/help-center",
     demo: "https://seasonx.ai/demo",
     getStarted: "https://seasonx.ai/get-started",
+    privacy: "https://seasonx.ai/privacy",
+    terms: "https://seasonx.ai/terms",
     description: "AI receptionist and point of sale for restaurants.",
   },
   kitchenspot: {
     name: "KitchenSpot",
     url: "https://kitchenspot.ai",
     domain: "kitchenspot.ai",
+    privacy: "https://kitchenspot.ai/privacy",
+    terms: "https://kitchenspot.ai/terms",
     description: "Restaurant discovery with full menus, dish-by-dish ratings and pickup ordering.",
   },
 } as const;

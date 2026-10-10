@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import Link from "next/link";
 import { Icon } from "./Icons";
 import { DEMO_LINE } from "@/lib/site";
 import {
@@ -170,7 +171,10 @@ export function DemoForm({
         <button className="btn btn-primary" type="submit" disabled={status === "sending"}>
           {status === "sending" ? "Sending…" : cta} <Icon name="arrow" />
         </button>
-        <p className="fine">By requesting a demo you agree to be contacted about Lumoras. No spam, no sharing.</p>
+        <p className="fine">
+          By requesting a demo you agree to be contacted about Lumoras. No spam, no sharing. See our{" "}
+          <Link className="tlink" href="/privacy">privacy policy</Link>.
+        </p>
         <p className="fine err" role="alert">
           {status === "error" ? "Something went wrong sending your request. Please try again, or call the live demo line." : ""}
         </p>
