@@ -70,9 +70,9 @@ describe("sonorch.ai preset", () => {
     assert.match(content, /\[https:\/\/sonorch\.ai\/pricing\]\(https:\/\/sonorch\.ai\/pricing\)/);
   });
 
-  it("is the slug-named .mdx file in src/content/posts, as a pull request into main on Gitea", () => {
+  it("is the slug-named .mdx file in src/content/posts, as a pull request into dev on Gitea", () => {
     assert.equal(SONORCH_GIT.provider, "gitea");
-    assert.equal(SONORCH_GIT.branch, "main");
+    assert.equal(SONORCH_GIT.branch, "dev");
     const cfg = readGitConfig(connectionInput.parse(presetConnection(SONORCH_GIT, "sonorch.ai")) as unknown as Record<string, unknown>);
     const p = new GitPublisher(cfg, "t", POLICY);
     assert.equal(p.pathFor(article()), "src/content/posts/walk-ins-and-appointments.mdx");
@@ -137,17 +137,17 @@ describe("format check on a fake Gitea", () => {
     ...over,
   });
   before(async () => {
-    git = await startFakeGit({ provider: "gitea", hostName: "gitea.test", repos: [{ owner: "lumoras", repo: "sonorch.ai", files: { "src/content/posts.ts": "export const POSTS = [];" } }] });
+    git = await startFakeGit({ provider: "gitea", hostName: "gitea.test", repos: [{ owner: "lumoras", repo: "sonorch.ai", defaultBranch: "dev", files: { "src/content/posts.ts": "export const POSTS = [];" } }] });
   });
   after(() => git.close());
 
-  it("before the format change is merged: Test fails on Site format and publish writes nothing", async () => {
+  it("before the format change is on dev: Test fails on Site format and publish writes nothing", async () => {
     const p = new GitPublisher(cfg(), git.token, POLICY);
     const v = await p.validate();
     assert.equal(v.ok, false);
     const check = v.checks.find((c) => c.label === "Site format")!;
     assert.equal(check.ok, false);
-    assert.match(check.detail, /src\/content\/post-schema\.ts is not on main/);
+    assert.match(check.detail, /src\/content\/post-schema\.ts is not on dev/);
     assert.ok(v.checks.find((c) => c.label === "Author keys")?.ok);
     const before = git.requests.length;
     await assert.rejects(p.publish(article()), (e: unknown) => e instanceof PublishError && e.opts.status === 409 && /merge the site's file-per-post change first/.test(e.message));
@@ -161,9 +161,9 @@ describe("format check on a fake Gitea", () => {
     assert.equal(git.requests.length, before);
   });
 
-  it("once the format file is on main: Test passes and publish opens a pull request with the .mdx file", async () => {
+  it("once the format file is on dev: Test passes and publish opens a pull request with the .mdx file", async () => {
     const schema = "export const AUTHORS = {};";
-    git.repo("lumoras", "sonorch.ai").branches.get("main")!.files.set("src/content/post-schema.ts", { content: schema, sha: createHash("sha1").update(schema).digest("hex") });
+    git.repo("lumoras", "sonorch.ai").branches.get("dev")!.files.set("src/content/post-schema.ts", { content: schema, sha: createHash("sha1").update(schema).digest("hex") });
     const p = new GitPublisher(cfg(), git.token, POLICY);
     const v = await p.validate();
     assert.equal(v.ok, true, JSON.stringify(v.checks));
@@ -173,7 +173,7 @@ describe("format check on a fake Gitea", () => {
     const file = git.fileOn("lumoras", "sonorch.ai", r.branch!, r.path!)!;
     assert.equal(matter(file).data.author, "tran");
     assert.match(file, /\\<20 minutes/);
-    assert.equal(git.fileOn("lumoras", "sonorch.ai", "main", r.path!), null, "PR mode wrote to main");
+    assert.equal(git.fileOn("lumoras", "sonorch.ai", "dev", r.path!), null, "PR mode wrote to dev");
   });
 
   it("a connection without a format check publishes as before", () => {

@@ -5,15 +5,18 @@ repo:
   host: https://gitea.timdatinh.com
   owner: lumoras
   name: sonorch.ai
-  base_branch: main
+  # the owner's workflow: pull requests go into dev; dev is promoted to main, which deploys
+  base_branch: dev
+  release_branch: main
 format_status:
-  state: pending-merge
-  pull_request: https://gitea.timdatinh.com/lumoras/sonorch.ai/pulls/1
-  pr_branch: content/file-per-post
+  state: on-main-pending-dev
+  pull_requests:
+    - https://gitea.timdatinh.com/lumoras/sonorch.ai/pulls/1  # into main, merged 9 October 2026
+    - https://gitea.timdatinh.com/lumoras/sonorch.ai/pulls/2  # main into dev (fast-forward), open
   note: >-
-    The one-file-per-post format exists on main only after PR #1 is merged.
-    Until then, main still keeps post metadata in the POSTS array in
-    src/content/posts.ts, and a lone .mdx file would not be published.
+    The format is on main. dev gets it when PR #2 is merged; until then a
+    post file on dev would not be published, and the publisher refuses to
+    write one (format check: src/content/post-schema.ts on dev).
 content_dir: src/content/posts
 filename_pattern: "{slug}.mdx"
 slug_pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -92,10 +95,10 @@ above is the machine-readable spec; the notes below are for whoever maintains th
 
 ## Publishing one post
 
-Create one file, `src/content/posts/<slug>.mdx`, on a branch from `main`, and open a PR into `main`.
+Create one file, `src/content/posts/<slug>.mdx`, on a branch from `dev`, and open a PR into `dev`.
 Don't change any other file: the site compiles its post list from these files at build time.
-The post is live at `https://sonorch.ai/insights/<slug>` once the PR is merged, deployed and its
-`publishedAt` date has arrived.
+The post is live at `https://sonorch.ai/insights/<slug>` once the PR is merged, `dev` is promoted
+to `main` and deployed, and its `publishedAt` date has arrived.
 
 ```mdx
 ---

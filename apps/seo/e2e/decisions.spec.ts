@@ -119,7 +119,7 @@ test("sonorch.ai on Gitea: its site format comes first and fills MDX, author key
   await expect(form.getByLabel("Site format")).toHaveValue("sonorch");
   await expect(form.getByLabel("Host")).toHaveValue("gitea");
   await expect(form.getByLabel("Repository")).toHaveValue("https://gitea.timdatinh.com/lumoras/sonorch.ai");
-  await expect(form.getByLabel("Base branch")).toHaveValue("main");
+  await expect(form.getByLabel("Base branch")).toHaveValue("dev");
   await expect(form.getByLabel("Content folder")).toHaveValue("src/content/posts");
   await expect(form.getByLabel("File name")).toHaveValue("{{slug}}.mdx");
   await expect(form.getByLabel("Body format")).toHaveValue("mdx");
@@ -135,7 +135,7 @@ test("sonorch.ai on Gitea: its site format comes first and fills MDX, author key
   const conn = page.locator(".conn").filter({ has: page.locator(".conn-name", { hasText: /^sonorch\.ai repository \(Gitea\)/ }) });
   await expect(conn.locator(".light")).toContainText("Token needed");
   await expect(conn.locator(".conn-token")).toContainText("In Gitea: Settings → Applications → Generate new token");
-  await expect(conn.locator(".conn-sum")).toContainText("src/content/posts/{{slug}}.mdx · opens a pull request into main · MDX · waits for src/content/post-schema.ts");
+  await expect(conn.locator(".conn-sum")).toContainText("src/content/posts/{{slug}}.mdx · opens a pull request into dev · MDX · waits for src/content/post-schema.ts");
   await shot(page, "connection-sonorch-gitea-dark-1440", P);
   await page.setViewportSize({ width: 375, height: 800 });
   await noSideways(page);

@@ -6,7 +6,8 @@
  *
  * The Lumoras sites' formats are written down in docs/site-formats/*.md.
  * sonorch.ai and seasonx.ai live on Gitea (owner decision #2, option (a)):
- * one MDX file per post with YAML frontmatter, as a pull request into main.
+ * one MDX file per post with YAML frontmatter, as a pull request into dev
+ * (the owner's workflow: work lands on dev, then dev is promoted to main).
  */
 import { DEFAULT_TEMPLATE, LUMORAS_INSIGHTS_TEMPLATE, type BodyFormat } from "./frontmatter.ts";
 import type { GitProvider } from "./git.ts";
@@ -57,7 +58,7 @@ export const SONORCH_GIT: SitePreset = {
   label: "sonorch.ai insights (MDX, Gitea)",
   provider: "gitea",
   repository: "https://gitea.timdatinh.com/lumoras/sonorch.ai",
-  branch: "main",
+  branch: "dev",
   contentDir: "src/content/posts",
   filenamePattern: "{{slug}}.mdx",
   livePath: "/insights/{{slug}}",
@@ -65,7 +66,7 @@ export const SONORCH_GIT: SitePreset = {
   bodyFormat: "mdx",
   // the site's AUTHORS (src/content/post-schema.ts): byline name → key
   authorKeys: { Tim: "tim", Tran: "tran", Alex: "alex", Jayden: "jayden" },
-  // added by the format pull request (lumoras/sonorch.ai#1); publishing waits for it on main
+  // added by the format change (lumoras/sonorch.ai#1 into main, #2 into dev); publishing waits for it on dev
   requiredPath: "src/content/post-schema.ts",
   domain: "sonorch.ai",
   seoRules: { coverKinds: ["calendar", "phone", "receipt", "card", "chart", "clock", "people", "list"], coverChips: 2, coverChipMax: 26 },
