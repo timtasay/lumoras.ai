@@ -1,13 +1,24 @@
 # Lumoras Growth: route for the shared Caddy on VPS3. FILES ONLY, not deployed.
 #
-# Host name: growth.lumoras.ai (owner decision #1, 10 October 2026). Add the DNS
-# record (A/AAAA to VPS3), then append this block to the shared Caddyfile and
-# reload Caddy.
+# Host name: growth.lumoras.ai (owner decision #1, 10 October 2026). DNS is done:
+# growth.lumoras.ai is a CNAME to lumoras.ai, proxied by Cloudflare, so it reaches
+# VPS3 the same way lumoras.ai does.
 #
+# Where it goes: append this block to docker/vps3/caddy/Caddyfile in
+# lumoras/phonon-orchestration-hub (branch marketing-split), after the lumoras.ai
+# block, then reload Caddy on VPS3. It follows the lumoras.ai block there:
+#   - certificate by HTTP-01 / TLS-ALPN through Cloudflare, like lumoras.ai;
+#   - `import client_ip_only` (defined at the top of that Caddyfile) so the app sees
+#     one trustworthy client address (rate limits and the audit log use it);
+#   - a short holding page while the container restarts.
 # Caddy and lumoras-seo share the external network lumoras_internal, so the
-# upstream is the container name. Caddy obtains the TLS certificate itself.
+# upstream is the container name.
+
+# ── Lumoras Growth ─────────────────────────────────────────────────────────
+# HTTP-01 / TLS-ALPN, like lumoras.ai (CNAME to lumoras.ai through Cloudflare).
 growth.lumoras.ai {
 	encode zstd gzip
+	import client_ip_only
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -21,5 +32,11 @@ growth.lumoras.ai {
 	reverse_proxy lumoras-seo:3007 {
 		health_uri /api/health
 		health_interval 30s
+	}
+
+	handle_errors 502 503 504 {
+		header Content-Type "text/html; charset=utf-8"
+		header Retry-After 60
+		respond "<!doctype html><title>Lumoras Growth</title><meta name=viewport content='width=device-width'><body style='font:16px system-ui;display:grid;place-items:center;height:90vh;margin:0'><p>Lumoras Growth is updating. Back in a minute.</p>" 503
 	}
 }
