@@ -368,26 +368,24 @@ docker build -f apps/seo/Dockerfile -t lumoras-seo .   # from the repository roo
 
 ## SEO data provider in production (owner decision #3)
 
-The documented production setting is **OpenSEO on the owner's hosted account**, in the server env file:
+The production setting is **DataForSEO directly, on Lumoras's own account** (owner decision #3, changed from
+OpenSEO on 10 October 2026), in the server env file:
 
 ```
-SEO_PROVIDER=openseo
-OPENSEO_MODE=hosted
-OPENSEO_API_KEY=oseo_…            # openseo.so → Settings → API keys; server env only
-# optional: OPENSEO_URL (default https://app.openseo.so/mcp), OPENSEO_PROJECT_ID (default project)
+SEO_PROVIDER=dataforseo
+DATAFORSEO_LOGIN=…                # app.dataforseo.com → API Access (the API login, not the email)
+DATAFORSEO_PASSWORD=…             # the API password shown there; server env only
+# optional: DATAFORSEO_BASE_URL=https://sandbox.dataforseo.com (free dummy data) to try it first
 ```
 
-The key is sent only from the server, as `Authorization: Bearer` (see `docs/external-apis.md`);
-it never reaches a browser, a log line or a model. A site can name its OpenSEO project under Site settings →
-SEO data provider; otherwise the default project, else one per domain. `balance()` is `whoami`'s
-`creditsRemaining` (1 credit = US$0.001); each call is charged the credits OpenSEO reports for it, else our
-estimate (DataForSEO list price × 1.28), and the ledger's detail says which. Cache, budget and reserve work as
-for every provider.
+The credentials are sent only from the server, as HTTP Basic auth to `api.dataforseo.com` (the only hosts
+accepted); they never reach a browser, a log line or a model. Every call is priced first from DataForSEO's list
+prices, held against the workspace budget and reserve, cached, and settled at the `cost` DataForSEO reports;
+`balance()` is the account's money balance (`/v3/appendix/user_data`, free). Rank checks read live SERPs and
+keep history in our database; site audits use the On-Page API.
 
-**Terms caveat** (shown to platform admins on the provider card): hosted OpenSEO allows SEO work for your own
-websites and for your clients, but not building a competing product or service. Use it for Lumoras's own sites
-and staff-run client work now; before clients run research themselves, get OpenSEO's written OK or move to
-self-hosted OpenSEO (`OPENSEO_MODE=selfhosted`, MIT, same tools) with a DataForSEO key.
+OpenSEO (hosted or self-hosted) is still supported (`SEO_PROVIDER=openseo`, see `.env.example` and
+`docs/provider-decision.md`) but is no longer the production choice.
 
 ## Adding a data provider
 

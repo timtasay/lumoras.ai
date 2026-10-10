@@ -27,14 +27,13 @@ Phases 0 to 4 and the owner decisions of 10 October 2026 (`owner-decisions.md`).
 - **First platform admin.** After the first deploy, a Lumoras staff member signs in once and the
   owner runs `docker exec lumoras-seo node --import tsx scripts/grant-admin.ts <email>`
   (recorded in the audit log as `system:cli`).
-- **Decision #3: SEO data provider — decided: hosted OpenSEO; the key is pending.** Built: `OPENSEO_MODE=hosted`.
-  The owner sets in the server env file `SEO_PROVIDER=openseo`, `OPENSEO_MODE=hosted` and
-  `OPENSEO_API_KEY=oseo_…` (optionally `OPENSEO_PROJECT_ID`, and per-site projects under Site settings). Until
-  then production runs with `SEO_PROVIDER=none`. **Terms:** use it for Lumoras's own sites and staff-run
-  client work; before clients run research themselves, get OpenSEO's written OK or move to self-hosted
-  OpenSEO with a DataForSEO key (nothing in code stops a client role from starting research today: it is a
-  policy the provider card states to platform admins). Not yet verified against the real hosted service (no
-  key here): first use should be one `whoami` and one small research call, checking the ledger detail.
+- **Decision #3: SEO data provider — decided: DataForSEO direct (changed from hosted OpenSEO, 10 October
+  2026); the credentials are pending.** Nothing to build. The owner sets in the server env file
+  `SEO_PROVIDER=dataforseo`, `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD` (app.dataforseo.com → API Access).
+  Until then production runs with `SEO_PROVIDER=none`. Not yet verified against the real API (no credentials
+  here; tested against a local fake DataForSEO): first use should be the sandbox
+  (`DATAFORSEO_BASE_URL=https://sandbox.dataforseo.com`), then one balance read and one small research call on
+  the real API, checking that the ledger settled at the cost DataForSEO reported.
 - **Google OAuth client for Search Console and GA4.** Create a Web OAuth client (needs the host name,
   decision #1), add the redirect URI `<BETTER_AUTH_URL>/api/google/callback`, enable the Search Console
   API, Analytics Admin API and Analytics Data API, configure the consent screen with the two read-only
