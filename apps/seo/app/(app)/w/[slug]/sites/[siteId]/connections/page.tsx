@@ -14,6 +14,8 @@ import { createConnectionAction, deleteConnectionAction, setConnectionTokenActio
 import { setPublishConnectionAction, testPublishConnectionAction } from "../../../publishing-actions";
 import { getSiteSettings } from "@/lib/data/sites";
 import { presetsFor } from "@/lib/publishers/presets";
+import { postsFeedUrl } from "@/lib/publishers/content-api";
+import { webEnv } from "@/lib/config";
 
 import { googleCards } from "@/lib/google/view";
 
@@ -45,7 +47,7 @@ export default async function ConnectionsPage({ params, searchParams }: { params
       <section aria-labelledby="pub-h">
         <div className="sec-head">
           <h2 id="pub-h">Publishing and other connections</h2>
-          <p className="muted small">Articles publish through one Git or webhook connection: a file per post in the client&apos;s repository (as a pull request by default), or a signed JSON delivery.</p>
+          <p className="muted small">Articles publish through one connection: Lumoras Growth serving them to the site (no deploy per article), a file per post in the client&apos;s repository (as a pull request by default), or a signed JSON delivery.</p>
         </div>
         <ConnectionsPanel
           // only the safe view crosses to the browser: no ciphertext, no secret
@@ -58,6 +60,7 @@ export default async function ConnectionsPage({ params, searchParams }: { params
           choosePublish={setPublishConnectionAction.bind(null, slug, site.id)}
           presets={presetsFor(site.domain)}
           saveToken={setConnectionTokenAction.bind(null, slug, site.id)}
+          postsFeedUrl={postsFeedUrl(webEnv().baseUrl, settings.feed_token)}
         />
       </section>
       {a.viewer.isPlatformAdmin ? <ProviderStatus info={providerInfo()} balance={balance} note={note} /> : null}

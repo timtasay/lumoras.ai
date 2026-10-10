@@ -265,7 +265,7 @@ const authorKeys = z
     return r.keys;
   });
 
-export const CONNECTION_KINDS = ["git", "wordpress", "webhook", "search_console", "ga4"] as const;
+export const CONNECTION_KINDS = ["git", "wordpress", "webhook", "content_api", "search_console", "ga4"] as const;
 export const connectionInput = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("git"),
@@ -300,6 +300,13 @@ export const connectionInput = z.discriminatedUnion("kind", [
     siteUrl: httpsUrl,
     username: z.string().trim().min(1).max(200),
     secret: z.string().trim().min(8, "Paste an application password").max(4000),
+  }),
+  z.object({
+    /** "Lumoras Growth serves it": the site reads its posts endpoint (docs/content-api.md). No credential. */
+    kind: z.literal("content_api"),
+    label: trimmed(80, "Label").min(1),
+    livePath: livePath.default("/insights/{{slug}}"),
+    authorKeys,
   }),
   z.object({
     kind: z.literal("webhook"),

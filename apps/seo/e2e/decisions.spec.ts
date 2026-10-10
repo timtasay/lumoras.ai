@@ -109,7 +109,7 @@ test("lumoras.ai Git connection: token needed → the Test explains → the toke
   expect(errors).toEqual([]);
 });
 
-test("sonorch.ai on Gitea: its site format comes first and fills MDX, author keys and the format check; the seeded connection needs a token", async ({ page }) => {
+test("sonorch.ai: its Git site format fills MDX, author keys and the format check; the seeded connection is Lumoras Growth serving it, with a public posts endpoint", async ({ page }) => {
   const errors = watchConsole(page);
   const site = await siteId("sonorch.ai");
   await setTheme(page, "dark");
@@ -131,12 +131,23 @@ test("sonorch.ai on Gitea: its site format comes first and fills MDX, author key
   await expect(form.getByLabel("Body format")).toHaveValue("markdown");
   await expect(form.getByLabel("Author keys (for {{author.key}})")).toHaveValue("");
   await form.getByLabel("Site format").selectOption("sonorch");
-  // the seeded connection: Gitea, no token, nothing contacted
-  const conn = page.locator(".conn").filter({ has: page.locator(".conn-name", { hasText: /^sonorch\.ai repository \(Gitea\)/ }) });
-  await expect(conn.locator(".light")).toContainText("Token needed");
-  await expect(conn.locator(".conn-token")).toContainText("In Gitea: Settings → Applications → Generate new token");
-  await expect(conn.locator(".conn-sum")).toContainText("src/content/posts/{{slug}}.mdx · opens a pull request into dev · MDX · waits for src/content/post-schema.ts");
-  await shot(page, "connection-sonorch-gitea-dark-1440", P);
+  // the seeded connection: Lumoras Growth serves sonorch.ai's articles; no token, no deploy per article
+  const conn = page.locator(".conn").filter({ has: page.locator(".conn-name", { hasText: /^Lumoras Growth \(sonorch\.ai\)/ }) });
+  await expect(conn.locator(".conn-sum")).toContainText(/No deploy per article · the site reads its posts endpoint · \/insights\/\{\{slug\}\} · authors (tim|tran|alex|jayden)(, (tim|tran|alex|jayden)){3}$/);
+  await expect(conn.locator(".conn-detail").first()).toContainText(/The site reads .*\/api\/feeds\/[0-9a-f]{64}\/posts\.json\. Set it as INSIGHTS_API_URL/);
+  await expect(conn.locator(".conn-token")).toHaveCount(0);
+  await conn.getByRole("button", { name: "Test" }).click();
+  await expect(conn.locator(".conn-test")).toContainText("Ready: approved articles are served to the site on their date.");
+  // not the publishing connection in the demo, so its public endpoint is off (404, no session involved) until it is
+  // chosen; the served posts themselves are covered by test/integration/content-api.pg.test.ts
+  const endpointUrl = (await conn.locator(".conn-url").textContent())!.replace(/^https?:\/\/[^/]+/, "");
+  const res = await page.request.fetch(endpointUrl);
+  expect(res.status()).toBe(404);
+  expect(await res.json()).toEqual({ error: "not found" });
+  // the form offers it too
+  await form.getByRole("radio", { name: "Growth" }).click();
+  await expect(form.getByLabel("Author keys")).toHaveValue("Tim = tim\nTran = tran\nAlex = alex\nJayden = jayden");
+  await shot(page, "connection-sonorch-served-dark-1440", P);
   await page.setViewportSize({ width: 375, height: 800 });
   await noSideways(page);
   expect(errors).toEqual([]);

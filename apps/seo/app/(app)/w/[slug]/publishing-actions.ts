@@ -21,6 +21,7 @@ import { slotsBetween } from "@/lib/content/schedule";
 import { enqueue, webPipelineDeps } from "@/lib/jobs/client";
 import { QUEUES } from "@/lib/pipeline/deps";
 import { createPublisher, loadPublishConnection, missingCredentialValidation, publisherFor } from "@/lib/publishers/registry";
+import { ContentApiPublisher, postsFeedUrl, readContentApiConfig } from "@/lib/publishers/content-api";
 import { PublishError } from "@/lib/publishers/types";
 import { hit, LIMITS } from "@/lib/rate-limit";
 import { scheduleInput } from "@/lib/validation";
@@ -68,7 +69,7 @@ export async function setPublishConnectionAction(slug: string, siteId: string, c
     await inWorkspace(slug, "connection:manage", "site.publish_connection", async (tx) => {
       if (connectionId) {
         const c = await tx.one<{ kind: string }>("SELECT kind FROM connections WHERE id = $1 AND site_id = $2", [connectionId, siteId], "connection");
-        if (c.kind !== "git" && c.kind !== "webhook") throw new PublishError("Only Git and webhook connections publish in this phase.");
+        if (c.kind !== "git" && c.kind !== "webhook" && c.kind !== "content_api") throw new PublishError("Only Git, webhook and Lumoras Growth connections publish in this phase.");
       }
       await tx.exec("UPDATE sites SET publish_connection_id = $2 WHERE id = $1", [siteId, connectionId]);
     });
@@ -94,6 +95,8 @@ export async function testPublishConnectionAction(slug: string, siteId: string, 
       async (tx) => {
         const site = await getSiteSettings(tx, siteId);
         const conn = await loadPublishConnection(tx, connectionId);
+        // Lumoras Growth serves it: nothing to contact; Test checks the author keys and says where the site reads
+        if (conn.kind === "content_api") return { missing: null, conn, publisher: new ContentApiPublisher(readContentApiConfig(conn.config), postsFeedUrl(webEnv().baseUrl, site.feed_token)) };
         // no token yet: say what is set and what is missing, without contacting anything
         if (!(await tx.one<{ has: boolean }>("SELECT credentials_ciphertext IS NOT NULL AS has FROM connections WHERE id = $1", [connectionId])).has) return { missing: missingCredentialValidation(conn) };
         return { missing: null, ...(await publisherFor(tx, keyring(), a.workspace.id, connectionId, { domain: site.domain }, deps.outbound, createPublisher)) };

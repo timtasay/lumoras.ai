@@ -15,7 +15,7 @@ export type ConnectionRow = {
   id: string;
   kind: string;
   label: string;
-  config: Record<string, string>;
+  config: Record<string, string> & { authorKeys?: Record<string, string> };
   has_secret: boolean;
   key_version: number | null;
   status: "untested" | "ok" | "warn" | "error";
@@ -27,6 +27,7 @@ const KIND: Record<string, { label: string; icon: IconName; phase: number }> = {
   git: { label: "Git (file per post)", icon: "flow", phase: 3 },
   wordpress: { label: "WordPress", icon: "doc", phase: 5 },
   webhook: { label: "Webhook", icon: "send", phase: 3 },
+  content_api: { label: "Lumoras Growth serves it", icon: "send", phase: 3 },
   search_console: { label: "Google Search Console", icon: "search", phase: 2 },
   ga4: { label: "Google Analytics 4", icon: "trend", phase: 2 },
   social: { label: "Social accounts", icon: "share", phase: 5 },
@@ -48,10 +49,11 @@ function summary(c: ConnectionRow) {
   if (c.kind === "git") return `${c.config.repository} · base ${c.config.branch ?? "main"} · ${c.config.contentDir ?? "content/posts"}/${c.config.filenamePattern ?? "{{slug}}.md"} · ${c.config.mode === "commit" ? "commits directly" : `opens a pull request into ${c.config.branch ?? "main"}`}${c.config.bodyFormat === "mdx" ? " · MDX" : ""}${c.config.requiredPath ? ` · waits for ${c.config.requiredPath}` : ""}`;
   if (c.kind === "wordpress") return `${c.config.siteUrl} · ${c.config.username}`;
   if (c.kind === "webhook") return `${c.config.endpoint} · signed HMAC-SHA256`;
+  if (c.kind === "content_api") return `No deploy per article · the site reads its posts endpoint · ${c.config.livePath ?? "/insights/{{slug}}"} · authors ${Object.values(c.config.authorKeys ?? {}).join(", ") || "none set"}`;
   return "";
 }
 
-const LIVE_TEST = new Set(["git", "webhook"]);
+const LIVE_TEST = new Set(["git", "webhook", "content_api"]);
 
 /** owner/repo from https://host/owner/repo (for the token instructions). */
 function repoName(url: string | undefined): string {
@@ -128,6 +130,7 @@ export function ConnectionsPanel({
   choosePublish,
   presets = [],
   saveToken,
+  postsFeedUrl = "",
 }: {
   connections: ConnectionRow[];
   canEdit: boolean;
@@ -139,8 +142,10 @@ export function ConnectionsPanel({
   presets?: TemplatePreset[];
   /** Adds a token to a connection saved without one. */
   saveToken?: (id: string, prev: ActionState, fd: FormData) => Promise<ActionState>;
+  /** The site's posts endpoint, for "Lumoras Growth serves it" (docs/content-api.md). */
+  postsFeedUrl?: string;
 }) {
-  const [kind, setKind] = useState<"git" | "wordpress" | "webhook">("git");
+  const [kind, setKind] = useState<"git" | "content_api" | "wordpress" | "webhook">("git");
   const [state, action, pending] = useActionState(create, idle);
   const [busy, start] = useTransition();
   const [testing, setTesting] = useState<string | null>(null);
@@ -189,6 +194,11 @@ export function ConnectionsPanel({
                     <Badge icon="lock">Credentials encrypted · key v{c.key_version}</Badge>
                   ) : null}
                 </p>
+                {c.kind === "content_api" && postsFeedUrl ? (
+                  <p className="small conn-detail">
+                    The site reads <span className="mono conn-url">{postsFeedUrl}</span>. Set it as <span className="mono">INSIGHTS_API_URL</span> in the site&apos;s server env file (on VPS3 the host can be <span className="mono">http://lumoras-seo:3007</span>).
+                  </p>
+                ) : null}
                 {c.status_detail && !results[c.id] && !needsToken ? <p className="small muted conn-detail">{c.status_detail}</p> : null}
                 {results[c.id] ? (
                   <div className="conn-test" role="status">
@@ -293,6 +303,7 @@ export function ConnectionsPanel({
               onChange={setKind}
               options={[
                 { value: "git", label: "Git" },
+                { value: "content_api", label: "Growth" },
                 { value: "wordpress", label: "WordPress" },
                 { value: "webhook", label: "Webhook" },
               ]}
@@ -301,7 +312,7 @@ export function ConnectionsPanel({
           <form action={action} onSubmit={submitKeepingValues(action)} className="form-grid" noValidate key={state.ok ? state.at : kind}>
             <ActionFeedback state={state} />
             <input type="hidden" name="kind" value={kind} />
-            <TextField label="Label" name="label" required defaultValue={kind === "git" ? "Content repository" : kind === "wordpress" ? "WordPress site" : "Publishing webhook"} error={fe.label} />
+            <TextField label="Label" name="label" required defaultValue={kind === "git" ? "Content repository" : kind === "content_api" ? "Lumoras Growth" : kind === "wordpress" ? "WordPress site" : "Publishing webhook"} error={fe.label} />
             {kind === "git" ? (
               <>
                 <SelectField key={`h-${preset}`} label="Host" name="provider" defaultValue={pre?.provider ?? "github"} options={[{ value: "github", label: "GitHub" }, { value: "gitea", label: "Gitea" }]} error={fe.provider} />
@@ -321,6 +332,12 @@ export function ConnectionsPanel({
                 <TextField key={`q-${preset}`} label="Format check (optional)" name="requiredPath" defaultValue={pre?.requiredPath ?? ""} placeholder="src/content/post-schema.ts" hint="A file that must be on the base branch before anything publishes, e.g. once the site's post format change is merged." error={fe.requiredPath} />
                 <TextareaField key={`a-${preset}`} className="span-2" label="Author keys (for {{author.key}})" name="authorKeys" rows={4} defaultValue={pre ? formatAuthorKeys(pre.authorKeys) : ""} placeholder="Tran = tran" hint="One per line: the byline's name as set on this site's Authors, then the key the site's frontmatter uses." error={fe.authorKeys} spellCheck={false} />
               </>
+            ) : kind === "content_api" ? (
+              <>
+                <p className="span-2 small muted"><strong>Lumoras Growth serves it.</strong> The site reads approved articles from Lumoras Growth when they are due: no commit, merge or deploy per article. The site needs a one-time change to read its posts endpoint (docs/content-api.md).</p>
+                <TextField label="Live path" name="livePath" defaultValue="/insights/{{slug}}" hint="Where the article appears on the site." error={fe.livePath} />
+                <TextareaField className="span-2" label="Author keys" name="authorKeys" rows={4} defaultValue={formatAuthorKeys(presets[0]?.domain ? presets[0].authorKeys : {})} placeholder="Tran = tran" hint="One per line: the byline's name as set on this site's Authors, then the key the site uses." error={fe.authorKeys} spellCheck={false} />
+              </>
             ) : kind === "wordpress" ? (
               <>
                 <TextField label="Site address" name="siteUrl" placeholder="https://blog.example.com" error={fe.siteUrl} />
@@ -334,9 +351,11 @@ export function ConnectionsPanel({
                 <TextField className="span-2" label="Signing secret" name="secret" type="password" autoComplete="off" hint="Each delivery carries X-Lumoras-Timestamp and X-Lumoras-Signature: v1=HMAC-SHA256(secret, timestamp.body). Reject anything older than five minutes." error={fe.secret} />
               </>
             )}
-            <p className="muted small span-2">
-              <Icon name="lock" className="inline-ico" /> Encrypted with AES-256-GCM before it is stored. Nobody can read it back here, including you.
-            </p>
+            {kind === "content_api" ? null : (
+              <p className="muted small span-2">
+                <Icon name="lock" className="inline-ico" /> Encrypted with AES-256-GCM before it is stored. Nobody can read it back here, including you.
+              </p>
+            )}
             <div className="form-acts span-2">
               <Button type="submit" variant="secondary" icon="plug" loading={pending}>
                 Save connection

@@ -430,3 +430,4 @@ a.onb-step:hover{background:var(--wash-2);color:var(--ink)}
 .conn-token-form > .form-alert{grid-column:1 / -1}
 @media (max-width:640px){.conn-token-form{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){.conn-token{animation:none}}
+@media (max-width:520px){.conn-add-head .seg-btn{padding:0 9px}}

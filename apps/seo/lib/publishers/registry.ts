@@ -14,11 +14,14 @@ import type { Keyring } from "../crypto/secrets.ts";
 import type { SafeFetchPolicy } from "../net/safe-fetch.ts";
 import { GitPublisher, parseRepository, readGitConfig } from "./git.ts";
 import { WebhookPublisher } from "./webhook.ts";
+import { ContentApiPublisher, readContentApiConfig } from "./content-api.ts";
 import { PublishError, type Publisher, type Validation } from "./types.ts";
 
 export type PublishConnection = { id: string; kind: string; label: string; config: Record<string, unknown>; status: string };
 
-export const PUBLISHING_KINDS = ["git", "webhook"] as const;
+export const PUBLISHING_KINDS = ["git", "webhook", "content_api"] as const;
+/** Publishing kinds that need no stored credential: Lumoras Growth serves the article itself. */
+export const NO_SECRET_KINDS = new Set<string>(["content_api"]);
 
 /** The path an article has on the live site, from the connection's live-path pattern. */
 export function livePathPattern(conn: Pick<PublishConnection, "kind" | "config"> | null): string {
@@ -32,6 +35,7 @@ export function describeConnection(conn: Pick<PublishConnection, "kind" | "confi
     return `${g.provider === "github" ? "GitHub" : "Gitea"} · ${g.mode === "pr" ? "opens a pull request" : "commits"} on ${g.branch} · ${g.contentDir}/${g.filenamePattern}`;
   }
   if (conn.kind === "webhook") return `Signed webhook to ${String(conn.config.endpoint ?? "")}`;
+  if (conn.kind === "content_api") return `Lumoras Growth serves it · the site reads its posts endpoint · ${readContentApiConfig(conn.config).livePath}`;
   return conn.kind;
 }
 
@@ -49,6 +53,8 @@ export const createPublisher: PublisherFactory = (conn, secret, site, policy) =>
       return new GitPublisher(readGitConfig(conn.config), secret, { policy });
     case "webhook":
       return new WebhookPublisher({ endpoint: String(conn.config.endpoint ?? "") }, secret, site, { policy });
+    case "content_api":
+      return new ContentApiPublisher(readContentApiConfig(conn.config));
     default:
       throw new PublishError(`No publisher for ${conn.kind} yet.`);
   }
@@ -94,6 +100,7 @@ export function missingCredentialValidation(conn: Pick<PublishConnection, "kind"
 /** Reads the sealed credential for a publishing connection (server-side only). */
 export async function publisherFor(tx: Tx, ring: Keyring, workspaceId: string, connectionId: string, site: { domain: string }, policy: SafeFetchPolicy, factory: PublisherFactory = createPublisher): Promise<{ conn: PublishConnection; publisher: Publisher }> {
   const conn = await loadPublishConnection(tx, connectionId);
+  if (NO_SECRET_KINDS.has(conn.kind)) return { conn, publisher: factory(conn, "", site, policy) };
   const secret = await readConnectionSecret(tx, ring, workspaceId, connectionId);
   if (!secret) throw new PublishError(`Token needed: ${conn.label} has no access token yet. Add it on the site's Connections tab.`);
   return { conn, publisher: factory(conn, secret, site, policy) };

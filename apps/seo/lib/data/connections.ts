@@ -59,6 +59,8 @@ function split(input: ConnectionInput): { config: Record<string, unknown>; secre
       return { config: { siteUrl: input.siteUrl, username: input.username }, secret: input.secret };
     case "webhook":
       return { config: { endpoint: input.endpoint, livePath: input.livePath }, secret: input.secret };
+    case "content_api":
+      return { config: { livePath: input.livePath, authorKeys: input.authorKeys }, secret: null };
   }
 }
 

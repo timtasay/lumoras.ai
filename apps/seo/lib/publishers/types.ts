@@ -55,7 +55,7 @@ export type PublicationRef = {
 
 export type PublishResult = {
   status: "open" | "published" | "merged";
-  mode: "pr" | "commit" | "webhook";
+  mode: "pr" | "commit" | "webhook" | "api";
   remoteId: string | null;
   path?: string | null;
   branch?: string | null;
@@ -64,6 +64,8 @@ export type PublishResult = {
   prUrl?: string | null;
   liveUrl: string;
   detail: string;
+  /** "Lumoras Growth serves it": the post exactly as the site's endpoint serves it (stored with the publication). */
+  payload?: Record<string, unknown>;
 };
 
 export type ValidationCheck = { label: string; ok: boolean; detail: string };
@@ -72,7 +74,7 @@ export type Validation = { ok: boolean; detail: string; checks: ValidationCheck[
 export type PublicationStatus = { status: "open" | "merged" | "closed" | "published" | "unpublished"; detail: string };
 
 export interface Publisher {
-  readonly kind: "github" | "gitea" | "webhook";
+  readonly kind: "github" | "gitea" | "webhook" | "content_api";
   validate(): Promise<Validation>;
   publish(a: PublishableArticle): Promise<PublishResult>;
   update(a: PublishableArticle, prev: PublicationRef): Promise<PublishResult>;

@@ -38,6 +38,8 @@ import { siteRunway } from "@/lib/content/planner";
 import { describeSchedule, localParts } from "@/lib/content/schedule";
 import { describeConnection, loadPublishConnection } from "@/lib/publishers/registry";
 import { presetsFor } from "@/lib/publishers/presets";
+import { postsFeedUrl } from "@/lib/publishers/content-api";
+import { webEnv } from "@/lib/config";
 import { createConnectionAction, deleteConnectionAction } from "@/app/(app)/w/[slug]/actions";
 import { saveScheduleAction, setPublishConnectionAction, testPublishConnectionAction } from "@/app/(app)/w/[slug]/publishing-actions";
 import type { CalItem } from "@/components/ui/CalendarMini";
@@ -158,7 +160,7 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
       const st = data.settings!;
       const chosen = data.conns.find((c) => c.id === st.publish_connection_id);
       return (
-        <OnboardingFrame {...frame} wide title="Choose how articles get published" lede="One connector per site, tested before the first article is due. A Git connection opens a pull request with one file per post; a webhook receives signed JSON.">
+        <OnboardingFrame {...frame} wide title="Choose how articles get published" lede="One connector per site, tested before the first article is due. Lumoras Growth can serve articles to the site directly (no deploy per article), a Git connection opens a pull request with one file per post, and a webhook receives signed JSON.">
           <ConnectionsPanel
             connections={data.conns.map((c) => ({ id: c.id, kind: c.kind, label: c.label, config: c.config, has_secret: c.has_secret, key_version: c.key_version, status: c.status, status_detail: c.status_detail, created: "" }))}
             canEdit={can(a.role, "connection:manage")}
@@ -168,6 +170,7 @@ export default async function OnboardingStepPage({ params, searchParams }: { par
             test={testPublishConnectionAction.bind(null, slug, site!.id)}
             choosePublish={setPublishConnectionAction.bind(null, slug, site!.id)}
             presets={presetsFor(site!.domain)}
+            postsFeedUrl={postsFeedUrl(webEnv().baseUrl, st.feed_token)}
           />
           <div className="onb-foot">
             <p className="muted small">

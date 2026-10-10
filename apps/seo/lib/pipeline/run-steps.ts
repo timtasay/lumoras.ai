@@ -741,7 +741,7 @@ export async function stepPublish(s: StepContext): Promise<StepResult> {
       await t.action("content.publish_failed");
       await t.exec(
         "INSERT INTO publications (workspace_id, site_id, item_id, connection_id, publisher, mode, action, status, error) VALUES ($1, $2, $3, $4, $5, $6, $7, 'failed', $8)",
-        [s.ctx.workspaceId, s.site.id, item.id, conn.id, publisher.kind, conn.kind === "webhook" ? "webhook" : conn.config.mode === "commit" ? "commit" : "pr", refreshPub ? "update" : "publish", msg.slice(0, 2000)],
+        [s.ctx.workspaceId, s.site.id, item.id, conn.id, publisher.kind, conn.kind === "webhook" ? "webhook" : conn.kind === "content_api" ? "api" : conn.config.mode === "commit" ? "commit" : "pr", refreshPub ? "update" : "publish", msg.slice(0, 2000)],
       );
       await setStatus(t, item.id, "approved", `Publishing failed: ${msg}`.slice(0, 500));
     });
@@ -750,9 +750,9 @@ export async function stepPublish(s: StepContext): Promise<StepResult> {
   const pubId = await tx(s, async (t) => {
     await t.action("content.publish");
     const p = await t.one<{ id: string }>(
-      `INSERT INTO publications (workspace_id, site_id, item_id, connection_id, publisher, mode, action, status, remote_id, path, branch, commit_sha, pr_number, pr_url, live_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
-      [s.ctx.workspaceId, s.site.id, item.id, conn.id, publisher.kind, result.mode, refreshPub ? "update" : "publish", result.status, result.remoteId, result.path ?? null, result.branch ?? null, result.commitSha && /^[0-9a-f]{7,64}$/.test(result.commitSha) ? result.commitSha : null, result.prNumber ?? null, result.prUrl ?? null, result.liveUrl],
+      `INSERT INTO publications (workspace_id, site_id, item_id, connection_id, publisher, mode, action, status, remote_id, path, branch, commit_sha, pr_number, pr_url, live_url, payload)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb) RETURNING id`,
+      [s.ctx.workspaceId, s.site.id, item.id, conn.id, publisher.kind, result.mode, refreshPub ? "update" : "publish", result.status, result.remoteId, result.path ?? null, result.branch ?? null, result.commitSha && /^[0-9a-f]{7,64}$/.test(result.commitSha) ? result.commitSha : null, result.prNumber ?? null, result.prUrl ?? null, result.liveUrl, result.payload ? JSON.stringify(result.payload) : null],
     );
     await setStatus(t, item.id, "published", result.detail, { published_at: s.deps.now(), live_url: result.liveUrl, publish_date: publishDate });
     return p.id;

@@ -11,6 +11,7 @@ import { livePathPattern, loadPublishConnection } from "../publishers/registry.t
 import { pagePath } from "../content/links.ts";
 import type { FeedArticle, FeedSite } from "../publishers/feed.ts";
 import { schemaTypeFor } from "../publishers/byline.ts";
+import type { ServedPost } from "../publishers/content-api.ts";
 
 export const FEED_ACTOR = "system:feed";
 
@@ -50,4 +51,59 @@ export async function loadFeed(db: pg.Pool, token: string, baseUrl: string, kind
     },
     { readOnly: true },
   );
+}
+
+/**
+ * The posts endpoint of a site that publishes through Lumoras Growth
+ * (docs/content-api.md). posts_feed_site() finds the site by its feed token
+ * only when its publishing connection is content_api; the snapshots stored at
+ * publishing are then read in that workspace under row-level security. The
+ * newest snapshot per slug wins (a refresh replaces the article); only posts
+ * whose date has arrived (UTC) are listed.
+ */
+export async function loadPostsFeed(db: pg.Pool, token: string, now: Date): Promise<{ version: 1; site: string; generatedAt: string; posts: ServedPost[] } | null> {
+  if (!/^[0-9a-f]{64}$/.test(token)) return null;
+  const hit = await withActor(db, { actorId: FEED_ACTOR }, (tx) => tx.maybe<{ workspace_id: string; site_id: string; domain: string }>("SELECT workspace_id, site_id, domain FROM posts_feed_site($1)", [token]), { readOnly: true });
+  if (!hit) return null;
+  const today = now.toISOString().slice(0, 10);
+  const rows = await withWorkspace(
+    db,
+    { workspaceId: hit.workspace_id, actorId: FEED_ACTOR, requestId: randomUUID() },
+    (tx) =>
+      tx.many<{ payload: unknown }>(
+        `SELECT payload FROM (
+           SELECT DISTINCT ON (p.payload->>'slug') p.payload, p.status
+           FROM publications p
+           WHERE p.site_id = $1 AND p.publisher = 'content_api' AND p.payload IS NOT NULL AND p.status IN ('published', 'unpublished')
+           ORDER BY p.payload->>'slug', p.created_at DESC
+         ) latest
+         WHERE status = 'published' AND payload->>'publishedAt' <= $2
+         ORDER BY payload->>'publishedAt' DESC, payload->>'slug'
+         LIMIT 500`,
+        [hit.site_id, today],
+      ),
+    { readOnly: true },
+  );
+  return { version: 1, site: hit.domain, generatedAt: now.toISOString(), posts: rows.map((r) => r.payload).filter(isServedPost).map(inContractOrder) };
+}
+
+/** jsonb reorders keys; the endpoint lists fields in the contract's order (docs/content-api.md). */
+function inContractOrder(p: ServedPost): ServedPost {
+  return {
+    slug: p.slug,
+    title: p.title,
+    description: p.description,
+    publishedAt: p.publishedAt,
+    ...(typeof p.updatedAt === "string" ? { updatedAt: p.updatedAt } : {}),
+    author: p.author,
+    readingMinutes: p.readingMinutes,
+    cover: { motif: p.cover.motif, chips: p.cover.chips.map(String) },
+    body: p.body,
+  };
+}
+
+/** A stored snapshot still has the served shape (defensive: rows are only written by ContentApiPublisher). */
+function isServedPost(v: unknown): v is ServedPost {
+  const p = v as ServedPost;
+  return !!p && typeof p.slug === "string" && typeof p.title === "string" && typeof p.description === "string" && typeof p.publishedAt === "string" && typeof p.author === "string" && Number.isInteger(p.readingMinutes) && !!p.cover && typeof p.cover.motif === "string" && Array.isArray(p.cover.chips) && typeof p.body === "string";
 }
