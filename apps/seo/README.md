@@ -2,7 +2,7 @@
 
 A multi-client SEO, content and marketing platform: each client workspace connects its sites
 and has research, writing, fact-checking, publishing and measurement run from one place.
-"Lumoras Growth" is a working name (owner decision #1). The full brief is
+Served at `https://growth.lumoras.ai` (owner decision #1, 10 October 2026). The full brief is
 [`docs/seo-platform-build-prompt.md`](../../docs/seo-platform-build-prompt.md).
 
 **Status: Phase 4 (measurement).** What exists, what was verified and what is open:
@@ -347,7 +347,7 @@ opacity only, a reduced-motion equivalent for everything, canvas paused when hid
 
 `deploy/docker-compose.yml` defines `lumoras-seo` (web, port 3007) and `lumoras-seo-worker` from
 one image on the external `lumoras_internal` network. `deploy/Caddyfile.snippet` is the route
-(host name placeholder `growth.lumoras.ai`, pending owner decision #1).
+(host `growth.lumoras.ai`, owner decision #1).
 `deploy/postgres/10-seo-database.sh` creates the database and roles. Nothing has been deployed;
 the owner deploys.
 

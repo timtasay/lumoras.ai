@@ -2,6 +2,7 @@
  * The LlmProvider interface: one model turn in, one response out. Two
  * implementations (lib/llm/registry.ts, LLM_PROVIDER):
  *
+ *   openrouter OpenRouter's chat completions API (production, owner decision of 10 October 2026)
  *   anthropic  the Anthropic Messages API through @anthropic-ai/sdk
  *   fake       recorded fixtures (lib/llm/fixtures.ts); tests and development
  *
@@ -61,10 +62,12 @@ export type LlmResponse = {
   usage: LlmUsage;
   /** Per-model usage when the provider reports it (fallbacks); otherwise one entry for `model`. */
   billed: BilledUsage[];
+  /** What the provider says it charged for this turn (OpenRouter's usage.cost), in µUSD; settles the ledger when present. */
+  reportedCostMicros?: number;
 };
 
 export interface LlmProvider {
-  readonly name: "anthropic" | "fake";
+  readonly name: "anthropic" | "openrouter" | "fake";
   readonly label: string;
   turn(req: LlmRequest): Promise<LlmResponse>;
 }
@@ -82,6 +85,8 @@ export class LlmError extends Error {
 /** Model ids from env (LLM_MODEL_DRAFT, LLM_MODEL_REVIEW). */
 export type LlmModels = { draft: string; review: string };
 export const DEFAULT_MODELS: LlmModels = { draft: "claude-sonnet-5-5", review: "claude-opus-5-5" };
+/** The same models as OpenRouter slugs (openrouter.ai/api/v1/models, read 10 October 2026). */
+export const OPENROUTER_DEFAULT_MODELS: LlmModels = { draft: "anthropic/claude-sonnet-5.5", review: "anthropic/claude-opus-5.5" };
 
 /** Which model each purpose uses: topic selection and fact-checking get the review model (section 3). */
 export function modelFor(purpose: LlmPurpose, m: LlmModels): string {

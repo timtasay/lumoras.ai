@@ -1,9 +1,8 @@
 # Lumoras Growth: route for the shared Caddy on VPS3. FILES ONLY, not deployed.
 #
-# PENDING OWNER DECISION #1 (build prompt, section 18): the public host name and
-# the product name. "growth.lumoras.ai" below is a PLACEHOLDER; "app.lumoras.ai"
-# is the other candidate. Replace it once decided, add the DNS record, then
-# append this block to the shared Caddyfile and reload Caddy.
+# Host name: growth.lumoras.ai (owner decision #1, 10 October 2026). Add the DNS
+# record (A/AAAA to VPS3), then append this block to the shared Caddyfile and
+# reload Caddy.
 #
 # Caddy and lumoras-seo share the external network lumoras_internal, so the
 # upstream is the container name. Caddy obtains the TLS certificate itself.

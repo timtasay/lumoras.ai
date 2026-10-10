@@ -53,6 +53,29 @@ On-Page `task_post` / `summary`) and backlinks (`backlinks.overview/profile`; Ba
 `summary/live`, `backlinks/live`) are the Phase 2 operations and prices above, now called on a cadence.
 DataForSEO SERP results also give the non-organic item types (SERP features), stored per rank snapshot.
 
+## OpenRouter chat completions (production model provider, `lib/llm/openrouter.ts`)
+
+- **Docs read:** 10 October 2026: API reference overview (openrouter.ai/docs/api/reference/overview),
+  reasoning tokens and prompt caching guides; model list and prices from `GET https://openrouter.ai/api/v1/models`.
+- **Endpoint:** `POST https://openrouter.ai/api/v1/chat/completions`, `Authorization: Bearer <OPENROUTER_API_KEY>`,
+  optional `HTTP-Referer` and `X-Title` (we send `https://growth.lumoras.ai` and "Lumoras Growth").
+- **Models:** `anthropic/claude-sonnet-5.5` ($2 / $10 per million input / output tokens, cache reads $0.10) and
+  `anthropic/claude-opus-5.5` ($4 / $20, cache reads $0.20); both list `tools`, `tool_choice`, `response_format`,
+  `structured_outputs` and `reasoning` as supported parameters.
+- **How we use it:** OpenAI-style messages; the system prompt is one text part with
+  `cache_control: {type: "ephemeral"}`; function tools with strict schemas and `tool_choice: "auto"`; final answers
+  with `response_format: {type: "json_schema", json_schema: {name, strict: true, schema}}`; `reasoning: {effort}`;
+  `provider: {require_parameters: true}` so only providers honouring those parameters are used;
+  `usage: {include: true}`. Tool results go back as `tool` messages; the assistant message is replayed unmodified,
+  `reasoning_details` included (required for Claude tool loops with reasoning).
+- **Usage and cost:** `usage.prompt_tokens` (including cached), `prompt_tokens_details.cached_tokens` and
+  `cache_write_tokens`, `completion_tokens`, and `usage.cost` in credits (US dollars). The ledger settles at
+  `usage.cost`; without it, at our price table.
+- **Errors:** 401/403 key rejected; 402 out of credits (not retried); 408/429/5xx and a `choices[0].error` or
+  `finish_reason: "error"` are retried by the step; `native_finish_reason: "refusal"` or `content_filter` is a refusal.
+- **Not verified against the real service** (no key here; tests use a scripted OpenRouter). First real use: one
+  article run on a workspace with a small `llm_tokens` budget, checking the ledger against OpenRouter's activity page.
+
 ## Anthropic Messages API, `@anthropic-ai/sdk` 0.133.0 (Phase 3, `lib/llm/anthropic.ts`)
 
 - **Version:** `@anthropic-ai/sdk` **0.133.0**, pinned exactly. Models from env: `LLM_MODEL_DRAFT`

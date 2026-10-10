@@ -100,14 +100,16 @@ export async function meteredTurn(deps: LlmDeps, ctx: LlmMeterContext, req: LlmR
     throw e;
   }
 
-  const cost = costOfTurn(deps.prices, res.billed);
+  // the provider's own charge when it reports one (OpenRouter), else our price table
+  const reported = typeof res.reportedCostMicros === "number" && res.reportedCostMicros >= 0;
+  const cost = reported ? res.reportedCostMicros! : costOfTurn(deps.prices, res.billed);
   const tokens = totalTokens(res.usage);
   const models = [...new Set(res.billed.map((b) => b.model))].join(" + ");
   await withWorkspace(deps.db, ctx, async (tx) => {
     await tx.action("llm.settle");
     const n = await tx.exec(
       `UPDATE usage_ledger SET status = 'settled', cost_micros = $2, units = $3, settled_at = now(), detail = $4 WHERE id = $1 AND status = 'held'`,
-      [reserved.ledgerId, cost, tokens, `${models}${cost > estimate ? " · charged more than the estimate" : ""}`.slice(0, 300)],
+      [reserved.ledgerId, cost, tokens, `${models}${reported ? " · cost reported by the provider" : ""}${cost > estimate ? " · charged more than the estimate" : ""}`.slice(0, 300)],
     );
     if (n !== 1) {
       await tx.exec(

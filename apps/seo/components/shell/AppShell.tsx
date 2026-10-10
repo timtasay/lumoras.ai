@@ -304,7 +304,6 @@ function Shell({ children, data, actions }: { children: ReactNode; data: ShellDa
           <BrandMark size={28} />
           <span>
             {PRODUCT_NAME}
-            <small>working name</small>
           </span>
         </Link>
         <WorkspaceSwitcher data={data} current={current} />

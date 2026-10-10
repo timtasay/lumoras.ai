@@ -10,6 +10,7 @@ import type { LlmEnv, OutboundEnv, WorkerEnv } from "../env.ts";
 import { sendEmailWith } from "../email.ts";
 import { googleEndpoints } from "../google/oauth.ts";
 import { AnthropicLlm } from "../llm/anthropic.ts";
+import { OpenRouterLlm } from "../llm/openrouter.ts";
 import { FakeLlm } from "../llm/fake.ts";
 import { RECORDED_PAGES } from "../llm/fixtures.ts";
 import type { LlmProvider } from "../llm/types.ts";
@@ -32,6 +33,8 @@ export function llmFrom(cfg: LlmEnv): LlmProvider | null {
   switch (cfg.provider) {
     case "anthropic":
       return new AnthropicLlm({ apiKey: cfg.apiKey!, baseURL: cfg.baseURL ?? undefined });
+    case "openrouter":
+      return new OpenRouterLlm({ apiKey: cfg.apiKey!, baseURL: cfg.baseURL ?? undefined, appUrl: process.env.BETTER_AUTH_URL?.trim() || undefined });
     case "fake":
       return new FakeLlm({ latencyMs: Number(process.env.FAKE_LLM_LATENCY_MS ?? 0) || 0 });
     default:

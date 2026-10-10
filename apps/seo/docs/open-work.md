@@ -5,8 +5,12 @@ Phases 0 to 4 and the owner decisions of 10 October 2026 (`owner-decisions.md`).
 
 ## Waiting on the owner
 
-- **Product name and host name** (decision #1). "Lumoras Growth" and `growth.lumoras.ai` are
-  placeholders in `components/shell/nav.ts`, `deploy/Caddyfile.snippet` and the docs.
+- **Decision #1 — decided: "Lumoras Growth" at `growth.lumoras.ai`.** Owner: add the DNS record, the
+  Caddy block (`deploy/Caddyfile.snippet`) and `BETTER_AUTH_URL=https://growth.lumoras.ai` in the env file.
+- **Model provider — decided: OpenRouter.** Owner: create a key at openrouter.ai → Keys (set a credit limit
+  on it), add credits, and set `LLM_PROVIDER=openrouter` and `OPENROUTER_API_KEY` in the server env file. Not
+  yet verified against the real service (tested against a scripted OpenRouter): the first article run should
+  be watched, checking that its ledger rows say "cost reported by the provider".
 - **Create the database on VPS3.** `deploy/postgres/10-seo-database.sh` now follows the hub's
   `docker/vps3/postgres/init/01-databases.sh` (branch `marketing-split`): database `seo` owned by
   a role named `seo`, CONNECT revoked from PUBLIC, passwords in `/opt/lumoras/env/postgres.env`
@@ -34,20 +38,24 @@ Phases 0 to 4 and the owner decisions of 10 October 2026 (`owner-decisions.md`).
   here; tested against a local fake DataForSEO): first use should be the sandbox
   (`DATAFORSEO_BASE_URL=https://sandbox.dataforseo.com`), then one balance read and one small research call on
   the real API, checking that the ledger settled at the cost DataForSEO reported.
-- **Google OAuth client for Search Console and GA4.** Create a Web OAuth client (needs the host name,
-  decision #1), add the redirect URI `<BETTER_AUTH_URL>/api/google/callback`, enable the Search Console
+- **Google OAuth client for Search Console and GA4.** Create a Web OAuth client in Google Cloud (signed in
+  as timtasay@gmail.com), with authorised JavaScript origin `https://growth.lumoras.ai` and redirect URIs
+  `https://growth.lumoras.ai/api/google/callback` (Search Console and GA4) and
+  `https://growth.lumoras.ai/api/auth/callback/google` (Google sign-in), enable the Search Console
   API, Analytics Admin API and Analytics Data API, configure the consent screen with the two read-only
   scopes (Google verification is needed for sensitive scopes before external users connect), and set
   `GOOGLE_OAUTH_CLIENT_ID/SECRET`. Until then the Connect buttons show "not configured". While the
   consent screen is in "Testing" status Google expires refresh tokens after 7 days.
-- **Phase 1 decisions** listed under "Questions for the owner" in `docs/phase-1-summary.md`
-  (self-serve sign-up and workspace creation, invitation and session lifetimes). The client-reviewer
-  question was decided in October 2026 and is built in Phase 3 (the `reviewer` role).
-- **Decision #2: sonorch.ai / seasonx.ai publishing.** Not built, by instruction: no adapter for either
-  repository, and neither repository was touched. Both sites have schedules in the seed but no publishing
-  connection, so seasonx.ai's runway reads red ("No publishing connection is set") and sonorch.ai's
-  articles stop at the review gate. When the owner decides, each gets a Git (file per post) or webhook
-  connection like lumoras.ai.
+- **Phase 1–4 defaults — decided: kept as built** (owner, 10 October 2026): any signed-in user may create
+  a workspace; sessions 7 days (refreshed daily), sign-in links 15 minutes, invitations 7 days,
+  impersonation 30 minutes; no SEO or model budget until an admin sets one; research cache per workspace
+  (keyword data 30 days, SERPs 7 days); rank checks weekly, top 30, up to 100 keywords; audits monthly, up
+  to 200 pages; 90 days of GA4 history and 20 index checks a day; competitors as proposed.
+- **Decision #2: sonorch.ai / seasonx.ai publishing — built.** The sites read new articles from Lumoras
+  Growth ("Lumoras Growth serves it", `docs/content-api.md`); their Gitea changes are merged into `dev`.
+  Owner: promote `dev` to `main` and deploy each site once, choose "Use for publishing" on each site's
+  Lumoras Growth connection, set `INSIGHTS_API_URL` in `/opt/lumoras/env/{sonorch,seasonx}-marketing.env`,
+  and replace the seeded demo authors with the real bylines (Tim, Tran, Alex, Jayden).
 - **The lumoras.ai token.** The connection now points at `timtasay/lumoras.ai`, base branch `dev`, pull
   requests (owner decision, 10 October 2026) and shows "Token needed". The owner creates a fine-grained token
   (Contents read/write and Pull requests read/write on that repository only), pastes it on lumoras.ai →

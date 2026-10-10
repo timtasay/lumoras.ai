@@ -34,6 +34,11 @@ export const DEFAULT_PRICES: PriceTable = {
   "claude-opus-4-8": usd(5, 25, 0.5),
   "claude-sonnet-5": usd(2, 10, 0.2),
   "claude-haiku-5-5": usd(0.1, 0.5, 0.01),
+  // OpenRouter slugs (openrouter.ai/api/v1/models, read 10 October 2026); used for the estimate only,
+  // since OpenRouter reports what it charged and the ledger settles at that
+  "anthropic/claude-opus-5.5": usd(4, 20, 0.2),
+  "anthropic/claude-sonnet-5.5": usd(2, 10, 0.1),
+  "anthropic/claude-haiku-5.5": usd(0.1, 0.5, 0.01),
 };
 
 /** LLM_PRICES_JSON: {"model": {"input": 4, "output": 20, "cacheRead": 0.2, "cacheWrite": 5}} in USD per million tokens. */

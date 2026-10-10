@@ -27,7 +27,7 @@ Plan and content format: `docs/site-plan.md`, `docs/content-spec.md`.
 
 ## Lumoras Growth (apps/seo) and shared packages
 
-[`apps/seo`](apps/seo/README.md) is Lumoras Growth (working name), the multi-client SEO and content
+[`apps/seo`](apps/seo/README.md) is Lumoras Growth (`growth.lumoras.ai`), the multi-client SEO and content
 platform, currently at Phase 4 (measurement: rank tracking, Search Console and GA4 sync, site audits, backlinks,
 site dashboard and agency home; brief in `docs/seo-platform-build-prompt.md`, progress in
 `apps/seo/docs/phase-4-summary.md`). Both apps

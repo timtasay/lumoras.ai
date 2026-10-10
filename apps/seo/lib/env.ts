@@ -5,7 +5,8 @@
  */
 import { isLogLevel, type LogLevel } from "./log.ts";
 import { parsePriceTable, type PriceTable } from "./llm/prices.ts";
-import { DEFAULT_MODELS, type LlmModels } from "./llm/types.ts";
+import { DEFAULT_MODELS, OPENROUTER_DEFAULT_MODELS, type LlmModels } from "./llm/types.ts";
+import { OPENROUTER_BASE_URL } from "./llm/openrouter.ts";
 
 export class EnvError extends Error {
   constructor(public readonly problems: string[]) {
@@ -71,21 +72,24 @@ export function readMigrateEnv(env: Env = process.env): MigrateEnv {
 // ---------------------------------------------------------------------------
 // Phase 3: the model provider, outbound fetching, email (shared by web and worker)
 // ---------------------------------------------------------------------------
-export type LlmEnv = { provider: "none" | "fake" | "anthropic"; apiKey: string | null; baseURL: string | null; models: LlmModels; prices: PriceTable };
+export type LlmEnv = { provider: "none" | "fake" | "anthropic" | "openrouter"; apiKey: string | null; baseURL: string | null; models: LlmModels; prices: PriceTable };
 
 /**
  * LLM_PROVIDER: "fake" (recorded fixtures) by default in development and
- * tests, "none" in production until ANTHROPIC_API_KEY is set and the owner
- * switches to "anthropic". "fake" is refused next to an https base URL.
+ * tests, "none" in production until a key is set. Production (owner decision,
+ * 10 October 2026): "openrouter" with OPENROUTER_API_KEY; "anthropic" with
+ * ANTHROPIC_API_KEY stays supported. "fake" is refused next to an https base URL.
  */
 export function readLlmEnv(env: Env, problems: string[], opts: { production: boolean; secure: boolean }): LlmEnv {
   const raw = env.LLM_PROVIDER?.trim() || (opts.production ? "none" : "fake");
+  const openrouter = raw === "openrouter";
+  const defaults = openrouter ? OPENROUTER_DEFAULT_MODELS : DEFAULT_MODELS;
   const model = (name: string, d: string) => {
     const v = env[name]?.trim() || d;
-    if (!/^claude-[a-z0-9.-]{1,60}$/.test(v)) problems.push(`${name} must be a Claude model id like ${d}`);
+    if (openrouter ? !/^[a-z0-9-]{1,40}\/[a-z0-9._:-]{1,80}$/.test(v) : !/^claude-[a-z0-9.-]{1,60}$/.test(v)) problems.push(`${name} must be ${openrouter ? "an OpenRouter model slug" : "a Claude model id"} like ${d}`);
     return v;
   };
-  const models = { draft: model("LLM_MODEL_DRAFT", DEFAULT_MODELS.draft), review: model("LLM_MODEL_REVIEW", DEFAULT_MODELS.review) };
+  const models = { draft: model("LLM_MODEL_DRAFT", defaults.draft), review: model("LLM_MODEL_REVIEW", defaults.review) };
   const prices = parsePriceTable(env.LLM_PRICES_JSON, problems);
   const apiKey = env.ANTHROPIC_API_KEY?.trim() || null;
   const baseURL = env.ANTHROPIC_BASE_URL?.trim() || null;
@@ -99,8 +103,15 @@ export function readLlmEnv(env: Env, problems: string[], opts: { production: boo
     case "anthropic":
       if (!apiKey) problems.push("ANTHROPIC_API_KEY is required when LLM_PROVIDER=anthropic");
       return { provider: "anthropic", apiKey, baseURL, models, prices };
+    case "openrouter": {
+      const key = env.OPENROUTER_API_KEY?.trim() || null;
+      if (!key) problems.push("OPENROUTER_API_KEY is required when LLM_PROVIDER=openrouter (openrouter.ai → Keys)");
+      const base = (env.OPENROUTER_BASE_URL?.trim() || OPENROUTER_BASE_URL).replace(/\/+$/, "");
+      if (base !== OPENROUTER_BASE_URL && !(LOOPBACK_ORIGIN.test(new URL(base, "http://x").origin) && !opts.secure)) problems.push(`OPENROUTER_BASE_URL must be ${OPENROUTER_BASE_URL} (a loopback origin only in tests)`);
+      return { provider: "openrouter", apiKey: key, baseURL: base, models, prices };
+    }
     default:
-      problems.push(`LLM_PROVIDER must be one of none, fake, anthropic (got "${raw}")`);
+      problems.push(`LLM_PROVIDER must be one of none, fake, openrouter, anthropic (got "${raw}")`);
       return { provider: "none", apiKey: null, baseURL: null, models, prices };
   }
 }
